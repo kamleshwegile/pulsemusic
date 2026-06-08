@@ -28,6 +28,7 @@ users_collection = db["users"]
 liked_songs_collection = db["liked_songs"]
 followed_artists_collection = db["followed_artists"]
 playlists_collection = db["playlists"]
+recent_searches_collection = db["recent_searches"]
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
 
@@ -262,6 +263,34 @@ def follow_artist(artist_id: str, name: str, image: str = "", user_id: str = Dep
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Recent Searches Routes
+class RecentSearch(BaseModel):
+    query: str
+    timestamp: float
+
+@app.get("/api/v1/user/searches")
+def get_recent_searches(user_id: str = Depends(get_current_user)):
+    rows = recent_searches_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(10)
+    return [{"query": r["query"], "timestamp": r["timestamp"]} for r in rows]
+
+@app.post("/api/v1/user/searches")
+def add_recent_search(req: RecentSearch, user_id: str = Depends(get_current_user)):
+    try:
+        # Upsert search query so it updates timestamp if it exists, otherwise inserts it
+        recent_searches_collection.update_one(
+            {"user_id": user_id, "query": req.query},
+            {"$set": {"timestamp": req.timestamp}},
+            upsert=True
+        )
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/v1/user/searches")
+def clear_recent_searches(user_id: str = Depends(get_current_user)):
+    recent_searches_collection.delete_many({"user_id": user_id})
+    return {"status": "success"}
 
 # Playlist Routes
 @app.get("/api/v1/user/playlists")
