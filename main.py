@@ -12,11 +12,23 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import threading
+import concurrent.futures
+import re
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+SPOTIPY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID", "cccb6c89f4ac43f8a874a20b19e38fc5")
+SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET", "d0b74333a8d24d51bdd58f4ed77179b1")
+
+if SPOTIPY_CLIENT_ID and SPOTIPY_CLIENT_SECRET:
+    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=SPOTIPY_CLIENT_ID, client_secret=SPOTIPY_CLIENT_SECRET))
+else:
+    sp = None
 
 app = FastAPI()
 
@@ -341,6 +353,100 @@ def add_recent_song(req: RecentlyPlayedSong, user_id: str = Depends(get_current_
         raise HTTPException(status_code=500, detail=str(e))
 
 # Playlist Routes
+class SpotifyImportRequest(BaseModel):
+    url: str
+
+def search_jiosaavn(track_name, artist_name):
+    try:
+        query = f"{track_name} {artist_name}"
+        res = _search_songs_internal(query, "song")
+        songs = res.songs if hasattr(res, "songs") else res.get("songs", [])
+        if songs and len(songs) > 0:
+            song = songs[0]
+            return {
+                "id": song.id if hasattr(song, "id") else song["id"],
+                "title": song.title if hasattr(song, "title") else song["title"],
+                "artist": song.artist if hasattr(song, "artist") else song["artist"],
+                "album": song.album if hasattr(song, "album") else song["album"],
+                "albumArt": song.albumArt if hasattr(song, "albumArt") else song["albumArt"],
+                "source": "jiosaavn"
+            }
+    except Exception:
+        pass
+    return None
+
+@app.post("/api/v1/user/playlists/spotify-import")
+def import_spotify_playlist(req: SpotifyImportRequest, user_id: str = Depends(get_current_user)):
+    match = re.search(r"playlist/([a-zA-Z0-9]+)", req.url)
+    if not match:
+        raise HTTPException(status_code=400, detail="Invalid Spotify Playlist URL")
+    
+    playlist_id = match.group(1)
+    
+    # Scrape tracks from Spotify embed page (no API key needed)
+    try:
+        embed_url = f"https://open.spotify.com/embed/playlist/{playlist_id}"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        embed_res = requests.get(embed_url, headers=headers, timeout=15)
+        if embed_res.status_code != 200:
+            raise HTTPException(status_code=400, detail="Could not fetch Spotify playlist")
+        
+        import json as json_mod
+        next_data_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', embed_res.text)
+        if not next_data_match:
+            raise HTTPException(status_code=400, detail="Could not parse Spotify playlist data")
+        
+        data = json_mod.loads(next_data_match.group(1))
+        entity = data.get("props", {}).get("pageProps", {}).get("state", {}).get("data", {}).get("entity", {})
+        playlist_name = entity.get("name") or entity.get("title") or "Imported Spotify Playlist"
+        track_list = entity.get("trackList", [])
+        
+        if not track_list:
+            raise HTTPException(status_code=400, detail="Playlist is empty or could not be read")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching playlist: {str(e)}")
+        
+    tracks_to_search = []
+    for track in track_list:
+        title = track.get("title", "")
+        # subtitle contains artist names separated by non-breaking spaces and commas
+        subtitle = track.get("subtitle", "").replace("\u00a0", " ").strip()
+        # Take only the first artist
+        artist = subtitle.split(",")[0].strip() if subtitle else ""
+        if title:
+            tracks_to_search.append((title, artist))
+            
+    matched_songs = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = []
+        for name, artist in tracks_to_search:
+            futures.append(executor.submit(search_jiosaavn, name, artist))
+        for future in concurrent.futures.as_completed(futures):
+            res = future.result()
+            if res:
+                matched_songs.append(res)
+                
+    if not matched_songs:
+        raise HTTPException(status_code=404, detail="Could not match any songs from the playlist")
+        
+    # Create the playlist in DB
+    res = playlists_collection.insert_one({
+        "user_id": user_id, 
+        "name": playlist_name, 
+        "songs": matched_songs,
+        "created_at": datetime.utcnow()
+    })
+    
+    return {
+        "status": "success",
+        "playlist_id": str(res.inserted_id),
+        "name": playlist_name,
+        "matched_count": len(matched_songs),
+        "total_count": len(tracks_to_search)
+    }
+
 @app.get("/api/v1/user/playlists")
 def get_playlists(user_id: str = Depends(get_current_user)):
     rows = playlists_collection.find({"user_id": user_id})
