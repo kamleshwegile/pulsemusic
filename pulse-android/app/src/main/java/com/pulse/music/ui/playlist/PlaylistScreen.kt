@@ -1,24 +1,36 @@
 package com.pulse.music.ui.playlist
 
+import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,125 +51,362 @@ fun PlaylistScreen(
     val playlistInfo by viewModel.playlistInfo.collectAsState()
     val playlistSongs by viewModel.playlistSongs.collectAsState()
     val currentSong by viewModel.currentSong.collectAsState()
+    val isFavorite by viewModel.isFavorite.collectAsState()
+    
+    val context = LocalContext.current
+    val listState = rememberLazyListState()
+
+    // Sticky header calculation
+    val firstVisibleItemIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
+    val showCollapsedToolbarTitle by remember { derivedStateOf { firstVisibleItemIndex > 0 } }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(playlistInfo?.name ?: "Playlist", color = Color.White) },
+                title = {
+                    AnimatedVisibility(visible = showCollapsedToolbarTitle, enter = fadeIn(), exit = fadeOut()) {
+                        Text(
+                            text = playlistInfo?.name ?: "Playlist",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = if (showCollapsedToolbarTitle) Color(0xFF121212) else Color.Transparent
                 )
             )
-        }
+        },
+        containerColor = Color.Black
     ) { padding ->
-        Column(
+        LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = padding.calculateTopPadding())
         ) {
-            // Header actions
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${playlistSongs.size} songs",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                if (playlistSongs.isNotEmpty()) {
-                    FloatingActionButton(
-                        onClick = { viewModel.playSong(playlistSongs.first(), playlistSongs) },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(56.dp)
+            item {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(280.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.DarkGray.copy(alpha = 0.6f), Color.Black),
+                                    startY = 0f,
+                                    endY = Float.POSITIVE_INFINITY
+                                )
+                            )
+                    )
+                    
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 16.dp, start = 24.dp, end = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.Black)
+                        Box(
+                            modifier = Modifier
+                                .size(200.dp)
+                                .shadow(8.dp, RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color(0xFF2E2E2E)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val firstArt = playlistSongs.firstOrNull { !it.albumArt.isNullOrEmpty() }?.albumArt
+                            if (firstArt != null) {
+                                AsyncImage(
+                                    model = firstArt,
+                                    contentDescription = "Playlist Cover",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.Gray)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        Text(
+                            text = playlistInfo?.name ?: "Playlist",
+                            color = Color.White,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "Playlist",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        
+                        val totalDurationMs = playlistSongs.sumOf { it.durationMs ?: 0L }
+                        val minutes = totalDurationMs / 60000
+                        Text(
+                            text = "2026 • ${playlistSongs.size} Songs • $minutes min",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val interactionSourceFav = remember { MutableInteractionSource() }
+                        val isPressedFav by interactionSourceFav.collectIsPressedAsState()
+                        val scaleFav by animateFloatAsState(targetValue = if (isPressedFav) 0.8f else 1f, label = "fav_scale")
+                        
+                        IconButton(
+                            onClick = { viewModel.toggleFavorite() },
+                            modifier = Modifier.scale(scaleFav),
+                            interactionSource = interactionSourceFav
+                        ) {
+                            Icon(
+                                if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorite",
+                                tint = if (isFavorite) Color(0xFF1DB954) else Color.White
+                            )
+                        }
+                        
+                        IconButton(onClick = {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, "Share Playlist")
+                                putExtra(Intent.EXTRA_TEXT, "Check out my playlist: ${playlistInfo?.name} on Pulse Music!")
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                        }) {
+                            Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White)
+                        }
+                        
+                        var expandedMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { expandedMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Color.White)
+                            }
+                            DropdownMenu(
+                                expanded = expandedMenu,
+                                onDismissRequest = { expandedMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Edit Playlist") },
+                                    onClick = { expandedMenu = false },
+                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Delete Playlist") },
+                                    onClick = { 
+                                        expandedMenu = false 
+                                        viewModel.deletePlaylist()
+                                        onBack()
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedIconButton(
+                            onClick = { viewModel.shufflePlay(playlistSongs) },
+                            modifier = Modifier.size(48.dp),
+                            shape = CircleShape,
+                            colors = IconButtonDefaults.outlinedIconButtonColors(contentColor = Color.White)
+                        ) {
+                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", modifier = Modifier.size(24.dp))
+                        }
+                        
+                        val interactionSourcePlay = remember { MutableInteractionSource() }
+                        val isPressedPlay by interactionSourcePlay.collectIsPressedAsState()
+                        val scalePlay by animateFloatAsState(targetValue = if (isPressedPlay) 0.9f else 1f, label = "play_scale")
+
+                        FloatingActionButton(
+                            onClick = { viewModel.playAll(playlistSongs) },
+                            containerColor = Color(0xFF1DB954),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .scale(scalePlay)
+                                .shadow(4.dp, CircleShape),
+                            interactionSource = interactionSourcePlay
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.Black, modifier = Modifier.size(36.dp))
+                        }
                     }
                 }
             }
 
             if (playlistSongs.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No songs in this playlist yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        Text("No songs in this playlist.", color = Color.White.copy(alpha = 0.5f))
+                    }
                 }
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    itemsIndexed(playlistSongs) { index, song ->
-                        val isActive = currentSong?.id == song.id
-                        ListItem(
-                            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
-                            headlineContent = { 
-                                Text(
-                                    text = song.title,
-                                    color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
-                                ) 
-                            },
-                            supportingContent = { 
-                                Text(
-                                    text = song.artist,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                ) 
-                            },
-                            leadingContent = {
+                itemsIndexed(playlistSongs, key = { index, song -> "${song.id}_$index" }) { _, song ->
+                    val isActive = currentSong?.id == song.id
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.playSong(song, playlistSongs) }
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .height(64.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF2E2E2E)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (!song.albumArt.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = song.albumArt,
+                                    contentDescription = song.title,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.Gray)
+                            }
+                            
+                            if (isActive) {
                                 Box(
                                     modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.7f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    if (!song.albumArt.isNullOrEmpty()) {
-                                        AsyncImage(
-                                            model = song.albumArt,
-                                            contentDescription = song.title,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } else {
-                                        Icon(Icons.Default.MusicNote, contentDescription = "Audio", tint = MaterialTheme.colorScheme.primary)
-                                    }
+                                    AnimatedEqualizer()
                                 }
-                            },
-                            trailingContent = {
-                                var showMenu by remember { mutableStateOf(false) }
-                                Box {
-                                    IconButton(onClick = { showMenu = true }) {
-                                        Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    DropdownMenu(
-                                        expanded = showMenu,
-                                        onDismissRequest = { showMenu = false }
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text("Remove from Playlist") },
-                                            onClick = {
-                                                showMenu = false
-                                                viewModel.removeSong(song.id)
-                                            }
-                                        )
-                                    }
-                                }
-                            },
-                            modifier = Modifier.clickable {
-                                viewModel.playSong(song, playlistSongs)
                             }
+                        }
+                        
+                        Spacer(modifier = Modifier.width(16.dp))
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = song.title,
+                                color = if (isActive) Color(0xFF1DB954) else Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontSize = 16.sp,
+                                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = song.artist,
+                                color = Color.White.copy(alpha = 0.6f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontSize = 14.sp
+                            )
+                        }
+                        
+                        val durationText = song.durationMs?.let { ms ->
+                            val sec = ms / 1000
+                            val m = sec / 60
+                            val s = sec % 60
+                            String.format("%d:%02d", m, s)
+                        } ?: ""
+
+                        Text(
+                            text = durationText,
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(end = 8.dp)
                         )
+                        
+                        var songMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { songMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White.copy(alpha = 0.7f))
+                            }
+                            DropdownMenu(
+                                expanded = songMenu,
+                                onDismissRequest = { songMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Remove from Playlist") },
+                                    onClick = {
+                                        songMenu = false
+                                        viewModel.removeSong(song.id)
+                                    }
+                                )
+                            }
+                        }
                     }
+                }
+                
+                item {
+                    Spacer(modifier = Modifier.height(100.dp))
                 }
             }
         }
     }
+}
+
+@Composable
+fun AnimatedEqualizer() {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier.height(16.dp)
+    ) {
+        val transition = rememberInfiniteTransition(label = "eq")
+        EqBar(transition, 0)
+        EqBar(transition, 1)
+        EqBar(transition, 2)
+        EqBar(transition, 3)
+    }
+}
+
+@Composable
+fun EqBar(transition: InfiniteTransition, index: Int) {
+    val height by transition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 400 + (index * 100), easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "eq_height_$index"
+    )
+    Box(
+        modifier = Modifier
+            .width(3.dp)
+            .fillMaxHeight(height)
+            .background(Color(0xFF1DB954), RoundedCornerShape(1.dp))
+    )
 }
