@@ -1,0 +1,119 @@
+package com.pulse.music.ui.auth
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.pulse.music.data.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import com.pulse.music.player.MusicPlayerManager
+import javax.inject.Inject
+
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val repository: AuthRepository,
+    private val musicPlayerManager: MusicPlayerManager
+) : ViewModel() {
+
+    val token: StateFlow<String?> = repository.authToken.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        null
+    )
+
+    val username: StateFlow<String?> = repository.username.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        null
+    )
+
+    val profilePicUri: StateFlow<String?> = repository.profilePicUri.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        null
+    )
+
+    val highQuality: StateFlow<Boolean> = repository.highQuality.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val spatialAudio: StateFlow<Boolean> = repository.spatialAudio.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val gapless: StateFlow<Boolean> = repository.gapless.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val crossfade: StateFlow<Int> = repository.crossfade.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun updateProfilePic(uri: String) {
+        viewModelScope.launch {
+            repository.updateProfilePic(uri)
+        }
+    }
+
+    fun updatePlaybackSettings(highQuality: Boolean, spatialAudio: Boolean, gapless: Boolean, crossfade: Int) {
+        viewModelScope.launch {
+            repository.updatePlaybackSettings(highQuality, spatialAudio, gapless, crossfade)
+        }
+    }
+
+    fun login(email: String, password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.login(email, password)
+            if (result.isSuccess) {
+                onSuccess()
+            } else {
+                onError(result.exceptionOrNull()?.message ?: "Error")
+            }
+        }
+    }
+
+    fun register(username: String, email: String, password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.register(username, email, password)
+            if (result.isSuccess) {
+                onSuccess()
+            } else {
+                onError(result.exceptionOrNull()?.message ?: "Error")
+            }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            musicPlayerManager.stopAndClear()
+            repository.logout()
+        }
+    }
+
+    fun forgotPassword(email: String, onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.forgotPassword(email)
+            if (result.isSuccess) {
+                onResult(result.getOrNull()?.message ?: "Code sent")
+            } else {
+                onResult(result.exceptionOrNull()?.message ?: "Failed to send code")
+            }
+        }
+    }
+
+    fun verifyCode(email: String, code: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.verifyCode(email, code)
+            if (result.isSuccess) {
+                val response = result.getOrNull()
+                onResult(response?.status == "success", response?.message ?: "Error")
+            } else {
+                onResult(false, result.exceptionOrNull()?.message ?: "Error")
+            }
+        }
+    }
+
+    fun resetPassword(email: String, code: String, newPassword: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.resetPassword(email, code, newPassword)
+            if (result.isSuccess) {
+                val response = result.getOrNull()
+                onResult(response?.status == "success", response?.message ?: "Error")
+            } else {
+                onResult(false, result.exceptionOrNull()?.message ?: "Error")
+            }
+        }
+    }
+}
