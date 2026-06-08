@@ -29,6 +29,7 @@ liked_songs_collection = db["liked_songs"]
 followed_artists_collection = db["followed_artists"]
 playlists_collection = db["playlists"]
 recent_searches_collection = db["recent_searches"]
+recently_played_collection = db["recently_played"]
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
 
@@ -291,6 +292,53 @@ def add_recent_search(req: RecentSearch, user_id: str = Depends(get_current_user
 def clear_recent_searches(user_id: str = Depends(get_current_user)):
     recent_searches_collection.delete_many({"user_id": user_id})
     return {"status": "success"}
+
+# Recently Played Routes
+class RecentlyPlayedSong(BaseModel):
+    id: str
+    title: str
+    artist: str
+    album: str
+    albumArt: str
+    source: str = "jiosaavn"
+    timestamp: float
+
+@app.get("/api/v1/user/recent-songs")
+def get_recent_songs(user_id: str = Depends(get_current_user)):
+    rows = recently_played_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(20)
+    result = []
+    for r in rows:
+        result.append({
+            "id": r["song_id"],
+            "title": r.get("title", ""),
+            "artist": r.get("artist", ""),
+            "album": r.get("album", ""),
+            "albumArt": r.get("albumArt", ""),
+            "source": r.get("source", "jiosaavn"),
+            "timestamp": r.get("timestamp", 0)
+        })
+    return result
+
+@app.post("/api/v1/user/recent-songs")
+def add_recent_song(req: RecentlyPlayedSong, user_id: str = Depends(get_current_user)):
+    try:
+        recently_played_collection.update_one(
+            {"user_id": user_id, "song_id": req.id},
+            {
+                "$set": {
+                    "title": req.title,
+                    "artist": req.artist,
+                    "album": req.album,
+                    "albumArt": req.albumArt,
+                    "source": req.source,
+                    "timestamp": req.timestamp
+                }
+            },
+            upsert=True
+        )
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Playlist Routes
 @app.get("/api/v1/user/playlists")
