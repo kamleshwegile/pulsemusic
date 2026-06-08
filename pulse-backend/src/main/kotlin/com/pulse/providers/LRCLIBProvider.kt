@@ -13,8 +13,9 @@ class LRCLIBProvider : MusicProvider {
     override suspend fun getArtist(id: String): Artist? = null
     override suspend fun getAlbum(id: String): Album? = null
 
-    override suspend fun getLyrics(title: String, artist: String): Lyrics? {
+    override suspend fun getLyrics(title: String, artist: String, songId: String?): Lyrics? {
         val response = defaultHttpClient.get("https://lrclib.net/api/get") {
+            header("User-Agent", "PulseMusic/1.0 (https://github.com/pulse-music)")
             parameter("track_name", title)
             parameter("artist_name", artist)
         }

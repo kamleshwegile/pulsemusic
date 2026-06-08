@@ -12,6 +12,12 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.pulse.music.data.repository.dataStore
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import com.pulse.music.BuildConfig // Automatically generated if configured in build.gradle
 
 @Module
@@ -20,7 +26,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor.Level.BODY
@@ -31,10 +37,18 @@ object NetworkModule {
 
         val headerInterceptor = Interceptor { chain ->
             val original = chain.request()
-            val request = original.newBuilder()
+            val tokenKey = stringPreferencesKey("jwt_token")
+            val token = kotlinx.coroutines.runBlocking { 
+                context.dataStore.data.map { it[tokenKey] }.first()
+            }
+            val builder = original.newBuilder()
                 .header("X-App-Version", BuildConfig.VERSION_NAME)
-                .method(original.method, original.body)
-                .build()
+                
+            if (!token.isNullOrEmpty()) {
+                builder.header("Authorization", "Bearer $token")
+            }
+            
+            val request = builder.method(original.method, original.body).build()
             chain.proceed(request)
         }
 
@@ -42,11 +56,12 @@ object NetworkModule {
             val request = chain.request()
             var response = chain.proceed(request)
             var tryCount = 0
-            val maxRetries = 2
+            val maxRetries = 1
             
             while (!response.isSuccessful && response.code == 503 && tryCount < maxRetries) {
                 tryCount++
                 response.close()
+                Thread.sleep(1000L * tryCount) // Back off before retry
                 response = chain.proceed(request)
             }
             response
@@ -56,9 +71,9 @@ object NetworkModule {
             .addInterceptor(headerInterceptor)
             .addInterceptor(retryInterceptor)
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 

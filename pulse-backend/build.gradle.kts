@@ -1,6 +1,6 @@
 plugins {
     kotlin("jvm") version "1.9.22"
-    id("io.ktor.plugin") version "2.3.8"
+    id("io.ktor.plugin") version "2.3.12"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
 }
 
@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    val ktorVersion = "2.3.8"
+    val ktorVersion = "2.3.12"
     val koinVersion = "3.5.3"
     val exposedVersion = "0.47.0"
     val logbackVersion = "1.4.14"
@@ -32,6 +32,8 @@ dependencies {
     implementation("io.ktor:ktor-server-cors-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-auth-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktorVersion")
+    implementation("org.mindrot:jbcrypt:0.4")
 
     // Ktor Client
     implementation("io.ktor:ktor-client-core-jvm:$ktorVersion")
@@ -43,13 +45,8 @@ dependencies {
     implementation("io.insert-koin:koin-ktor:$koinVersion")
     implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")
 
-    // Exposed ORM & Database
-    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
-    implementation("org.postgresql:postgresql:$postgresVersion")
-    implementation("com.zaxxer:HikariCP:5.1.0")
+    // KMongo & Database
+    implementation("org.litote.kmongo:kmongo-coroutine:4.11.0")
 
     // Coroutines & Logging
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")

@@ -22,6 +22,7 @@ data class Artist(
     val genres: List<String> = emptyList(),
     val similar: List<String> = emptyList(),
     val topTracks: List<Song> = emptyList(),
+    val albums: List<Album> = emptyList(),
     val score: Int? = null
 )
 
@@ -31,7 +32,8 @@ data class Album(
     val title: String,
     val artist: String,
     val coverArt: String? = null,
-    val year: Int? = null
+    val year: Int? = null,
+    val tracks: List<Song> = emptyList()
 )
 
 @Serializable
@@ -49,10 +51,20 @@ data class Lyrics(
 )
 
 @Serializable
+data class Playlist(
+    val id: String,
+    val title: String,
+    val image: String? = null,
+    val songCount: Int? = null,
+    val source: String
+)
+
+@Serializable
 data class SearchResponse(
     val songs: List<Song> = emptyList(),
     val artists: List<Artist> = emptyList(),
-    val albums: List<Album> = emptyList()
+    val albums: List<Album> = emptyList(),
+    val playlists: List<Playlist> = emptyList()
 )
 
 @Serializable

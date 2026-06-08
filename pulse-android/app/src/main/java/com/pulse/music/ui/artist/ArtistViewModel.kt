@@ -12,7 +12,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ArtistViewModel @Inject constructor(
-    private val repository: MusicRepository
+    private val repository: MusicRepository,
+    private val followedArtistRepository: com.pulse.music.data.repository.FollowedArtistRepository
 ) : ViewModel() {
 
     private val _artistInfo = MutableStateFlow<Any?>(null)
@@ -21,10 +22,33 @@ class ArtistViewModel @Inject constructor(
     private val _topTracks = MutableStateFlow<List<Any>>(emptyList())
     val topTracks: StateFlow<List<Any>> = _topTracks.asStateFlow()
 
+    private val _isFollowed = MutableStateFlow(false)
+    val isFollowed: StateFlow<Boolean> = _isFollowed.asStateFlow()
+
     fun loadArtist(name: String) {
         viewModelScope.launch {
             repository.getArtistInfo(name).collect { info ->
                 _artistInfo.value = info
+                if (info is com.pulse.music.domain.Artist) {
+                    _topTracks.value = info.topTracks
+                }
+            }
+        }
+        viewModelScope.launch {
+            followedArtistRepository.isArtistFollowed(name).collect { followed ->
+                _isFollowed.value = followed
+            }
+        }
+    }
+
+    fun toggleFollow(artist: com.pulse.music.domain.Artist) {
+        viewModelScope.launch {
+            if (_isFollowed.value) {
+                followedArtistRepository.removeFollowedArtist(artist.id)
+                _isFollowed.value = false
+            } else {
+                followedArtistRepository.addFollowedArtist(artist)
+                _isFollowed.value = true
             }
         }
     }

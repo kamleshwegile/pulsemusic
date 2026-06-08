@@ -31,7 +31,7 @@ class TheAudioDBProvider : MusicProvider {
     }
 
     override suspend fun getAlbum(id: String): Album? = null
-    override suspend fun getLyrics(title: String, artist: String): Lyrics? = null
+    override suspend fun getLyrics(title: String, artist: String, songId: String?): Lyrics? = null
     override suspend fun getRecommendations(songId: String): List<Song> = emptyList()
     override fun isHealthy(): Boolean = true
 }

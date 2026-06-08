@@ -19,7 +19,7 @@ val defaultHttpClient = HttpClient(CIO) {
     install(HttpRequestRetry) {
         maxRetries = 2
         retryIf { request, response ->
-            !response.status.isSuccess()
+            response.status.value >= 500 || response.status.value == 408 || response.status.value == 429
         }
         retryOnExceptionIf { request, cause ->
             cause is java.net.SocketTimeoutException || cause is java.net.ConnectException

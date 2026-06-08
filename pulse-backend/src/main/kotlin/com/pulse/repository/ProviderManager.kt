@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class ProviderManager(
-    private val providers: List<MusicProvider>,
+    val providers: List<MusicProvider>,
     private val cacheRepository: CacheRepository
 ) {
     private val logger = LoggerFactory.getLogger(ProviderManager::class.java)
@@ -32,8 +32,8 @@ class ProviderManager(
         }
         
         val failures = window.count { !it }
-        if (window.size >= 5 && failures.toFloat() / window.size > 0.5f) {
-            disabledUntil[providerName] = System.currentTimeMillis() + 5 * 60 * 1000
+        if (window.size >= 8 && failures.toFloat() / window.size > 0.8f) {
+            disabledUntil[providerName] = System.currentTimeMillis() + 30 * 1000 // 30 seconds
             logger.warn("Provider $providerName auto-disabled due to high failure rate.")
             window.clear()
         }

@@ -22,7 +22,7 @@ class GeniusProvider : MusicProvider {
     override suspend fun getArtist(id: String): Artist? = null
     override suspend fun getAlbum(id: String): Album? = null
 
-    override suspend fun getLyrics(title: String, artist: String): Lyrics? {
+    override suspend fun getLyrics(title: String, artist: String, songId: String?): Lyrics? {
         val response = defaultHttpClient.get("https://api.genius.com/search") {
             parameter("q", "$title $artist")
             header("Authorization", "Bearer $accessToken")
