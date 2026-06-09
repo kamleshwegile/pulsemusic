@@ -883,10 +883,6 @@ def get_home():
 def health_v1():
     return {"status": "ok", "provider": "jiosaavn"}
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
