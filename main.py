@@ -175,6 +175,61 @@ def login(user: AuthUser):
     username = db_user.get("username", user.email.split("@")[0])
     return {"token": token, "username": username, "email": user.email}
 
+class SocialLoginRequest(BaseModel):
+    token: str
+
+@app.post("/api/v1/auth/google")
+def google_login(req: SocialLoginRequest):
+    try:
+        response = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={req.token}")
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Google token")
+        
+        token_info = response.json()
+        email = token_info.get("email")
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid Google token payload")
+        
+        db_user = users_collection.find_one({"email": email})
+        if not db_user:
+            username = token_info.get("name", email.split("@")[0])
+            result = users_collection.insert_one({"username": username, "email": email, "passwordHash": ""})
+            user_id = str(result.inserted_id)
+        else:
+            username = db_user.get("username", email.split("@")[0])
+            user_id = str(db_user["_id"])
+            
+        token = create_access_token({"sub": user_id})
+        return {"token": token, "username": username, "email": email}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Google verification failed: {str(e)}")
+
+@app.post("/api/v1/auth/facebook")
+def facebook_login(req: SocialLoginRequest):
+    try:
+        response = requests.get(f"https://graph.facebook.com/me?fields=id,name,email&access_token={req.token}")
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Facebook token")
+            
+        token_info = response.json()
+        email = token_info.get("email")
+        if not email:
+            email = f"{token_info.get('id')}@facebook.com"
+            
+        db_user = users_collection.find_one({"email": email})
+        if not db_user:
+            username = token_info.get("name", email.split("@")[0])
+            result = users_collection.insert_one({"username": username, "email": email, "passwordHash": ""})
+            user_id = str(result.inserted_id)
+        else:
+            username = db_user.get("username", email.split("@")[0])
+            user_id = str(db_user["_id"])
+            
+        token = create_access_token({"sub": user_id})
+        return {"token": token, "username": username, "email": email}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Facebook verification failed: {str(e)}")
+
 class ForgotPasswordRequest(BaseModel):
     email: str
 

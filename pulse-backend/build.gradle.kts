@@ -34,6 +34,7 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktorVersion")
     implementation("org.mindrot:jbcrypt:0.4")
+    implementation("com.google.api-client:google-api-client:2.2.0")
 
     // Ktor Client
     implementation("io.ktor:ktor-client-core-jvm:$ktorVersion")
