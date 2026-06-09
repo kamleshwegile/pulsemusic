@@ -41,7 +41,8 @@ fun ArtistScreen(
     onBack: () -> Unit,
     onSongClick: (Song, List<Song>) -> Unit,
     onAlbumClick: (String) -> Unit = {},
-    onArtistClick: (String) -> Unit = {}
+    onArtistClick: (String) -> Unit = {},
+    onShuffleClick: (List<Song>) -> Unit = {}
 ) {
     LaunchedEffect(artistName) {
         viewModel.loadArtist(artistName)
@@ -122,50 +123,77 @@ fun ArtistScreen(
                         Text(
                             text = artist.name,
                             color = Color.White,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 40.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-1).sp
                         )
                         val followersText = artist.score?.let { "%,d followers".format(it) } ?: "${artist.name} listeners"
                         Text(
                             text = followersText,
                             color = TextSecondary,
-                            fontSize = 12.sp,
+                            fontSize = 14.sp,
                             modifier = Modifier.padding(top = 4.dp)
                         )
-                        
-                        Row(
-                            modifier = Modifier.padding(top = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    }
+                }
+            }
+            
+            // Action Buttons Row (Play, Shuffle, Follow, More)
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Play FAB
+                        FloatingActionButton(
+                            onClick = { if (topTracks.isNotEmpty()) onSongClick(topTracks.first() as Song, topTracks.map { it as Song }) },
+                            containerColor = PulseAccent,
+                            contentColor = Color.White,
+                            shape = CircleShape,
+                            modifier = Modifier.size(56.dp)
                         ) {
-                            OutlinedButton(
-                                onClick = { viewModel.toggleFollow(artist) },
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = if (isFollowed) Color.White.copy(alpha = 0.2f) else Color.Transparent,
-                                    contentColor = Color.White
-                                ),
-                                modifier = Modifier.height(36.dp)
-                            ) {
-                                Text(if (isFollowed) "Following" else "Follow", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            }
-                            IconButton(onClick = { }) {
-                                Icon(Icons.Default.MoreHoriz, contentDescription = "More", tint = Color.White)
-                            }
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play", modifier = Modifier.size(32.dp))
+                        }
+
+                        // Shuffle Button
+                        IconButton(
+                            onClick = { 
+                                val tracks = topTracks.map { it as Song }
+                                if (tracks.isNotEmpty()) {
+                                    onShuffleClick(tracks)
+                                }
+                            },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = Color.White, modifier = Modifier.size(28.dp))
                         }
                     }
 
-                    // Shuffle FAB
-                    FloatingActionButton(
-                        onClick = { if (topTracks.isNotEmpty()) onSongClick(topTracks.first() as Song, topTracks.map { it as Song }) },
-                        containerColor = PulseAccent,
-                        contentColor = Color.White,
-                        shape = CircleShape,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = 20.dp, bottom = 20.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Play", modifier = Modifier.size(32.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.toggleFollow(artist) },
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isFollowed) Color.Transparent else Color.White.copy(alpha = 0.5f)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (isFollowed) Color.White.copy(alpha = 0.15f) else Color.Transparent,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier.height(36.dp)
+                        ) {
+                            Text(if (isFollowed) "Following" else "Follow", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White.copy(alpha = 0.8f))
+                        }
                     }
                 }
             }
@@ -175,9 +203,9 @@ fun ArtistScreen(
                 Text(
                     text = "Popular",
                     color = Color.White,
-                    fontSize = 18.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 20.dp, top = 24.dp, bottom = 12.dp)
+                    modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 16.dp)
                 )
             }
 
@@ -193,23 +221,24 @@ fun ArtistScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
+                            .height(64.dp)
                             .clickable { onSongClick(song, displayTracks) }
                             .padding(horizontal = 20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "${index + 1}",
-                            color = TextMuted,
-                            fontSize = 14.sp,
-                            modifier = Modifier.width(24.dp)
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.width(32.dp)
                         )
                         AsyncImage(
                             model = song.albumArt,
                             contentDescription = "Cover",
                             modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(4.dp))
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(6.dp))
                                 .background(SurfaceContainer),
                             contentScale = ContentScale.Crop,
                             error = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Default.Album)

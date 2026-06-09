@@ -21,17 +21,15 @@ data class ForgotPasswordResponse(val status: String, val message: String)
 data class VerifyCodeRequest(val email: String, val code: String)
 data class ResetPasswordRequest(val email: String, val code: String, val new_password: String)
 
+data class SocialLoginRequest(val token: String)
+
+data class HomeModule(
+    val title: String,
+    val items: List<Playlist>
+)
+
 data class HomeResponse(
-    val featuredPlaylists: List<Playlist>,
-    val topPlaylists: List<Playlist>,
-    val englishHits: List<Playlist>,
-    val hindiHits: List<Playlist>,
-    val punjabiHits: List<Playlist>,
-    val topHits: List<Playlist>,
-    val popClassic: List<Playlist>,
-    val artists: List<Artist>,
-    val kpop: List<Playlist>,
-    val trendingEnglish: List<Playlist>
+    val modules: List<HomeModule>
 )
 
 interface PulseApiService {
@@ -81,6 +79,12 @@ interface PulseApiService {
     @POST("api/v1/auth/register")
     suspend fun register(@Body request: RegisterRequest): AuthResponse
 
+    @POST("api/v1/auth/google")
+    suspend fun googleLogin(@Body request: SocialLoginRequest): AuthResponse
+
+    @POST("api/v1/auth/facebook")
+    suspend fun facebookLogin(@Body request: SocialLoginRequest): AuthResponse
+
     @POST("api/v1/auth/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): ForgotPasswordResponse
 
@@ -107,6 +111,12 @@ interface PulseApiService {
 
     @retrofit2.http.DELETE("api/v1/user/searches")
     suspend fun clearRecentSearches(): Map<String, String>
+
+    @GET("api/v1/user/recent-songs")
+    suspend fun getRecentSongs(): List<Song>
+
+    @POST("api/v1/user/recent-songs")
+    suspend fun addRecentSong(@Body song: Map<String, Any>): Map<String, String>
 
     @GET("api/v1/user/follows")
     suspend fun getFollowedArtists(): List<Map<String, String>>

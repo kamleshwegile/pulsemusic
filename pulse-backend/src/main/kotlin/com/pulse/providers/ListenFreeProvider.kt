@@ -168,8 +168,8 @@ class ListenFreeProvider : MusicProvider {
                     val albumObj = item.jsonObject
                     val title = albumObj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
                     Album(
-                        id = albumObj["id"]?.jsonPrimitive?.content ?: title,
-                        title = title,
+                        id = albumObj["albumid"]?.jsonPrimitive?.content ?: albumObj["id"]?.jsonPrimitive?.content ?: title,
+                        title = title.replace("&quot;", "\""),
                         artist = id,
                         coverArt = albumObj["image"]?.jsonPrimitive?.content?.replace(Regex("\\d+x\\d+"), "500x500"),
                         year = albumObj["year"]?.jsonPrimitive?.intOrNull
@@ -190,23 +190,77 @@ class ListenFreeProvider : MusicProvider {
         }
     }
 
-    override suspend fun getAlbum(id: String): Album? {
-        return try {
-            val searchResponse = defaultHttpClient.get("https://www.jiosaavn.com/api.php") {
-                parameter("__call", "search.getAlbumResults")
-                parameter("q", id)
+    private suspend fun fetchPlaylistAsAlbum(listid: String): Album? {
+        try {
+            val response = defaultHttpClient.get("https://www.jiosaavn.com/api.php") {
+                parameter("__call", "playlist.getDetails")
+                parameter("listid", listid)
                 parameter("_format", "json")
                 parameter("_marker", "0")
                 parameter("ctx", "web6dot0")
             }
-            if (searchResponse.status.value != 200) return null
-            val searchJson = Json.parseToJsonElement(searchResponse.bodyAsText()).jsonObject
-            val results = searchJson["results"]?.jsonArray
-            if (results.isNullOrEmpty()) return null
+            if (response.status.value != 200) return null
+            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
             
-            val firstResult = results[0].jsonObject
-            val numericId = firstResult["albumid"]?.jsonPrimitive?.content ?: firstResult["id"]?.jsonPrimitive?.content ?: return null
+            val title = json["listname"]?.jsonPrimitive?.content ?: json["title"]?.jsonPrimitive?.content ?: return null
+            val coverArt = json["image"]?.jsonPrimitive?.content?.replace(Regex("\\d+x\\d+"), "500x500") ?: ""
+            val fanCount = json["fan_count"]?.jsonPrimitive?.content ?: "0"
+            val artistName = "Playlist • $fanCount Fans"
             
+            val songsArray = json["songs"]?.jsonArray ?: json["list"]?.jsonArray
+            val tracks = songsArray?.mapNotNull { item ->
+                val songObj = item.jsonObject
+                val songTitle = songObj["song"]?.jsonPrimitive?.content ?: songObj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                val songImageUrl = songObj["image"]?.jsonPrimitive?.content?.replace(Regex("\\d+x\\d+"), "500x500") ?: coverArt
+                
+                Song(
+                    id = songObj["id"]?.jsonPrimitive?.content ?: "",
+                    title = songTitle.replace("&quot;", "\""),
+                    artist = (songObj["primary_artists"]?.jsonPrimitive?.content ?: songObj["singers"]?.jsonPrimitive?.content ?: "").replace("&quot;", "\""),
+                    album = title,
+                    albumArt = songImageUrl,
+                    source = this.name,
+                    durationMs = songObj["duration"]?.jsonPrimitive?.content?.toLongOrNull()?.times(1000L)
+                )
+            } ?: emptyList()
+            
+            return Album(
+                id = listid,
+                title = title,
+                artist = artistName,
+                coverArt = coverArt,
+                year = null,
+                tracks = tracks
+            )
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    override suspend fun getAlbum(id: String): Album? {
+        return try {
+            var numericId = id
+            val isNumeric = id.toLongOrNull() != null
+            
+            if (!isNumeric) {
+                val searchResponse = defaultHttpClient.get("https://www.jiosaavn.com/api.php") {
+                    parameter("__call", "search.getAlbumResults")
+                    parameter("q", id)
+                    parameter("_format", "json")
+                    parameter("_marker", "0")
+                    parameter("ctx", "web6dot0")
+                }
+                if (searchResponse.status.value == 200) {
+                    val searchJson = Json.parseToJsonElement(searchResponse.bodyAsText()).jsonObject
+                    val results = searchJson["results"]?.jsonArray
+                    if (!results.isNullOrEmpty()) {
+                        val firstResult = results[0].jsonObject
+                        numericId = firstResult["albumid"]?.jsonPrimitive?.content ?: firstResult["id"]?.jsonPrimitive?.content ?: id
+                    }
+                }
+            }
+
+            // Try to fetch as Album first
             val detailResponse = defaultHttpClient.get("https://www.jiosaavn.com/api.php") {
                 parameter("__call", "content.getAlbumDetails")
                 parameter("albumid", numericId)
@@ -214,24 +268,35 @@ class ListenFreeProvider : MusicProvider {
                 parameter("_marker", "0")
                 parameter("ctx", "web6dot0")
             }
-            if (detailResponse.status.value != 200) return null
-            val detailJson = Json.parseToJsonElement(detailResponse.bodyAsText()).jsonObject
+            
+            val detailJson = if (detailResponse.status.value == 200) {
+                try {
+                    Json.parseToJsonElement(detailResponse.bodyAsText()).jsonObject
+                } catch (e: Exception) { null }
+            } else null
+            
+            if (detailJson == null || (!detailJson.containsKey("title") && !detailJson.containsKey("name"))) {
+                // If album fetch failed, try as playlist!
+                val playlist = fetchPlaylistAsAlbum(numericId)
+                if (playlist != null) return playlist
+                return null
+            }
             
             val title = detailJson["title"]?.jsonPrimitive?.content ?: detailJson["name"]?.jsonPrimitive?.content ?: id
             val year = detailJson["year"]?.jsonPrimitive?.intOrNull ?: detailJson["release_date"]?.jsonPrimitive?.content?.substringBefore("-")?.toIntOrNull()
             val coverArt = detailJson["image"]?.jsonPrimitive?.content?.replace(Regex("\\d+x\\d+"), "500x500")
             val artistNames = detailJson["primary_artists"]?.jsonPrimitive?.content ?: "Unknown Artist"
             
-            val songsArray = detailJson["songs"]?.jsonArray
+            val songsArray = detailJson["songs"]?.jsonArray ?: detailJson["list"]?.jsonArray
             val tracks = songsArray?.mapNotNull { item ->
                 val songObj = item.jsonObject
-                val songTitle = songObj["song"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                val songTitle = songObj["song"]?.jsonPrimitive?.content ?: songObj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
                 val songImageUrl = songObj["image"]?.jsonPrimitive?.content?.replace(Regex("\\d+x\\d+"), "500x500") ?: coverArt
                 
                 Song(
                     id = songObj["id"]?.jsonPrimitive?.content ?: "",
-                    title = songTitle,
-                    artist = songObj["primary_artists"]?.jsonPrimitive?.content ?: artistNames,
+                    title = songTitle.replace("&quot;", "\""),
+                    artist = (songObj["primary_artists"]?.jsonPrimitive?.content ?: songObj["singers"]?.jsonPrimitive?.content ?: artistNames).replace("&quot;", "\""),
                     album = title,
                     albumArt = songImageUrl,
                     source = this.name,
@@ -241,8 +306,8 @@ class ListenFreeProvider : MusicProvider {
             
             Album(
                 id = numericId,
-                title = title,
-                artist = artistNames,
+                title = title.replace("&quot;", "\""),
+                artist = artistNames.replace("&quot;", "\""),
                 coverArt = coverArt,
                 year = year,
                 tracks = tracks

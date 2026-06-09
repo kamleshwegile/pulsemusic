@@ -3,9 +3,11 @@ package com.pulse.music.ui.nowplaying
 import androidx.compose.ui.zIndex
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -375,6 +377,7 @@ fun NowPlayingScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainPlayerContent(
     modifier: Modifier = Modifier,
@@ -406,6 +409,9 @@ fun MainPlayerContent(
     val mutedGray = Color(0xFFB3B3B3)
     val pureWhite = Color(0xFFFFFFFF)
 
+    var showMoreMenu by remember { mutableStateOf(false) }
+    var showSleepTimerDialog by remember { mutableStateOf(false) }
+
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         IconButton(
             onClick = onBack,
@@ -415,6 +421,16 @@ fun MainPlayerContent(
                 .zIndex(10f)
         ) {
             Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Minimize", tint = pureWhite, modifier = Modifier.size(36.dp))
+        }
+
+        IconButton(
+            onClick = { showMoreMenu = true },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 16.dp, end = 16.dp)
+                .zIndex(10f)
+        ) {
+            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = pureWhite, modifier = Modifier.size(24.dp))
         }
 
         Column(
@@ -458,26 +474,45 @@ fun MainPlayerContent(
             Spacer(modifier = Modifier.height(32.dp))
 
             // SONG INFO (Top Section)
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = songTitle, 
-                    color = pureWhite, 
-                    fontSize = 26.sp, 
-                    fontWeight = FontWeight.Bold, 
-                    maxLines = 1, 
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    val artists = songArtist.split(",").map { it.trim() }
-                    artists.forEachIndexed { index, artist -> 
-                        Text(
-                            text = artist + if (index < artists.size - 1) "," else "", 
-                            color = pureWhite.copy(alpha = 0.7f), 
-                            fontSize = 18.sp, 
-                            modifier = Modifier.clickable { onNavigateToArtist(artist) }
-                        ) 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = songTitle, 
+                        color = pureWhite, 
+                        fontSize = 26.sp, 
+                        fontWeight = FontWeight.Bold, 
+                        maxLines = 1, 
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val artists = songArtist.split(",").map { it.trim() }
+                        artists.forEachIndexed { index, artist -> 
+                            Text(
+                                text = artist + if (index < artists.size - 1) "," else "", 
+                                color = pureWhite.copy(alpha = 0.7f), 
+                                fontSize = 18.sp, 
+                                modifier = Modifier.clickable { onNavigateToArtist(artist) }
+                            ) 
+                        }
                     }
+                }
+                
+                val heartScale by animateFloatAsState(
+                    targetValue = if (isLiked) 1.2f else 1f,
+                    animationSpec = tween(durationMillis = 200)
+                )
+                IconButton(onClick = { viewModel.toggleLike() }) {
+                    Icon(
+                        if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = if (isLiked) PulseGreen else pureWhite,
+                        modifier = Modifier.size(24.dp).scale(heartScale)
+                    )
                 }
             }
 
@@ -528,7 +563,16 @@ fun MainPlayerContent(
                     Icon(Icons.Default.SkipNext, "Next", tint = pureWhite, modifier = Modifier.size(28.dp)) 
                 }
                 IconButton(onClick = { viewModel.cycleRepeatMode() }) { 
-                    Icon(when (repeatMode) { RepeatMode.ONE -> Icons.Default.RepeatOne else -> Icons.Default.Repeat }, "Repeat", tint = if (repeatMode != RepeatMode.OFF) pureWhite else mutedGray, modifier = Modifier.size(24.dp)) 
+                    val tintColor = if (repeatMode != RepeatMode.OFF) PulseGreen else pureWhite
+                    Icon(
+                        imageVector = when (repeatMode) { 
+                            RepeatMode.ONE -> Icons.Default.RepeatOne 
+                            else -> Icons.Default.Repeat 
+                        }, 
+                        contentDescription = "Repeat", 
+                        tint = tintColor, 
+                        modifier = Modifier.size(24.dp)
+                    ) 
                 }
             }
 
@@ -553,6 +597,158 @@ fun MainPlayerContent(
                 }
             }
         }
+    }
+
+    if (showMoreMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showMoreMenu = false },
+            containerColor = Color(0xFF121212),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            dragHandle = { BottomSheetDefaults.DragHandle(color = Color.Gray) }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
+                // Header: Artwork, Title, Artist
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = currentSong?.albumArt,
+                        contentDescription = "Album Art",
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(4.dp)),
+                        contentScale = ContentScale.Crop,
+                        error = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Default.MusicNote)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(songTitle, color = pureWhite, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(songArtist, color = Color(0xFFAAAAAA), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = Color(0xFF282828), thickness = 1.dp)
+
+                // Menu Options
+                val menuItems = listOf(
+                    Triple(if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, if (isLiked) "Remove from Liked Songs" else "Add to Liked Songs", { viewModel.toggleLike() }),
+                    Triple(Icons.Default.PlaylistAdd, "Add to Playlist", { /* TODO */ }),
+                    Triple(Icons.Default.Snooze, "Sleep Timer", { showSleepTimerDialog = true }),
+                    Triple(Icons.Default.Album, "Go to Album", { 
+                        val albumName = currentSong?.album
+                        if (!albumName.isNullOrBlank() && currentSong != null) {
+                            onNavigateToAlbum(currentSong.id)
+                        }
+                    }),
+                    Triple(Icons.Default.Person, "Go to Artist", { currentSong?.artist?.split(",")?.firstOrNull()?.trim()?.let { onNavigateToArtist(it) } })
+                )
+
+                menuItems.forEach { (icon, text, action) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                action()
+                                showMoreMenu = false
+                            }
+                            .padding(horizontal = 16.dp)
+                            .height(56.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(icon, contentDescription = null, tint = if (text.contains("Liked Songs") && isLiked) PulseGreen else pureWhite, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(text, color = pureWhite, fontSize = 16.sp)
+                    }
+                }
+            }
+        }
+    }
+    val sleepTimerMode by viewModel.sleepTimerMode.collectAsState()
+    val sleepTimerTimeLeft by viewModel.sleepTimerTimeLeft.collectAsState()
+
+    if (showSleepTimerDialog) {
+        AlertDialog(
+            onDismissRequest = { showSleepTimerDialog = false },
+            containerColor = Color(0xFF282828),
+            title = { Text("Sleep Timer", color = pureWhite, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    val options = listOf(
+                        com.pulse.music.player.SleepTimerMode.MIN_5,
+                        com.pulse.music.player.SleepTimerMode.MIN_10,
+                        com.pulse.music.player.SleepTimerMode.MIN_15,
+                        com.pulse.music.player.SleepTimerMode.MIN_30,
+                        com.pulse.music.player.SleepTimerMode.MIN_45,
+                        com.pulse.music.player.SleepTimerMode.MIN_60,
+                        com.pulse.music.player.SleepTimerMode.END_OF_TRACK
+                    )
+                    options.forEach { mode ->
+                        val isActive = sleepTimerMode == mode
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setSleepTimer(mode)
+                                    showSleepTimerDialog = false
+                                }
+                                .padding(vertical = 14.dp, horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(mode.label, color = if (isActive) PulseGreen else pureWhite, fontSize = 16.sp)
+                            
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isActive) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = PulseGreen, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                }
+                                if (mode.minutes != null) {
+                                    val timeText = if (isActive) {
+                                        val totalSeconds = sleepTimerTimeLeft / 1000
+                                        val m = totalSeconds / 60
+                                        val s = totalSeconds % 60
+                                        String.format("%02d:%02d", m, s)
+                                    } else {
+                                        String.format("%02d:00", mode.minutes)
+                                    }
+                                    Text(
+                                        text = timeText,
+                                        color = if (isActive) PulseGreen else Color.Gray,
+                                        fontSize = 16.sp,
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (sleepTimerMode != com.pulse.music.player.SleepTimerMode.OFF) {
+                        HorizontalDivider(color = Color(0xFF404040), thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setSleepTimer(com.pulse.music.player.SleepTimerMode.OFF)
+                                    showSleepTimerDialog = false
+                                }
+                                .padding(vertical = 14.dp, horizontal = 8.dp)
+                        ) {
+                            Text("Turn off timer", color = pureWhite, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSleepTimerDialog = false }) {
+                    Text("Cancel", color = pureWhite)
+                }
+            }
+        )
     }
 }
 

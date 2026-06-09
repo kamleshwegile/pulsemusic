@@ -74,6 +74,25 @@ class SearchViewModel @Inject constructor(
             }
         }
     }
+    
+    val categoryPlaylists = androidx.compose.runtime.mutableStateMapOf<String, com.pulse.music.domain.Playlist?>()
+    val categoryLoading = androidx.compose.runtime.mutableStateMapOf<String, Boolean>()
+    
+    fun fetchCategoryPlaylist(categoryQuery: String) {
+        if (categoryPlaylists.containsKey(categoryQuery) || categoryLoading[categoryQuery] == true) return
+        categoryLoading[categoryQuery] = true
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val response = onlineRepo.searchOnline(categoryQuery).getOrNull()
+                val playlist = response?.playlists?.firstOrNull()
+                categoryPlaylists[categoryQuery] = playlist
+            } catch (e: Exception) {
+                categoryPlaylists[categoryQuery] = null
+            } finally {
+                categoryLoading[categoryQuery] = false
+            }
+        }
+    }
 
     fun saveRecentSearch(query: String) {
         android.util.Log.e("SearchHistory", "saveRecentSearch called with query: $query")

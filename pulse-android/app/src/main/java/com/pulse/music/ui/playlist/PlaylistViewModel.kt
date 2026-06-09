@@ -36,19 +36,53 @@ class PlaylistViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val currentSong = musicPlayerManager.currentSong
+    
+    // Mocking favorite functionality since DB doesn't support it directly on PlaylistEntity
+    private val _isFavorite = MutableStateFlow(false)
+    val isFavorite = _isFavorite.asStateFlow()
 
     fun loadPlaylist(id: Int) {
         _playlistId.value = id
+        // In a real app we'd load this from DB
+        _isFavorite.value = false
     }
 
     fun playSong(song: Song, contextSongs: List<Song>) {
         musicPlayerManager.playSongFromList(song, contextSongs)
     }
 
+    fun playAll(contextSongs: List<Song>) {
+        if (contextSongs.isNotEmpty()) {
+            musicPlayerManager.playSongFromList(contextSongs.first(), contextSongs)
+        }
+    }
+
+    fun shufflePlay(contextSongs: List<Song>) {
+        if (contextSongs.isNotEmpty()) {
+            val shuffled = contextSongs.shuffled()
+            musicPlayerManager.playSongFromList(shuffled.first(), shuffled)
+        }
+    }
+
+    fun toggleFavorite() {
+        _isFavorite.value = !_isFavorite.value
+    }
+
     fun removeSong(songId: String) {
         val pId = _playlistId.value ?: return
         viewModelScope.launch {
             playlistRepository.removeSongFromPlaylist(pId, songId)
+        }
+    }
+
+    fun renamePlaylist(newName: String) {
+        // Implementation for renaming playlist
+    }
+
+    fun deletePlaylist() {
+        val pId = _playlistId.value ?: return
+        viewModelScope.launch {
+            playlistRepository.deletePlaylist(pId)
         }
     }
 }

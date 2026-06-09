@@ -41,6 +41,8 @@ fun AlbumScreen(
     val albumInfo by viewModel.albumInfo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val currentSong by viewModel.currentSong.collectAsState()
+    val isFavorite by viewModel.isFavorite.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Scaffold(
         topBar = {
@@ -132,16 +134,35 @@ fun AlbumScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            Icon(Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
+                            Icon(
+                                if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorite",
+                                tint = if (isFavorite) Color(0xFF1DB954) else Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(22.dp).clickable { viewModel.toggleFavorite() }
+                            )
                             Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
-                            Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
+                            Icon(
+                                Icons.Default.Share, 
+                                contentDescription = "Share", 
+                                tint = Color.White.copy(alpha = 0.7f), 
+                                modifier = Modifier.size(22.dp).clickable {
+                                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Share Album")
+                                        putExtra(android.content.Intent.EXTRA_TEXT, "Check out this album: ${album.title} on Pulse Music!")
+                                    }
+                                    context.startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
+                                }
+                            )
                             Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
                                     .size(44.dp)
-                                    .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(22.dp)),
+                                    .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(22.dp))
+                                    .clip(RoundedCornerShape(22.dp))
+                                    .clickable { viewModel.shufflePlay(album.tracks) },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = Color.White, modifier = Modifier.size(24.dp))
