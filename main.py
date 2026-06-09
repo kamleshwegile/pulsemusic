@@ -880,8 +880,12 @@ def get_home():
     return home_cache
 
 @app.get("/api/v1/health")
-def health():
+def health_v1():
     return {"status": "ok", "provider": "jiosaavn"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
