@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.draw.*
 
 val PulseAccentSearch = Color(0xFF1ED760)
 
@@ -134,6 +136,52 @@ fun SearchScreen(
                         Text(tag, color = Color.White, fontSize = 16.sp, modifier = Modifier.weight(1f))
                     }
                 }
+                
+                val allCategories = listOf("Romance", "Dance", "Workout", "Happy", "Chill", "Party", "Hip Hop", "EDM", "Travel", "Devotional", "Ghazal", "Wedding", "Sufi", "Kids", "Pop", "Indie", "Fusion", "Folk", "Retro", "Desi Hip Hop", "Top K-Pop", "Best Of 90s", "Best Of 2021", "Best Of 2022", "The 1990s", "The 2000s", "The 2010s", "Top JioTunes", "Throwback Top 20", "Carvaan", "Fresh Hits", "Mood Booster", "Road Trip", "Sleep", "Study", "Focus", "Gym Workout", "Relax", "Instrumental", "Lo-Fi", "Bollywood", "Punjabi Hits", "Hindi Hits", "Tamil Hits", "Telugu Hits", "Malayalam Hits", "Kannada Hits", "Marathi Hits", "Gujarati Hits", "Bengali Hits", "Bhojpuri Hits", "Haryanvi Hits", "Assamese Hits", "Odia Hits", "Rajasthani Hits", "International Hits", "Rock", "Jazz", "Classical", "Electronic", "Reggae", "Country", "Anime Songs", "K-Pop", "J-Pop", "Christmas", "Festival Songs", "Krishna Bhajans", "Hanuman Chalisa", "Shiv Bhajans", "Ganesh Bhajans", "Durga Bhajans", "Podcast Picks", "Comedy Podcasts", "True Crime", "Technology Podcasts", "Business Podcasts", "Motivational Podcasts", "News Podcasts", "Storytelling Podcasts", "Kids Stories", "Nursery Rhymes")
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Channels", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("See All", fontSize = 18.sp, color = PulseAccentSearch)
+                    }
+                }
+
+                val chunkedCategories = allCategories.chunked(2)
+                items(chunkedCategories) { rowItems ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                        rowItems.forEach { query ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                LaunchedEffect(query) {
+                                    viewModel.fetchCategoryPlaylist(query)
+                                }
+                                val data = viewModel.categoryPlaylists[query]
+                                val isLoading = viewModel.categoryLoading[query] ?: true
+                                
+                                if (isLoading) {
+                                    SkeletonCategoryCard()
+                                } else if (data != null) {
+                                    CategoryCard(
+                                        title = query,
+                                        imageUrl = data.image,
+                                        onClick = { onNavigateToAlbum(data.id) }
+                                    )
+                                } else {
+                                    // Empty state if API failed so we don't break layout
+                                    Box(modifier = Modifier.height(180.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF242424)))
+                                }
+                            }
+                        }
+                        if (rowItems.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 item { Spacer(modifier = Modifier.height(140.dp)) }
             }
         } else {
@@ -456,5 +504,137 @@ fun SkeletonCircle() {
         SkeletonBox(modifier = Modifier.size(100.dp).clip(CircleShape))
         Spacer(modifier = Modifier.height(8.dp))
         SkeletonBox(modifier = Modifier.fillMaxWidth(0.8f).height(14.dp).clip(RoundedCornerShape(4.dp)))
+    }
+}
+
+val searchCategoryColors = listOf(
+    Color(0xFFE91E63), // Pink
+    Color(0xFF9C27B0), // Purple
+    Color(0xFFFF9800), // Orange
+    Color(0xFF2196F3), // Blue
+    Color(0xFF009688), // Teal
+    Color(0xFFFFC107), // Yellow
+    Color(0xFF4CAF50), // Green
+    Color(0xFFF44336)  // Red
+)
+
+fun getColorForTitle(title: String): Color {
+    val hash = kotlin.math.abs(title.hashCode())
+    return searchCategoryColors[hash % searchCategoryColors.size]
+}
+
+@Composable
+fun CategoryCard(
+    title: String,
+    imageUrl: String?,
+    onClick: () -> Unit
+) {
+    val color = getColorForTitle(title)
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(targetValue = if (isPressed) 0.97f else 1f, animationSpec = tween(200))
+    
+    val titleSize = when {
+        title.length < 10 -> 24.sp
+        title.length < 20 -> 22.sp
+        else -> 19.sp
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .scale(scale)
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(interactionSource = interactionSource, indication = androidx.compose.material.ripple.rememberRipple()) { onClick() }
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                    colors = listOf(color, color.copy(alpha = 0.6f)),
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                )
+            )
+    ) {
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize().alpha(0.1f)) {
+            val w = size.width
+            val h = size.height
+            val step = 15.dp.toPx()
+            for (i in -w.toInt() until (w + h).toInt() step step.toInt()) {
+                drawLine(
+                    color = Color.Black,
+                    start = androidx.compose.ui.geometry.Offset(i.toFloat(), 0f),
+                    end = androidx.compose.ui.geometry.Offset(i.toFloat() - h, h),
+                    strokeWidth = 2.dp.toPx()
+                )
+            }
+        }
+        
+        Text(
+            text = title,
+            color = Color.White,
+            fontSize = titleSize,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(20.dp).align(Alignment.TopStart)
+        )
+        
+        if (!imageUrl.isNullOrEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 15.dp, y = 20.dp)
+                    .rotate(-18f)
+                    .size(110.dp)
+                    .shadow(6.dp, RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.DarkGray)
+            ) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SkeletonCategoryCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFF333333))
+    ) {
+        val infiniteTransition = rememberInfiniteTransition(label = "skeleton")
+        val alpha by infiniteTransition.animateFloat(
+            initialValue = 0.5f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "alpha"
+        )
+        
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize().alpha(0.1f)) {
+            val w = size.width
+            val h = size.height
+            val step = 15.dp.toPx()
+            for (i in -w.toInt() until (w + h).toInt() step step.toInt()) {
+                drawLine(
+                    color = Color.Black,
+                    start = androidx.compose.ui.geometry.Offset(i.toFloat(), 0f),
+                    end = androidx.compose.ui.geometry.Offset(i.toFloat() - h, h),
+                    strokeWidth = 2.dp.toPx()
+                )
+            }
+        }
+        
+        Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = alpha * 0.1f)))
     }
 }

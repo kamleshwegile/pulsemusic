@@ -85,5 +85,14 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-hls:$media3_version")
 
     // Coil
+    // Coil
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Google Sign-In (Credential Manager)
+    implementation("androidx.credentials:credentials:1.2.2")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+
+    // Facebook Login
+    implementation("com.facebook.android:facebook-login:17.0.0")
 }

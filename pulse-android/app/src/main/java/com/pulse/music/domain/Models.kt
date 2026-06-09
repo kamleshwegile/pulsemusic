@@ -1,8 +1,7 @@
-package com.pulse.models
+package com.pulse.music.domain
 
-import kotlinx.serialization.Serializable
 
-@Serializable
+
 data class Song(
     val id: String,
     val title: String,
@@ -13,20 +12,18 @@ data class Song(
     val source: String
 )
 
-@Serializable
 data class Artist(
     val id: String,
     val name: String,
     val bio: String? = null,
     val image: String? = null,
     val genres: List<String> = emptyList(),
-    val similar: List<String> = emptyList(),
+    val similar: List<Artist> = emptyList(),
     val topTracks: List<Song> = emptyList(),
-    val albums: List<Album> = emptyList(),
+    val albums: List<Album>? = emptyList(),
     val score: Int? = null
 )
 
-@Serializable
 data class Album(
     val id: String,
     val title: String,
@@ -36,13 +33,11 @@ data class Album(
     val tracks: List<Song> = emptyList()
 )
 
-@Serializable
 data class LyricLine(
     val timeMs: Long,
     val text: String
 )
 
-@Serializable
 data class Lyrics(
     val synced: List<LyricLine>? = null,
     val plain: String? = null,
@@ -50,7 +45,6 @@ data class Lyrics(
     val cached: Boolean = false
 )
 
-@Serializable
 data class Playlist(
     val id: String,
     val title: String,
@@ -59,37 +53,9 @@ data class Playlist(
     val source: String
 )
 
-@Serializable
 data class SearchResponse(
     val songs: List<Song> = emptyList(),
     val artists: List<Artist> = emptyList(),
     val albums: List<Album> = emptyList(),
     val playlists: List<Playlist> = emptyList()
-)
-
-@Serializable
-data class HomeModule(
-    val title: String,
-    val items: List<Playlist>
-)
-
-@Serializable
-data class HomeResponse(
-    val modules: List<HomeModule>
-)
-
-@Serializable
-data class ArtResponse(
-    val url: String?,
-    val thumbnail: String?,
-    val source: String
-)
-
-@Serializable
-data class ProviderStatus(
-    val name: String,
-    val healthy: Boolean,
-    val failureRate: Float,
-    val lastCheck: Long?,
-    val disabled: Boolean
 )

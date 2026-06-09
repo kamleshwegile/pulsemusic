@@ -107,110 +107,23 @@ fun HomeScreen(
                         }
                     }
                     
-                    if (state.featuredPlaylists.isNotEmpty()) {
-                        item {
-                            SectionTitle("Featured Playlists")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.featuredPlaylists) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (state.topPlaylists.isNotEmpty()) {
-                        item {
-                            SectionTitle("Top Playlists")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.topPlaylists) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
-                                }
-                            }
-                        }
-                    }
-
-                    if (state.englishHits.isNotEmpty()) {
-                        item {
-                            SectionTitle("English Hits")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.englishHits) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
-                                }
-                            }
-                        }
-                    }
-
-                    if (state.hindiHits.isNotEmpty()) {
-                        item {
-                            SectionTitle("Hindi Hits")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.hindiHits) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
-                                }
-                            }
-                        }
-                    }
-
-                    if (state.punjabiHits.isNotEmpty()) {
-                        item {
-                            SectionTitle("Punjabi Hits")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.punjabiHits) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (state.topHits.isNotEmpty()) {
-                        item {
-                            SectionTitle("Top Hits")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.topHits) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
-                                }
-                            }
-                        }
-                    }
-
-                    if (state.popClassic.isNotEmpty()) {
-                        item {
-                            SectionTitle("Pop Classic")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.popClassic) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (state.artistsYouFollow.isNotEmpty()) {
-                        item {
-                            SectionTitle("Artists You Follow")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.artistsYouFollow) { artist ->
-                                    ArtistCard(artist, onClick = { onNavigateToArtist(artist.name) })
-                                }
-                            }
-                        }
-                    }
-                    if (state.kpop.isNotEmpty()) {
-                        item {
-                            SectionTitle("K-Pop")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.kpop) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
-                                }
-                            }
-                        }
-                    }
-
-                    if (state.trendingEnglish.isNotEmpty()) {
-                        item {
-                            SectionTitle("Trending English")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.trendingEnglish) { playlist ->
-                                    PlaylistCard(playlist, onClick = { onNavigateToAlbum(playlist.id) })
+                    state.modules.forEach { module ->
+                        if (module.items.isNotEmpty()) {
+                            item {
+                                SectionTitle(module.title)
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
+                                    items(module.items) { playlist ->
+                                        PlaylistCard(
+                                            playlist = com.pulse.music.domain.Playlist(
+                                                id = playlist.id,
+                                                title = playlist.title,
+                                                image = playlist.image,
+                                                songCount = playlist.songCount,
+                                                source = playlist.source
+                                            ),
+                                            onClick = { onNavigateToAlbum(playlist.id) }
+                                        )
+                                    }
                                 }
                             }
                         }

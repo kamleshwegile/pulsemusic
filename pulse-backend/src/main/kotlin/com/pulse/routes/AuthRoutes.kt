@@ -14,6 +14,16 @@ import com.auth0.jwt.algorithms.Algorithm
 import java.util.*
 import org.litote.kmongo.eq
 import org.litote.kmongo.setValue
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import kotlinx.serialization.json.Json
+import org.litote.kmongo.eq
+import org.litote.kmongo.setValue
 
 @Serializable
 data class RegisterRequest(val username: String, val email: String, val password: String)
@@ -23,6 +33,15 @@ data class LoginRequest(val email: String, val password: String)
 
 @Serializable
 data class AuthResponse(val token: String, val username: String, val email: String)
+
+@Serializable
+data class SocialLoginRequest(val token: String)
+
+@Serializable
+data class GoogleTokenInfo(val email: String? = null, val name: String? = null, val sub: String? = null, val error: String? = null)
+
+@Serializable
+data class FacebookTokenInfo(val id: String? = null, val name: String? = null, val email: String? = null, val error: kotlinx.serialization.json.JsonObject? = null)
 
 @Serializable
 data class ForgotPasswordRequest(val email: String, val newPassword: String)
@@ -85,6 +104,11 @@ fun Application.authRoutes(secret: String, issuer: String) {
                     call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid credentials"))
                     return@post
                 }
+                
+                if (userRow.passwordHash.isEmpty()) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Please sign in with Google or Facebook"))
+                    return@post
+                }
 
                 if (BCrypt.checkpw(req.password, userRow.passwordHash)) {
                     val token = JWT.create()
@@ -98,6 +122,66 @@ fun Application.authRoutes(secret: String, issuer: String) {
                 } else {
                     call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid credentials"))
                 }
+            }
+
+            post("/google") {
+                val req = try { call.receive<SocialLoginRequest>() } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request body")); return@post
+                }
+                
+                val client = HttpClient(CIO) { install(ClientContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
+                val response: HttpResponse = client.get("https://oauth2.googleapis.com/tokeninfo?id_token=${req.token}")
+                
+                if (response.status != HttpStatusCode.OK) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Google token")); return@post
+                }
+                
+                val tokenInfo = response.body<GoogleTokenInfo>()
+                if (tokenInfo.email == null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Google token payload")); return@post
+                }
+                
+                // Find or create user
+                val user = usersCollection.findOne(User::email eq tokenInfo.email) ?: User(
+                    username = tokenInfo.name ?: tokenInfo.email.substringBefore("@"),
+                    email = tokenInfo.email,
+                    passwordHash = "", // Social login, no password
+                    createdAt = System.currentTimeMillis()
+                ).also { usersCollection.insertOne(it) }
+                
+                val jwtToken = JWT.create().withAudience("pulse-users").withIssuer(issuer).withClaim("email", user.email).withExpiresAt(Date(System.currentTimeMillis() + 604800000L)).sign(Algorithm.HMAC256(secret))
+                call.respond(HttpStatusCode.OK, AuthResponse(jwtToken, user.username, user.email))
+            }
+
+            post("/facebook") {
+                val req = try { call.receive<SocialLoginRequest>() } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request body")); return@post
+                }
+                
+                val client = HttpClient(CIO) { install(ClientContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
+                val response: HttpResponse = client.get("https://graph.facebook.com/me?fields=id,name,email&access_token=${req.token}")
+                
+                if (response.status != HttpStatusCode.OK) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Facebook token")); return@post
+                }
+                
+                val tokenInfo = response.body<FacebookTokenInfo>()
+                if (tokenInfo.id == null) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid Facebook token payload")); return@post
+                }
+                
+                val email = tokenInfo.email ?: "${tokenInfo.id}@facebook.com"
+                
+                // Find or create user
+                val user = usersCollection.findOne(User::email eq email) ?: User(
+                    username = tokenInfo.name ?: "Facebook User",
+                    email = email,
+                    passwordHash = "", // Social login, no password
+                    createdAt = System.currentTimeMillis()
+                ).also { usersCollection.insertOne(it) }
+                
+                val jwtToken = JWT.create().withAudience("pulse-users").withIssuer(issuer).withClaim("email", user.email).withExpiresAt(Date(System.currentTimeMillis() + 604800000L)).sign(Algorithm.HMAC256(secret))
+                call.respond(HttpStatusCode.OK, AuthResponse(jwtToken, user.username, user.email))
             }
 
             post("/forgot-password") {

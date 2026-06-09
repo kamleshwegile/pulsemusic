@@ -171,6 +171,13 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onArtistClick = { simArtistName ->
                                         navController.navigate("artist/$simArtistName")
+                                    },
+                                    onShuffleClick = { playlist ->
+                                        val shuffled = playlist.shuffled()
+                                        if (shuffled.isNotEmpty()) {
+                                            musicPlayerManager.setShuffleEnabled(true)
+                                            musicPlayerManager.playSongFromList(shuffled.first(), shuffled)
+                                        }
                                     }
                                 )
                             }

@@ -17,6 +17,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
+import com.pulse.music.R
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +38,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     val token by viewModel.token.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(token) {
         if (!token.isNullOrEmpty()) {
@@ -92,6 +101,92 @@ fun LoginScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Login")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            try {
+                                val googleIdOption = GetGoogleIdOption.Builder()
+                                    .setFilterByAuthorizedAccounts(false)
+                                    .setServerClientId(context.getString(R.string.default_web_client_id))
+                                    .setAutoSelectEnabled(true)
+                                    .build()
+
+                                val request = GetCredentialRequest.Builder()
+                                    .addCredentialOption(googleIdOption)
+                                    .build()
+
+                                val credentialManager = CredentialManager.create(context)
+                                val result = credentialManager.getCredential(context, request)
+                                
+                                val credential = result.credential
+                                if (credential is com.google.android.libraries.identity.googleid.GoogleIdTokenCredential) {
+                                    val idToken = credential.idToken
+                                    viewModel.socialLogin("google", idToken, onNavigateToHome, { error ->
+                                        Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                    })
+                                } else if (credential is androidx.credentials.CustomCredential && credential.type == com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                    val googleIdTokenCredential = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.createFrom(credential.data)
+                                    val idToken = googleIdTokenCredential.idToken
+                                    viewModel.socialLogin("google", idToken, onNavigateToHome, { error ->
+                                        Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                    })
+                                } else {
+                                    Toast.makeText(context, "Unexpected type of credential", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                Toast.makeText(context, "Google Sign-In failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Continue with Google")
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val callbackManager = remember { com.facebook.CallbackManager.Factory.create() }
+                DisposableEffect(Unit) {
+                    com.facebook.login.LoginManager.getInstance().registerCallback(
+                        callbackManager,
+                        object : com.facebook.FacebookCallback<com.facebook.login.LoginResult> {
+                            override fun onSuccess(result: com.facebook.login.LoginResult) {
+                                viewModel.socialLogin("facebook", result.accessToken.token, onNavigateToHome, { err -> 
+                                    Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                                })
+                            }
+                            override fun onCancel() {}
+                            override fun onError(error: com.facebook.FacebookException) {
+                                Toast.makeText(context, "Facebook error: ${error.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                    onDispose {
+                        com.facebook.login.LoginManager.getInstance().unregisterCallback(callbackManager)
+                    }
+                }
+                
+                val facebookLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    contract = com.facebook.login.LoginManager.getInstance().createLogInActivityResultContract(callbackManager, null)
+                ) { }
+
+                Button(
+                    onClick = {
+                        facebookLauncher.launch(listOf("email", "public_profile"))
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2))
+                ) {
+                    Text("Continue with Facebook", color = Color.White)
                 }
 
                 TextButton(

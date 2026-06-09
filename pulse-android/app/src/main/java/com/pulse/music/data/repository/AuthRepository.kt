@@ -75,6 +75,20 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    suspend fun socialLogin(provider: String, token: String): Result<AuthResponse> {
+        return try {
+            val response = if (provider == "google") {
+                api.googleLogin(com.pulse.music.data.network.SocialLoginRequest(token))
+            } else {
+                api.facebookLogin(com.pulse.music.data.network.SocialLoginRequest(token))
+            }
+            saveAuth(response)
+            Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun forgotPassword(email: String): Result<ForgotPasswordResponse> {
         return try {
             val response = api.forgotPassword(ForgotPasswordRequest(email))

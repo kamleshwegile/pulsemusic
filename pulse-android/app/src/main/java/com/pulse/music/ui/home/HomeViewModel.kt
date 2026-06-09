@@ -16,16 +16,7 @@ sealed class HomeUiState {
     data class Success(
         val recentPlays: List<Song>,
         val suggested: List<Song>,
-        val featuredPlaylists: List<com.pulse.music.domain.Playlist>,
-        val topPlaylists: List<com.pulse.music.domain.Playlist>,
-        val englishHits: List<com.pulse.music.domain.Playlist>,
-        val hindiHits: List<com.pulse.music.domain.Playlist>,
-        val punjabiHits: List<com.pulse.music.domain.Playlist>,
-        val topHits: List<com.pulse.music.domain.Playlist>,
-        val popClassic: List<com.pulse.music.domain.Playlist>,
-        val artistsYouFollow: List<com.pulse.music.domain.Artist>,
-        val kpop: List<com.pulse.music.domain.Playlist>,
-        val trendingEnglish: List<com.pulse.music.domain.Playlist>
+        val modules: List<com.pulse.music.data.network.HomeModule>
     ) : HomeUiState()
     data class Error(val message: String) : HomeUiState()
 }
@@ -76,8 +67,12 @@ class HomeViewModel @Inject constructor(
                     )
                 }
 
-                val suggestedDeferred = if (recentSong != null) {
-                    async { repository.getRecommendations(recentSong.artist, recentSong.title) }
+                val actualRecentSongs = repository.getRecentSongs().getOrNull() ?: emptyList()
+                val recentPlaysList = if (actualRecentSongs.isNotEmpty()) actualRecentSongs else localSongs
+                val actualRecentSong = recentPlaysList.firstOrNull()
+                
+                val suggestedDeferred = if (actualRecentSong != null) {
+                    async { repository.getRecommendations(actualRecentSong.artist, actualRecentSong.title) }
                 } else {
                     async { repository.getTrending() } // Fallback
                 }
@@ -85,29 +80,27 @@ class HomeViewModel @Inject constructor(
                 val trendingDeferred = async { repository.getTrending() }
                 val homeDeferred = async { repository.getHome() }
                 
+                val limitedRecentPlays = recentPlaysList.take(2)
+                
                 val rawSuggested = suggestedDeferred.await().getOrNull() ?: emptyList()
                 val rawTrending = trendingDeferred.await().getOrNull() ?: emptyList()
-                val suggested = (rawSuggested + rawTrending).distinctBy { it.id }.take(20)
+                val suggested = (rawSuggested + rawTrending).distinctBy { it.id }.take(4)
                 
                 val homeData = homeDeferred.await().getOrNull()
+                android.util.Log.d("PulseAPI", "homeData is null: ${homeData == null}, modules count: ${homeData?.modules?.size}")
+                homeData?.modules?.forEach { 
+                    android.util.Log.d("PulseAPI", "Module ${it.title} has ${it.items?.size} items")
+                }
                 
                 val successState = HomeUiState.Success(
-                    recentPlays = localSongs,
+                    recentPlays = limitedRecentPlays,
                     suggested = suggested,
-                    featuredPlaylists = homeData?.featuredPlaylists ?: emptyList(),
-                    topPlaylists = homeData?.topPlaylists ?: emptyList(),
-                    englishHits = homeData?.englishHits ?: emptyList(),
-                    hindiHits = homeData?.hindiHits ?: emptyList(),
-                    punjabiHits = homeData?.punjabiHits ?: emptyList(),
-                    topHits = homeData?.topHits ?: emptyList(),
-                    popClassic = homeData?.popClassic ?: emptyList(),
-                    artistsYouFollow = homeData?.artists ?: emptyList(),
-                    kpop = homeData?.kpop ?: emptyList(),
-                    trendingEnglish = homeData?.trendingEnglish ?: emptyList()
+                    modules = homeData?.modules ?: emptyList()
                 )
                 cachedUiState = successState
                 _uiState.value = successState
             } catch (e: Exception) {
+                android.util.Log.e("PulseAPI", "HomeViewModel error: ", e)
                 _uiState.value = HomeUiState.Error(e.message ?: "Unknown Error")
             }
         }

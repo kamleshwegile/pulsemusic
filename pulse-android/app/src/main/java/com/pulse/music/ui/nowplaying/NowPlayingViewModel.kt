@@ -96,19 +96,10 @@ class NowPlayingViewModel @Inject constructor(
     fun toggleShuffle() = musicPlayerManager.toggleShuffle()
     fun cycleRepeatMode() = musicPlayerManager.cycleRepeatMode()
 
-    private var sleepTimerJob: kotlinx.coroutines.Job? = null
-    
-    fun setSleepTimer(minutes: Int) {
-        sleepTimerJob?.cancel()
-        if (minutes > 0) {
-            sleepTimerJob = viewModelScope.launch {
-                kotlinx.coroutines.delay(minutes * 60 * 1000L)
-                if (isPlaying.value) {
-                    togglePlayPause()
-                }
-            }
-        }
-    }
+    val sleepTimerMode: StateFlow<com.pulse.music.player.SleepTimerMode> = musicPlayerManager.sleepTimerMode
+    val sleepTimerTimeLeft: StateFlow<Long> = musicPlayerManager.sleepTimerTimeLeft
+
+    fun setSleepTimer(mode: com.pulse.music.player.SleepTimerMode) = musicPlayerManager.setSleepTimer(mode)
 
     fun getVolumeFraction(): Float = musicPlayerManager.getVolumeFraction()
     fun setVolume(fraction: Float) = musicPlayerManager.setVolumeFraction(fraction)

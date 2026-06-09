@@ -35,4 +35,18 @@ class AlbumViewModel @Inject constructor(
             }
         }
     }
+
+    private val _isFavorite = MutableStateFlow(false)
+    val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
+
+    fun toggleFavorite() {
+        _isFavorite.value = !_isFavorite.value
+    }
+
+    fun shufflePlay(songs: List<com.pulse.music.domain.Song>) {
+        if (songs.isNotEmpty()) {
+            val shuffled = songs.shuffled()
+            musicPlayerManager.playSongFromList(shuffled.first(), shuffled)
+        }
+    }
 }

@@ -75,6 +75,17 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun socialLogin(provider: String, token: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.socialLogin(provider, token)
+            if (result.isSuccess) {
+                onSuccess()
+            } else {
+                onError(result.exceptionOrNull()?.message ?: "Social login failed")
+            }
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             musicPlayerManager.stopAndClear()

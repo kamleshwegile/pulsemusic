@@ -30,6 +30,17 @@ import kotlinx.coroutines.flow.first
 
 enum class RepeatMode { OFF, ONE, ALL }
 
+enum class SleepTimerMode(val minutes: Int?, val label: String) {
+    OFF(null, "Off"),
+    MIN_5(5, "5 minutes"),
+    MIN_10(10, "10 minutes"),
+    MIN_15(15, "15 minutes"),
+    MIN_30(30, "30 minutes"),
+    MIN_45(45, "45 minutes"),
+    MIN_60(60, "60 minutes"),
+    END_OF_TRACK(null, "End of current track")
+}
+
 @Singleton
 class MusicPlayerManager @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -147,6 +158,14 @@ class MusicPlayerManager @Inject constructor(
     private val _repeatMode = MutableStateFlow(RepeatMode.OFF)
     val repeatMode: StateFlow<RepeatMode> = _repeatMode.asStateFlow()
 
+    private val _sleepTimerMode = MutableStateFlow(SleepTimerMode.OFF)
+    val sleepTimerMode: StateFlow<SleepTimerMode> = _sleepTimerMode.asStateFlow()
+
+    private val _sleepTimerTimeLeft = MutableStateFlow(0L)
+    val sleepTimerTimeLeft: StateFlow<Long> = _sleepTimerTimeLeft.asStateFlow()
+
+    private var sleepTimerJob: Job? = null
+
     // ── Volume ───────────────────────────────────────────────────────────
 
     val maxVolume: Int get() = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
@@ -165,7 +184,50 @@ class MusicPlayerManager @Inject constructor(
 
     // ── Position polling ─────────────────────────────────────────────────
 
-    private var positionPollingJob: Job? = null
+    private var positionPollingJob: kotlinx.coroutines.Job? = null
+    private var artworkJob: kotlinx.coroutines.Job? = null
+
+    private fun updateArtworkData(song: com.pulse.music.domain.Song, index: Int, playerToUpdate: androidx.media3.exoplayer.ExoPlayer) {
+        artworkJob?.cancel()
+        artworkJob = scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                if (song.albumArt == null) return@launch
+                val urlStr = song.albumArt.replace("http://", "https://")
+                val url = java.net.URL(urlStr)
+                val connection = url.openConnection() as java.net.HttpURLConnection
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                connection.connect()
+                val input = connection.inputStream
+                val bitmap = android.graphics.BitmapFactory.decodeStream(input)
+                input.close()
+                connection.disconnect()
+                
+                if (bitmap != null) {
+                    val scaledBitmap = android.graphics.Bitmap.createScaledBitmap(bitmap, 400, 400, true)
+                    val stream = java.io.ByteArrayOutputStream()
+                    scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, stream)
+                    val artworkData = stream.toByteArray()
+                    
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        try {
+                            if (index < playerToUpdate.mediaItemCount) {
+                                val currentItem = playerToUpdate.getMediaItemAt(index)
+                                if (currentItem.mediaId == song.id) {
+                                    val newMetadata = currentItem.mediaMetadata.buildUpon()
+                                        .setArtworkData(artworkData, androidx.media3.common.MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                                        .build()
+                                    val newItem = currentItem.buildUpon().setMediaMetadata(newMetadata).build()
+                                    playerToUpdate.replaceMediaItem(index, newItem)
+                                }
+                            }
+                        } catch(e: Exception) {}
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MusicPlayerManager", "Artwork download failed", e)
+            }
+        }
+    }
 
     private fun startPositionPolling() {
         positionPollingJob?.cancel()
@@ -199,7 +261,7 @@ class MusicPlayerManager @Inject constructor(
                                 android.util.Log.d("Crossfade", "Tick: timeLeft=$timeLeft, crossfadeMs=$actualCrossfadeMs, queueIdx=${player.currentMediaItemIndex}")
                             }
 
-                            if (actualCrossfadeMs > 0L && timeLeft <= actualCrossfadeMs && timeLeft > 0 && player.currentMediaItemIndex < _queue.value.size - 1 && !isCrossfading) {
+                            if (actualCrossfadeMs > 0L && timeLeft <= actualCrossfadeMs && timeLeft > 0 && player.currentPosition > 15000L && player.currentMediaItemIndex < _queue.value.size - 1 && !isCrossfading && _repeatMode.value != RepeatMode.ONE && _sleepTimerMode.value != SleepTimerMode.END_OF_TRACK) {
                                 val nextPlayer = if (player === player1) player2 else player1
                                 if (nextPlayer.mediaItemCount > 0) {
                                     android.util.Log.d("Crossfade", "--- Crossfade Check ---")
@@ -228,7 +290,9 @@ class MusicPlayerManager @Inject constructor(
                                         val nextIdx = nextPlayer.currentMediaItemIndex
                                         if (nextIdx >= 0 && nextIdx < _queue.value.size) {
                                             _currentIndex.value = nextIdx
-                                            _currentSong.value = _queue.value[nextIdx]
+                                            val nextSong = _queue.value[nextIdx]
+                                            _currentSong.value = nextSong
+                                            updateArtworkData(nextSong, nextIdx, nextPlayer)
                                         }
                                     } else {
                                         android.util.Log.w("Crossfade", "Secondary player NOT READY (State: ${nextPlayer.playbackState}). Fallback: Continuing current track.")
@@ -485,11 +549,34 @@ class MusicPlayerManager @Inject constructor(
             if (targetPlayer !== player) return
             if (isCrossfading) return // Ignore transitions during crossfade, we already swapped active player
 
+            if (_sleepTimerMode.value == SleepTimerMode.END_OF_TRACK) {
+                player.pause()
+                _sleepTimerMode.value = SleepTimerMode.OFF
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    android.widget.Toast.makeText(context, "Sleep timer ended. Playback paused.", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+
             val idx = player.currentMediaItemIndex
             if (idx >= 0 && idx < _queue.value.size) {
                 _currentIndex.value = idx
                 val current = _queue.value[idx]
                 _currentSong.value = current
+                
+                if (mediaItem?.mediaMetadata?.artworkData == null) {
+                    updateArtworkData(current, idx, player)
+                }
+                
+                // Track recent song
+                if (!current.id.startsWith("local_")) {
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            onlineRepo.addRecentSong(current)
+                        } catch (e: Exception) {
+                            android.util.Log.e("MusicPlayerManager", "Failed to add recent song", e)
+                        }
+                    }
+                }
                 
                 // Pre-buffer alternate player
                 val nextIdx = idx + 1
@@ -501,8 +588,8 @@ class MusicPlayerManager @Inject constructor(
                     alternatePlayer.pause()
                 }
 
-                // Dynamically fetch and append 5 recommended songs to the queue on every song play
-                if (!current.id.startsWith("local_")) {
+                // Dynamically fetch and append 5 recommended songs to the queue on every song play, ONLY if Repeat is OFF
+                if (_repeatMode.value == RepeatMode.OFF && !current.id.startsWith("local_")) {
                     scope.launch(Dispatchers.IO) {
                         try {
                             val recs = onlineRepo.getRecommendations(current.artist, current.title).getOrNull()
@@ -538,6 +625,13 @@ class MusicPlayerManager @Inject constructor(
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_READY) {
                 _duration.value = player.duration.coerceAtLeast(0L)
+            } else if (playbackState == Player.STATE_ENDED) {
+                if (_sleepTimerMode.value == SleepTimerMode.END_OF_TRACK) {
+                    _sleepTimerMode.value = SleepTimerMode.OFF
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        android.widget.Toast.makeText(context, "Sleep timer ended. Playback paused.", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }
@@ -566,45 +660,8 @@ class MusicPlayerManager @Inject constructor(
             player.play()
             preBufferAlternatePlayer()
             
-            // Auto-fetch recommendations and append to queue
-            launch(Dispatchers.IO) {
-                try {
-                    val encodedArtist = java.net.URLEncoder.encode(song.artist.split(",").first().trim(), "UTF-8")
-                    val encodedTrack = java.net.URLEncoder.encode(song.title, "UTF-8")
-                    val url = "${com.pulse.music.BuildConfig.API_BASE_URL}api/v1/recommendations?artist=$encodedArtist&track=$encodedTrack"
-                    val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
-                    conn.requestMethod = "GET"
-                    conn.connectTimeout = 5000
-                    conn.readTimeout = 5000
-                    val text = conn.inputStream.bufferedReader().use { it.readText() }
-                    conn.disconnect()
-                    
-                    val arr = org.json.JSONArray(text)
-                    val recs = mutableListOf<Song>()
-                    for (i in 0 until arr.length()) {
-                        val obj = arr.getJSONObject(i)
-                        val recId = obj.getString("id")
-                        val recTitle = obj.getString("title")
-                        val recArtist = obj.optString("artist", "Unknown")
-                        val recAlbum = obj.optString("album", "")
-                        val recArt = obj.optString("albumArt", "")
-                        recs.add(Song(recId, recTitle, recArtist, recAlbum, recArt, null, "online"))
-                    }
-                    
-                    withContext(Dispatchers.Main) {
-                        val q = _queue.value.toMutableList()
-                        val existingIds = q.map { it.id }.toSet()
-                        val uniqueRecs = recs.filter { it.id !in existingIds }
-                        if (uniqueRecs.isNotEmpty()) {
-                            q.addAll(uniqueRecs)
-                            _queue.value = q
-                            player.addMediaItems(uniqueRecs.map { buildMediaItem(it) })
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
+            // Auto-fetch recommendations block removed to fix Repeat All behavior for Singles
+            // (Queue needs to remain size 1 so ExoPlayer loops exactly one item)
         }
     }
 
@@ -757,6 +814,23 @@ class MusicPlayerManager @Inject constructor(
         _shuffleEnabled.value = !_shuffleEnabled.value
         player.shuffleModeEnabled = _shuffleEnabled.value
     }
+    
+    fun setShuffleEnabled(enabled: Boolean) {
+        if (_shuffleEnabled.value != enabled) {
+            _shuffleEnabled.value = enabled
+            player.shuffleModeEnabled = enabled
+        }
+    }
+
+    private fun syncRepeatMode() {
+        val mode = when (_repeatMode.value) {
+            RepeatMode.OFF -> Player.REPEAT_MODE_OFF
+            RepeatMode.ALL -> Player.REPEAT_MODE_ALL
+            RepeatMode.ONE -> Player.REPEAT_MODE_ONE
+        }
+        player1.repeatMode = mode
+        player2.repeatMode = mode
+    }
 
     /** Cycle repeat mode: OFF → ALL → ONE → OFF. */
     fun cycleRepeatMode() {
@@ -765,11 +839,7 @@ class MusicPlayerManager @Inject constructor(
             RepeatMode.ALL -> RepeatMode.ONE
             RepeatMode.ONE -> RepeatMode.OFF
         }
-        player.repeatMode = when (_repeatMode.value) {
-            RepeatMode.OFF -> Player.REPEAT_MODE_OFF
-            RepeatMode.ALL -> Player.REPEAT_MODE_ALL
-            RepeatMode.ONE -> Player.REPEAT_MODE_ONE
-        }
+        syncRepeatMode()
     }
 
     /** Remove a song from queue by index. */
@@ -783,6 +853,38 @@ class MusicPlayerManager @Inject constructor(
         if (q.isEmpty()) {
             _currentSong.value = null
             _currentIndex.value = -1
+        }
+    }
+
+    fun setSleepTimer(mode: SleepTimerMode) {
+        sleepTimerJob?.cancel()
+        _sleepTimerMode.value = mode
+        if (mode.minutes != null) {
+            _sleepTimerTimeLeft.value = mode.minutes * 60 * 1000L
+            sleepTimerJob = scope.launch {
+                while (_sleepTimerTimeLeft.value > 0) {
+                    delay(1000L)
+                    _sleepTimerTimeLeft.value -= 1000L
+                }
+                player.pause()
+                _sleepTimerMode.value = SleepTimerMode.OFF
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    android.widget.Toast.makeText(context, "Sleep timer ended. Playback paused.", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                android.widget.Toast.makeText(context, "Sleep timer set for ${mode.minutes} minutes.", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } else if (mode == SleepTimerMode.END_OF_TRACK) {
+            _sleepTimerTimeLeft.value = 0L
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                android.widget.Toast.makeText(context, "Sleep timer set for end of current track.", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            _sleepTimerTimeLeft.value = 0L
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                android.widget.Toast.makeText(context, "Sleep timer cancelled.", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

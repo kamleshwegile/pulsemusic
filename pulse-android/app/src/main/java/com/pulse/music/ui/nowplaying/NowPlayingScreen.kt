@@ -410,6 +410,7 @@ fun MainPlayerContent(
     val pureWhite = Color(0xFFFFFFFF)
 
     var showMoreMenu by remember { mutableStateOf(false) }
+    var showSleepTimerDialog by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         IconButton(
@@ -562,7 +563,16 @@ fun MainPlayerContent(
                     Icon(Icons.Default.SkipNext, "Next", tint = pureWhite, modifier = Modifier.size(28.dp)) 
                 }
                 IconButton(onClick = { viewModel.cycleRepeatMode() }) { 
-                    Icon(when (repeatMode) { RepeatMode.ONE -> Icons.Default.RepeatOne else -> Icons.Default.Repeat }, "Repeat", tint = if (repeatMode != RepeatMode.OFF) pureWhite else mutedGray, modifier = Modifier.size(24.dp)) 
+                    val tintColor = if (repeatMode != RepeatMode.OFF) PulseGreen else pureWhite
+                    Icon(
+                        imageVector = when (repeatMode) { 
+                            RepeatMode.ONE -> Icons.Default.RepeatOne 
+                            else -> Icons.Default.Repeat 
+                        }, 
+                        contentDescription = "Repeat", 
+                        tint = tintColor, 
+                        modifier = Modifier.size(24.dp)
+                    ) 
                 }
             }
 
@@ -629,8 +639,13 @@ fun MainPlayerContent(
                 val menuItems = listOf(
                     Triple(if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, if (isLiked) "Remove from Liked Songs" else "Add to Liked Songs", { viewModel.toggleLike() }),
                     Triple(Icons.Default.PlaylistAdd, "Add to Playlist", { /* TODO */ }),
-                    Triple(Icons.Default.Snooze, "Sleep Timer", { /* TODO */ }),
-                    Triple(Icons.Default.Album, "Go to Album", { currentSong?.album?.let { onNavigateToAlbum(it) } }),
+                    Triple(Icons.Default.Snooze, "Sleep Timer", { showSleepTimerDialog = true }),
+                    Triple(Icons.Default.Album, "Go to Album", { 
+                        val albumName = currentSong?.album
+                        if (!albumName.isNullOrBlank() && currentSong != null) {
+                            onNavigateToAlbum(currentSong.id)
+                        }
+                    }),
                     Triple(Icons.Default.Person, "Go to Artist", { currentSong?.artist?.split(",")?.firstOrNull()?.trim()?.let { onNavigateToArtist(it) } })
                 )
 
@@ -653,6 +668,87 @@ fun MainPlayerContent(
                 }
             }
         }
+    }
+    val sleepTimerMode by viewModel.sleepTimerMode.collectAsState()
+    val sleepTimerTimeLeft by viewModel.sleepTimerTimeLeft.collectAsState()
+
+    if (showSleepTimerDialog) {
+        AlertDialog(
+            onDismissRequest = { showSleepTimerDialog = false },
+            containerColor = Color(0xFF282828),
+            title = { Text("Sleep Timer", color = pureWhite, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    val options = listOf(
+                        com.pulse.music.player.SleepTimerMode.MIN_5,
+                        com.pulse.music.player.SleepTimerMode.MIN_10,
+                        com.pulse.music.player.SleepTimerMode.MIN_15,
+                        com.pulse.music.player.SleepTimerMode.MIN_30,
+                        com.pulse.music.player.SleepTimerMode.MIN_45,
+                        com.pulse.music.player.SleepTimerMode.MIN_60,
+                        com.pulse.music.player.SleepTimerMode.END_OF_TRACK
+                    )
+                    options.forEach { mode ->
+                        val isActive = sleepTimerMode == mode
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setSleepTimer(mode)
+                                    showSleepTimerDialog = false
+                                }
+                                .padding(vertical = 14.dp, horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(mode.label, color = if (isActive) PulseGreen else pureWhite, fontSize = 16.sp)
+                            
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isActive) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = PulseGreen, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                }
+                                if (mode.minutes != null) {
+                                    val timeText = if (isActive) {
+                                        val totalSeconds = sleepTimerTimeLeft / 1000
+                                        val m = totalSeconds / 60
+                                        val s = totalSeconds % 60
+                                        String.format("%02d:%02d", m, s)
+                                    } else {
+                                        String.format("%02d:00", mode.minutes)
+                                    }
+                                    Text(
+                                        text = timeText,
+                                        color = if (isActive) PulseGreen else Color.Gray,
+                                        fontSize = 16.sp,
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (sleepTimerMode != com.pulse.music.player.SleepTimerMode.OFF) {
+                        HorizontalDivider(color = Color(0xFF404040), thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setSleepTimer(com.pulse.music.player.SleepTimerMode.OFF)
+                                    showSleepTimerDialog = false
+                                }
+                                .padding(vertical = 14.dp, horizontal = 8.dp)
+                        ) {
+                            Text("Turn off timer", color = pureWhite, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSleepTimerDialog = false }) {
+                    Text("Cancel", color = pureWhite)
+                }
+            }
+        )
     }
 }
 

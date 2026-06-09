@@ -46,6 +46,7 @@ class OnlineMusicRepository @Inject constructor(
         return try {
             Result.success(apiService.getHome())
         } catch (e: Exception) {
+            android.util.Log.e("PulseAPI", "getHome failed", e)
             Result.failure(e)
         }
     }
@@ -55,6 +56,31 @@ class OnlineMusicRepository @Inject constructor(
             Result.success(apiService.getArtist(name))
         } catch(e: Exception) {
             android.util.Log.e("PulseAPI", "getArtistInfo failed for name: $name", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getRecentSongs(): Result<List<Song>> {
+        return try {
+            Result.success(apiService.getRecentSongs())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun addRecentSong(song: Song): Result<Map<String, String>> {
+        return try {
+            val req = mapOf<String, Any>(
+                "id" to song.id,
+                "title" to song.title,
+                "artist" to song.artist,
+                "album" to (song.album ?: ""),
+                "albumArt" to (song.albumArt ?: ""),
+                "source" to song.source,
+                "timestamp" to System.currentTimeMillis().toDouble()
+            )
+            Result.success(apiService.addRecentSong(req))
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

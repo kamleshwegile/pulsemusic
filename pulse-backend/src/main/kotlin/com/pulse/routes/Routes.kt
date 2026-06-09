@@ -13,6 +13,11 @@ import kotlinx.serialization.json.Json
 import com.pulse.models.*
 import kotlinx.coroutines.async
 
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import kotlinx.serialization.json.*
+import com.pulse.providers.defaultHttpClient
+
 fun Application.configureApiRoutes() {
     val providerManager by inject<ProviderManager>()
     val cacheRepository by inject<CacheRepository>()
@@ -48,6 +53,8 @@ fun Application.configureApiRoutes() {
                     call.respond(HttpStatusCode.ServiceUnavailable, "All providers failed")
                 }
             }
+
+
 
             get("/lyrics") {
                 val title = call.request.queryParameters["title"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing title")
@@ -253,6 +260,60 @@ fun Application.configureApiRoutes() {
                     call.respondText(responseJson, ContentType.Application.Json)
                 } else {
                     call.respond(HttpStatusCode.ServiceUnavailable, "All providers failed")
+                }
+            }
+            get("/home") {
+                try {
+                    val response = defaultHttpClient.get("https://www.jiosaavn.com/api.php?__call=webapi.getLaunchData&api_version=4&_format=json&_marker=0&ctx=web6dot0")
+                    if (response.status.value == 200) {
+                        val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                        val modulesJson = json["modules"]?.jsonObject ?: return@get call.respond(HttpStatusCode.ServiceUnavailable)
+                        
+                        val parsedModules = mutableListOf<HomeModule>()
+                        
+                        println("Modules keys: ${modulesJson.keys}")
+                        modulesJson.keys.forEach { key ->
+                            val moduleData = modulesJson[key]?.jsonObject
+                            val title = moduleData?.get("title")?.jsonPrimitive?.content
+                            if (title == null) {
+                                println("Skipped $key because title is null")
+                                return@forEach
+                            }
+                            
+                            val itemsArray = json[key]?.jsonArray
+                            if (itemsArray == null) {
+                                println("Skipped $key because itemsArray is null. type=${json[key]?.javaClass?.name}")
+                                return@forEach
+                            }
+                            if (itemsArray.isEmpty()) {
+                                println("Skipped $key because itemsArray is empty")
+                                return@forEach
+                            }
+                            
+                            val items = itemsArray.mapNotNull {
+                                val obj = it.jsonObject
+                                Playlist(
+                                    id = obj["id"]?.jsonPrimitive?.content ?: "",
+                                    title = obj["title"]?.jsonPrimitive?.content ?: "",
+                                    image = obj["image"]?.jsonPrimitive?.content?.replace("150x150", "500x500") ?: "",
+                                    songCount = obj["list_count"]?.jsonPrimitive?.intOrNull,
+                                    source = "ListenFree"
+                                )
+                            }
+                            
+                            if (items.isNotEmpty()) {
+                                parsedModules.add(HomeModule(title, items))
+                            } else {
+                                println("Skipped $key because mapped items is empty")
+                            }
+                        }
+                        println("Parsed ${parsedModules.size} modules")
+                        call.respond(HomeResponse(modules = parsedModules))
+                    } else {
+                        call.respond(HttpStatusCode.ServiceUnavailable, "Failed to load home")
+                    }
+                } catch(e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, "Error: ${e.message}")
                 }
             }
             
