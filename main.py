@@ -934,6 +934,7 @@ def get_home():
         
     return home_cache
 
+@app.head("/api/v1/health")
 @app.get("/api/v1/health")
 def health_v1():
     return {"status": "ok", "provider": "jiosaavn"}
