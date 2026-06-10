@@ -902,19 +902,19 @@ def get_home():
         return res.artists[:10]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        f_ishq = executor.submit(fetch_playlists, "ishq wala love")
-        f_chill = executor.submit(fetch_playlists, "aao chill kare")
+        f_ishq = executor.submit(fetch_playlists, "romance hindi")
+        f_chill = executor.submit(fetch_playlists, "chill hindi")
         f_filmy = executor.submit(fetch_playlists, "filmy tadka")
-        f_hiphop = executor.submit(fetch_playlists, "ek number hip hop")
-        f_community = executor.submit(fetch_playlists, "from community")
+        f_hiphop = executor.submit(fetch_playlists, "desi hip hop")
+        f_community = executor.submit(fetch_playlists, "trending community")
         f_new = executor.submit(fetch_playlists, "new releases")
-        f_mood = executor.submit(fetch_playlists, "made for your mood")
-        f_artist_station = executor.submit(fetch_playlists, "recommended artist station")
+        f_mood = executor.submit(fetch_playlists, "mood hindi")
+        f_artist_station = executor.submit(fetch_playlists, "best of artists")
         f_safar = executor.submit(fetch_playlists, "safarnama")
         f_fresh = executor.submit(fetch_playlists, "fresh hits")
-        f_genre = executor.submit(fetch_playlists, "top genre and moods")
-        f_pop_hindi = executor.submit(fetch_playlists, "new releases pop hindi")
-        f_editors = executor.submit(fetch_playlists, "editors choice")
+        f_genre = executor.submit(fetch_playlists, "top genres")
+        f_pop_hindi = executor.submit(fetch_playlists, "pop hindi")
+        f_editors = executor.submit(fetch_playlists, "editors choice hindi")
         f_charts = executor.submit(fetch_playlists, "top charts")
 
         home_cache = HomeResponse(
