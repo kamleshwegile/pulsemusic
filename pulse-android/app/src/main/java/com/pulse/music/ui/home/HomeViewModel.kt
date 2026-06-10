@@ -27,7 +27,8 @@ class HomeViewModel @Inject constructor(
     private val repository: com.pulse.music.data.repository.OnlineMusicRepository,
     private val songDao: com.pulse.music.data.local.SongDao,
     private val musicPlayerManager: MusicPlayerManager,
-    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
+    private val authRepository: com.pulse.music.data.repository.AuthRepository
 ) : ViewModel() {
 
     fun playSong(song: Song, contextSongs: List<Song>) {
@@ -40,6 +41,12 @@ class HomeViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    val username: StateFlow<String?> = authRepository.username.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     init {
         if (cachedUiState == null) {

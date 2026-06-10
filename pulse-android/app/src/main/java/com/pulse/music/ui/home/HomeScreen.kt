@@ -33,7 +33,17 @@ fun HomeScreen(
     onNavigateToArtist: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val username by viewModel.username.collectAsState()
     var showHistory by remember { mutableStateOf(false) }
+
+    val calendar = java.util.Calendar.getInstance()
+    val hour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+    val greeting = when (hour) {
+        in 0..11 -> "Good morning"
+        in 12..16 -> "Good afternoon"
+        else -> "Good evening"
+    }
+    val greetingText = if (!username.isNullOrEmpty()) "$greeting, $username!" else "$greeting!"
     
     if (showHistory && uiState is HomeUiState.Success) {
         val state = uiState as HomeUiState.Success
@@ -75,7 +85,7 @@ fun HomeScreen(
         ) {
             item {
                 Text(
-                    text = "Good Morning!",
+                    text = greetingText,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
