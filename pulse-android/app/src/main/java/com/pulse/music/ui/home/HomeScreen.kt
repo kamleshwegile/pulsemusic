@@ -197,9 +197,8 @@ fun SongCard(song: Song, onRemove: (() -> Unit)? = null, onClick: () -> Unit = {
     ) {
         Box {
             if (!song.albumArt.isNullOrEmpty()) {
-                val optimizedArt = song.albumArt?.replace("500x500", "150x150")
                 coil.compose.AsyncImage(
-                    model = optimizedArt,
+                    model = song.albumArt,
                     contentDescription = song.title,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -260,9 +259,8 @@ fun PlaylistCard(playlist: com.pulse.music.domain.Playlist, onClick: () -> Unit 
             .clickable(onClick = onClick)
     ) {
         if (!playlist.image.isNullOrEmpty()) {
-            val optimizedArt = playlist.image?.replace("500x500", "150x150")
             coil.compose.AsyncImage(
-                model = optimizedArt,
+                model = playlist.image,
                 contentDescription = playlist.title,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -313,9 +311,8 @@ fun ArtistCard(artist: com.pulse.music.domain.Artist, onClick: () -> Unit = {}) 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (!artist.image.isNullOrEmpty()) {
-            val optimizedArt = artist.image?.replace("500x500", "150x150")
             coil.compose.AsyncImage(
-                model = optimizedArt,
+                model = artist.image,
                 contentDescription = artist.name,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -384,9 +381,8 @@ fun RecentlyPlayedScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (!song.albumArt.isNullOrEmpty()) {
-                        val optimizedArt = song.albumArt?.replace("500x500", "150x150")
                         coil.compose.AsyncImage(
-                            model = optimizedArt,
+                            model = song.albumArt,
                             contentDescription = song.title,
                             modifier = Modifier
                                 .size(56.dp)
