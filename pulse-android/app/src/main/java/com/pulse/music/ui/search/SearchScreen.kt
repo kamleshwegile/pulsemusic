@@ -45,6 +45,7 @@ fun SearchScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var isSearchBarFocused by remember { mutableStateOf(false) }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -57,8 +58,13 @@ fun SearchScreen(
                             .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { /* Back */ }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+                        if (isSearchBarFocused || uiState.query.isNotEmpty()) {
+                            IconButton(onClick = { 
+                                viewModel.setQuery("")
+                                focusManager.clearFocus()
+                            }) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+                            }
                         }
                         TextField(
                             value = uiState.query,
