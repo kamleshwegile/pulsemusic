@@ -77,10 +77,11 @@ class SearchViewModel @Inject constructor(
     
     companion object {
         val cachedCategoryPlaylists = androidx.compose.runtime.mutableStateMapOf<String, com.pulse.music.domain.Playlist?>()
+        val cachedCategoryLoading = androidx.compose.runtime.mutableStateMapOf<String, Boolean>()
     }
 
     val categoryPlaylists = cachedCategoryPlaylists
-    val categoryLoading = androidx.compose.runtime.mutableStateMapOf<String, Boolean>()
+    val categoryLoading = cachedCategoryLoading
     
     fun fetchCategoryPlaylist(categoryQuery: String) {
         if (categoryPlaylists.containsKey(categoryQuery) || categoryLoading[categoryQuery] == true) return
