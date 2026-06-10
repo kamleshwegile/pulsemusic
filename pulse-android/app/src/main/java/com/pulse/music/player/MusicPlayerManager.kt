@@ -94,7 +94,8 @@ class MusicPlayerManager @Inject constructor(
             .build()
             
         return ExoPlayer.Builder(context)
-            .setAudioAttributes(audioAttributes, false)
+            .setAudioAttributes(audioAttributes, true)
+            .setHandleAudioBecomingNoisy(true)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(context).setDataSourceFactory(sharedDataSourceFactory))
             .build().also { exo ->
             exo.addListener(createPlayerListener(exo))
