@@ -355,6 +355,14 @@ def clear_recent_searches(user_id: str = Depends(get_current_user)):
     recent_searches_collection.delete_many({"user_id": user_id})
     return {"status": "success"}
 
+@app.delete("/api/v1/user/searches/{query}")
+def remove_recent_search(query: str, user_id: str = Depends(get_current_user)):
+    try:
+        recent_searches_collection.delete_many({"user_id": user_id, "query": query})
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Recently Played Routes
 class RecentlyPlayedSong(BaseModel):
     id: str
@@ -707,7 +715,70 @@ async def get_lyrics(title: str, artist: str, songId: str = None):
 
 @app.get("/api/v1/recommendations", response_model=List[Song])
 def get_recommendations(artist: str, track: str):
+    def is_similar(t1, t2):
+        s1 = re.sub(r'[^a-zA-Z0-9]', '', t1.lower())
+        s2 = re.sub(r'[^a-zA-Z0-9]', '', t2.lower())
+        return s1 in s2 or s2 in s1
+
     try:
+        if sp:
+            try:
+                sp_res = sp.search(q=f"track:{track} artist:{artist}", type="track", limit=1)
+                if sp_res and sp_res['tracks']['items']:
+                    seed_track = sp_res['tracks']['items'][0]
+                    t_id = seed_track['id']
+                    a_id = seed_track['artists'][0]['id']
+                    
+                    recs = sp.recommendations(seed_tracks=[t_id], seed_artists=[a_id], limit=15)
+                    
+                    spotify_queries = []
+                    for t in recs['tracks']:
+                        t_name = t['name']
+                        t_artist = t['artists'][0]['name']
+                        if not is_similar(t_name, track):
+                            spotify_queries.append(f"{t_name} {t_artist}")
+                            
+                    songs = []
+                    def fetch_jiosaavn(q):
+                        try:
+                            res = requests.get("https://music-api.albatross0071.workers.dev/api/search/songs", params={"query": q}, timeout=5)
+                            if res.status_code == 200:
+                                data = res.json()
+                                if data.get("success") and data.get("data", {}).get("results"):
+                                    return data["data"]["results"][0]
+                        except:
+                            pass
+                        return None
+
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                        results = executor.map(fetch_jiosaavn, spotify_queries)
+                        
+                    for item in results:
+                        if item:
+                            title = item.get("name", "") or item.get("title", "")
+                            if is_similar(title, track):
+                                continue
+                            images = item.get("image", [])
+                            cover = images[-1]["url"] if images else ""
+                            p_artists = item.get("artists", {}).get("primary", []) if "artists" in item else [{"name": item.get("subtitle", "")}]
+                            artist_names = ", ".join([a["name"] for a in p_artists]) if p_artists else "Unknown"
+                            songs.append(Song(
+                                id=item["id"],
+                                title=title,
+                                artist=artist_names,
+                                album=item.get("album", {}).get("name", "") if isinstance(item.get("album"), dict) else item.get("album", ""),
+                                albumArt=cover,
+                                durationMs=int(item.get("duration", 0)) * 1000,
+                                source="jiosaavn"
+                            ))
+                            if len(songs) >= 5:
+                                break
+                    if songs:
+                        return songs
+            except Exception as e:
+                print("Spotify recs error:", e)
+
+        # Fallback to JioSaavn
         search_res = requests.get("https://music-api.albatross0071.workers.dev/api/search", params={"query": f"{track} {artist}"}, timeout=5)
         if search_res.status_code == 200:
             s_data = search_res.json()
@@ -721,19 +792,24 @@ def get_recommendations(artist: str, track: str):
                         if sugg_data.get("success"):
                             songs = []
                             for item in sugg_data.get("data", []):
+                                title = item.get("name", "")
+                                if is_similar(title, track):
+                                    continue
                                 images = item.get("image", [])
                                 cover = images[-1]["url"] if images else ""
                                 p_artists = item.get("artists", {}).get("primary", [])
                                 artist_names = ", ".join([a["name"] for a in p_artists]) if p_artists else "Unknown"
                                 songs.append(Song(
                                     id=item["id"],
-                                    title=item["name"],
+                                    title=title,
                                     artist=artist_names,
                                     album=item.get("album", {}).get("name", ""),
                                     albumArt=cover,
                                     durationMs=int(item.get("duration", 0)) * 1000,
                                     source="jiosaavn"
                                 ))
+                                if len(songs) >= 5:
+                                    break
                             return songs
     except Exception as e:
         print("ListenFree Recommendations Error:", e)
@@ -782,6 +858,22 @@ def get_artist(name: str):
             artist_bio = bio_data[0].get("text", "")
         elif isinstance(bio_data, str):
             artist_bio = bio_data
+            
+        for ts in data.get("topSongs", []):
+            if isinstance(ts, dict):
+                ts_images = ts.get("image", [])
+                ts_cover = ts_images[-1]["url"] if isinstance(ts_images, list) and ts_images else ""
+                p_artists = ts.get("artists", {}).get("primary", []) if "artists" in ts else []
+                ts_artist_names = ", ".join([a["name"] for a in p_artists]) if p_artists else artist_name
+                top_tracks.append(Song(
+                    id=ts["id"],
+                    title=ts.get("name", "") or ts.get("title", ""),
+                    artist=ts_artist_names,
+                    album=ts.get("album", {}).get("name", "") if isinstance(ts.get("album"), dict) else ts.get("album", ""),
+                    albumArt=ts_cover,
+                    durationMs=int(ts.get("duration", 0)) * 1000,
+                    source="jiosaavn"
+                ))
 
     fetched_by_id = False
     try:
@@ -819,10 +911,11 @@ def get_artist(name: str):
         except Exception as e:
             print("Artist search error:", e)
 
-    try:
-        top_tracks = search_songs(artist_name).songs[:10]
-    except Exception:
-        pass
+    if not top_tracks:
+        try:
+            top_tracks = search_songs(artist_name).songs[:20]
+        except Exception:
+            pass
 
     return Artist(
         id=artist_id,
@@ -845,6 +938,34 @@ def get_album(id: str):
         if not data.get("success") or not alb_data or not alb_data.get("id"):
             res = requests.get(f"https://music-api.albatross0071.workers.dev/api/playlists?id={id}", timeout=5)
             data = res.json() if res.status_code == 200 else {}
+
+        # If STILL not found, check if the ID is a SONG ID and get its album ID
+        if not data.get("success") or not data.get("data", {}).get("id"):
+            song_res = requests.get(f"https://music-api.albatross0071.workers.dev/api/songs?ids={id}", timeout=5)
+            song_data = song_res.json() if song_res.status_code == 200 else {}
+            if song_data.get("success") and song_data.get("data"):
+                # Grab the exact album ID from the song
+                song_obj = song_data["data"][0]
+                if "album" in song_obj and "id" in song_obj["album"]:
+                    real_album_id = song_obj["album"]["id"]
+                    res = requests.get(f"https://music-api.albatross0071.workers.dev/api/albums?id={real_album_id}", timeout=5)
+                    data = res.json() if res.status_code == 200 else {}
+                else:
+                    # Fallback to searching by album name if song has no album ID
+                    search_res = requests.get(f"https://music-api.albatross0071.workers.dev/api/search/albums?query={id}", timeout=5)
+                    search_data = search_res.json() if search_res.status_code == 200 else {}
+                    if search_data.get("success") and search_data.get("data", {}).get("results"):
+                        real_id = search_data["data"]["results"][0]["id"]
+                        res = requests.get(f"https://music-api.albatross0071.workers.dev/api/albums?id={real_id}", timeout=5)
+                        data = res.json() if res.status_code == 200 else {}
+        # If STILL not found, try searching the ID as an album name directly
+        if not data.get("success") or not data.get("data", {}).get("id"):
+            search_res = requests.get(f"https://music-api.albatross0071.workers.dev/api/search/albums?query={id}", timeout=5)
+            search_data = search_res.json() if search_res.status_code == 200 else {}
+            if search_data.get("success") and search_data.get("data", {}).get("results"):
+                real_id = search_data["data"]["results"][0]["id"]
+                res = requests.get(f"https://music-api.albatross0071.workers.dev/api/albums?id={real_id}", timeout=5)
+                data = res.json() if res.status_code == 200 else {}
 
         if data.get("success") and data.get("data", {}).get("id"):
             alb = data.get("data", {})
