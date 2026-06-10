@@ -37,10 +37,10 @@ fun HomeScreen(
     if (showHistory && uiState is HomeUiState.Success) {
         val state = uiState as HomeUiState.Success
         RecentlyPlayedScreen(
-            songs = state.allRecentPlays,
+            songs = state.allRecentPlays ?: emptyList(),
             onBack = { showHistory = false },
             onSongClick = { song ->
-                viewModel.playSong(song, state.allRecentPlays)
+                viewModel.playSong(song, state.allRecentPlays ?: emptyList())
                 onNavigateToNowPlaying()
             }
         )
@@ -97,7 +97,7 @@ fun HomeScreen(
                         item {
                             SectionTitle(
                                 title = "Recently Played", 
-                                onSeeAll = if (state.allRecentPlays.size > 5) { { showHistory = true } } else null
+                                onSeeAll = if ((state.allRecentPlays?.size ?: 0) > 5) { { showHistory = true } } else null
                             )
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
                                 items(state.recentPlays) { song ->
