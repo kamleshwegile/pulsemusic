@@ -67,6 +67,11 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = HomeUiState.Loading
             }
             try {
+                // Kick off independent parallel fetches immediately
+                val trendingDeferred = async { repository.getTrending() }
+                val homeDeferred = async { repository.getHome() }
+                val recentSongsDeferred = async { repository.getRecentSongs() }
+                
                 // Fetch actual recently played songs from local SharedPreferences
                 var localSongs: List<Song> = emptyList()
                 try {
@@ -76,7 +81,7 @@ class HomeViewModel @Inject constructor(
                     localSongs = array?.toList() ?: emptyList()
                 } catch (e: Exception) {}
 
-                val actualRecentSongs = repository.getRecentSongs().getOrNull() ?: emptyList()
+                val actualRecentSongs = recentSongsDeferred.await().getOrNull() ?: emptyList()
                 
                 // Merge local and backend songs, keeping the most recent first
                 val mergedList = (localSongs + actualRecentSongs).distinctBy { it.id }.take(20)
@@ -86,8 +91,10 @@ class HomeViewModel @Inject constructor(
                 val backendIds = actualRecentSongs.map { it.id }.toSet()
                 val missingInBackend = localSongs.filter { it.id !in backendIds }
                 if (missingInBackend.isNotEmpty()) {
-                    missingInBackend.reversed().forEach { song ->
-                        try { repository.addRecentSong(song) } catch(e: Exception) {}
+                    launch {
+                        missingInBackend.reversed().forEach { song ->
+                            try { repository.addRecentSong(song) } catch(e: Exception) {}
+                        }
                     }
                 }
 
@@ -105,8 +112,6 @@ class HomeViewModel @Inject constructor(
                     async { repository.getTrending() } // Fallback
                 }
                 
-                val trendingDeferred = async { repository.getTrending() }
-                val homeDeferred = async { repository.getHome() }
                 val limitedRecentPlays = recentPlaysList.take(5)
                 
                 val rawSuggested = suggestedDeferred.await().getOrNull() ?: emptyList()
