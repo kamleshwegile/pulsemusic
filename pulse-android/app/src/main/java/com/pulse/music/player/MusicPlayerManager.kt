@@ -87,29 +87,13 @@ class MusicPlayerManager @Inject constructor(
     }
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    private fun createExoPlayer(processor: CrossfadeAudioProcessor): ExoPlayer {
+    private fun createExoPlayer(): ExoPlayer {
         val audioAttributes = androidx.media3.common.AudioAttributes.Builder()
             .setUsage(androidx.media3.common.C.USAGE_MEDIA)
             .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
             
-        val audioSink = androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
-            .setAudioProcessors(arrayOf(processor))
-            .setEnableFloatOutput(true)
-            .build()
-            
-        val renderersFactory = object : androidx.media3.exoplayer.DefaultRenderersFactory(context) {
-            override fun buildAudioSink(
-                context: Context,
-                enableFloatOutput: Boolean,
-                enableAudioTrackPlaybackParams: Boolean,
-                enableOffload: Boolean
-            ): androidx.media3.exoplayer.audio.AudioSink {
-                return audioSink
-            }
-        }
-
-        return ExoPlayer.Builder(context, renderersFactory)
+        return ExoPlayer.Builder(context)
             .setAudioAttributes(audioAttributes, false)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(context).setDataSourceFactory(sharedDataSourceFactory))
             .build().also { exo ->
@@ -117,11 +101,8 @@ class MusicPlayerManager @Inject constructor(
         }
     }
 
-    private val crossfadeProcessor1 = CrossfadeAudioProcessor()
-    private val crossfadeProcessor2 = CrossfadeAudioProcessor()
-    
-    private val player1: ExoPlayer by lazy { createExoPlayer(crossfadeProcessor1) }
-    private val player2: ExoPlayer by lazy { createExoPlayer(crossfadeProcessor2) }
+    private val player1: ExoPlayer by lazy { createExoPlayer() }
+    private val player2: ExoPlayer by lazy { createExoPlayer() }
     
     private val _activePlayerFlow = MutableStateFlow<ExoPlayer>(player1)
     val activePlayerFlow: StateFlow<ExoPlayer> = _activePlayerFlow.asStateFlow()
@@ -301,12 +282,6 @@ class MusicPlayerManager @Inject constructor(
                                         }
 
                                         nextPlayer.volume = 1f
-                                        
-                                        val currentProcessor = if (player === player1) crossfadeProcessor1 else crossfadeProcessor2
-                                        val nextProcessor = if (player === player1) crossfadeProcessor2 else crossfadeProcessor1
-                                        
-                                        currentProcessor.startFadeOut(actualCrossfadeMs)
-                                        nextProcessor.startFadeIn(actualCrossfadeMs)
                                         
                                         nextPlayer.play()
                                         android.util.Log.d("Crossfade", "Secondary player play() called.")
