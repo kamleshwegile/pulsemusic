@@ -43,6 +43,7 @@ fun SearchScreen(
     focusRequester: FocusRequester = remember { FocusRequester() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var isSearchBarFocused by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -61,7 +62,11 @@ fun SearchScreen(
                         TextField(
                             value = uiState.query,
                             onValueChange = { viewModel.setQuery(it) },
-                            modifier = Modifier.weight(1f).height(52.dp).focusRequester(focusRequester),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp)
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { isSearchBarFocused = it.isFocused },
                             placeholder = { Text("What do you want to listen to?", color = Color.Gray, fontSize = 16.sp) },
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color(0xFF242424),
@@ -119,27 +124,29 @@ fun SearchScreen(
             val quickSearches = uiState.recentSearches
             LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 item { Spacer(modifier = Modifier.height(16.dp)) }
-                if (quickSearches.isNotEmpty()) {
-                    item { 
-                        Text("Recent searches", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 16.dp))
-                    }
-                } else {
-                    item { 
-                        Text("No recent searches", color = Color.Gray, fontSize = 16.sp, modifier = Modifier.padding(vertical = 16.dp))
-                    }
-                }
-                items(quickSearches) { tag ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { viewModel.setQuery(tag) }.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFF242424)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.History, null, tint = Color.Gray, modifier = Modifier.size(24.dp))
+                if (isSearchBarFocused) {
+                    if (quickSearches.isNotEmpty()) {
+                        item { 
+                            Text("Recent searches", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 16.dp))
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(tag, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                        IconButton(onClick = { viewModel.removeRecentSearch(tag) }) {
-                            Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.Gray, modifier = Modifier.size(18.dp))
+                    } else {
+                        item { 
+                            Text("No recent searches", color = Color.Gray, fontSize = 16.sp, modifier = Modifier.padding(vertical = 16.dp))
+                        }
+                    }
+                    items(quickSearches) { tag ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable { viewModel.setQuery(tag) }.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFF242424)), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.History, null, tint = Color.Gray, modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(tag, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                            IconButton(onClick = { viewModel.removeRecentSearch(tag) }) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.Gray, modifier = Modifier.size(18.dp))
+                            }
                         }
                     }
                 }
