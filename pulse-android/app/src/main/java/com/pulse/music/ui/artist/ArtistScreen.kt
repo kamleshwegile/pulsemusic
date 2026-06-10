@@ -31,9 +31,9 @@ import com.pulse.music.domain.Artist
 import com.pulse.music.domain.Song
 
 val PulseAccent = Color(0xFFFA2D48)
-val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
-val TextMuted = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-val TextSecondary = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+val SurfaceContainer @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+val TextMuted @Composable get() = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+val TextSecondary @Composable get() = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
 
 @Composable
 fun ArtistScreen(
