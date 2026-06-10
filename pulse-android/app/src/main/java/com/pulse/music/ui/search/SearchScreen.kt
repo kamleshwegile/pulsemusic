@@ -29,6 +29,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 
 val PulseAccentSearch = Color(0xFFF92839)
 
@@ -37,7 +39,8 @@ val PulseAccentSearch = Color(0xFFF92839)
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel(),
     onNavigateToArtist: (String) -> Unit = {},
-    onNavigateToAlbum: (String) -> Unit = {}
+    onNavigateToAlbum: (String) -> Unit = {},
+    focusRequester: FocusRequester = remember { FocusRequester() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -58,7 +61,7 @@ fun SearchScreen(
                         TextField(
                             value = uiState.query,
                             onValueChange = { viewModel.setQuery(it) },
-                            modifier = Modifier.weight(1f).height(52.dp),
+                            modifier = Modifier.weight(1f).height(52.dp).focusRequester(focusRequester),
                             placeholder = { Text("What do you want to listen to?", color = Color.Gray, fontSize = 16.sp) },
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color(0xFF242424),

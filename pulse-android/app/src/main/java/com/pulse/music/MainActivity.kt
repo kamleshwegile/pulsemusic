@@ -92,6 +92,8 @@ class MainActivity : ComponentActivity() {
                 val showMiniPlayer = currentRoute != "now_playing" && currentRoute != "auth_login" && currentRoute != "auth_register" && currentRoute != "auth_forgot_password"
                 val currentSong by musicPlayerManager.currentSong.collectAsState()
                 val isPlaying by musicPlayerManager.isPlaying.collectAsState()
+                val searchFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+                val scope = rememberCoroutineScope()
 
                 Scaffold { paddingValues ->
                     Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -171,7 +173,8 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onNavigateToAlbum = { albumId ->
                                         navController.navigate("album/$albumId")
-                                    }
+                                    },
+                                    focusRequester = searchFocusRequester
                                 )
                             }
                             composable("artist/{artistName}") { backStackEntry ->
@@ -285,14 +288,46 @@ class MainActivity : ComponentActivity() {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color.Transparent)
                                         .pointerInput(Unit) {
-                                            // Consume all touch events so content behind nav bar is not clickable
                                             awaitEachGesture {
                                                 awaitFirstDown(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
                                             }
                                         }
                                 ) {
+                                    // Glass blur layer (API 31+)
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                                        Box(
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .graphicsLayer {
+                                                    renderEffect = androidx.compose.ui.graphics.RenderEffect.createBlurEffect(
+                                                        50f, 50f, androidx.compose.ui.graphics.TileMode.Mirror
+                                                    )
+                                                }
+                                                .background(Color(0xFF1C1C1E).copy(alpha = 0.45f))
+                                        )
+                                    }
+                                    // Tinted semi-transparent overlay
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .background(
+                                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                                    colors = listOf(
+                                                        Color(0xFF1C1C2E).copy(alpha = 0.55f),
+                                                        Color(0xFF0A0A0F).copy(alpha = 0.82f)
+                                                    )
+                                                )
+                                            )
+                                    )
+                                    // Thin white top border (glass edge)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(0.6.dp)
+                                            .background(Color.White.copy(alpha = 0.14f))
+                                    )
+
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -321,10 +356,17 @@ class MainActivity : ComponentActivity() {
                                                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                                                         indication = null
                                                     ) {
-                                                        navController.navigate(route) {
-                                                            popUpTo(navController.graph.startDestinationId) { saveState = false }
-                                                            launchSingleTop = true
-                                                            restoreState = false
+                                                        if (selected && route == "search") {
+                                                            // Second tap on Search: focus the search bar
+                                                            scope.launch {
+                                                                try { searchFocusRequester.requestFocus() } catch (e: Exception) {}
+                                                            }
+                                                        } else {
+                                                            navController.navigate(route) {
+                                                                popUpTo(navController.graph.startDestinationId) { saveState = false }
+                                                                launchSingleTop = true
+                                                                restoreState = false
+                                                            }
                                                         }
                                                     }
                                                     .scale(scale),
