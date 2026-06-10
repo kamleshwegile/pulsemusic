@@ -93,6 +93,7 @@ fun ProfileScreen(
                     context.cacheDir.listFiles()?.forEach { file -> 
                         file.deleteRecursively() 
                     }
+                    com.pulse.music.ui.home.HomeViewModel.cachedUiState = null
                     android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
                 })
             }
