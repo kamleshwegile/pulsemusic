@@ -294,6 +294,9 @@ class MusicPlayerManager @Inject constructor(
                                             val nextSong = _queue.value[nextIdx]
                                             _currentSong.value = nextSong
                                             updateArtworkData(nextSong, nextIdx, nextPlayer)
+                                            if (!nextSong.id.startsWith("local_")) {
+                                                saveRecentPlay(nextSong)
+                                            }
                                         }
                                     } else {
                                         android.util.Log.w("Crossfade", "Secondary player NOT READY (State: ${nextPlayer.playbackState}). Fallback: Continuing current track.")
@@ -550,13 +553,7 @@ class MusicPlayerManager @Inject constructor(
                 
                 // Track recent song
                 if (!current.id.startsWith("local_")) {
-                    scope.launch(Dispatchers.IO) {
-                        try {
-                            onlineRepo.addRecentSong(current)
-                        } catch (e: Exception) {
-                            android.util.Log.e("MusicPlayerManager", "Failed to add recent song", e)
-                        }
-                    }
+                    saveRecentPlay(current)
                 }
                 
                 // Pre-buffer alternate player
