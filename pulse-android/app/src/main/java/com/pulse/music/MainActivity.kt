@@ -288,47 +288,14 @@ class MainActivity : ComponentActivity() {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .background(Color.Transparent)
                                         .pointerInput(Unit) {
                                             awaitEachGesture {
                                                 awaitFirstDown(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
                                             }
                                         }
                                 ) {
-                                    // Glass blur layer (API 31+)
-                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                                        Box(
-                                            modifier = Modifier
-                                                .matchParentSize()
-                                                .graphicsLayer {
-                                                    renderEffect = androidx.compose.ui.graphics.BlurEffect(
-                                                        radiusX = 50f,
-                                                        radiusY = 50f,
-                                                        edgeTreatment = androidx.compose.ui.graphics.TileMode.Mirror
-                                                    )
-                                                }
-                                                .background(Color(0xFF1C1C1E).copy(alpha = 0.45f))
-                                        )
-                                    }
-                                    // Tinted semi-transparent overlay
-                                    Box(
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .background(
-                                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color(0xFF1C1C2E).copy(alpha = 0.55f),
-                                                        Color(0xFF0A0A0F).copy(alpha = 0.82f)
-                                                    )
-                                                )
-                                            )
-                                    )
-                                    // Thin white top border (glass edge)
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(0.6.dp)
-                                            .background(Color.White.copy(alpha = 0.14f))
-                                    )
+
 
                                     Row(
                                         modifier = Modifier

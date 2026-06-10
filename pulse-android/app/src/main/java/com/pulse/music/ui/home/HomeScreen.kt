@@ -38,12 +38,20 @@ fun HomeScreen(
 
     val calendar = java.util.Calendar.getInstance()
     val hour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
-    val greeting = when (hour) {
-        in 0..11 -> "Good morning"
-        in 12..16 -> "Good afternoon"
-        else -> "Good evening"
+    
+    val greetingPrefix = remember(hour) {
+        val morningGreetings = listOf("Rise and shine", "Start your day right", "Morning vibes", "Ready for the day")
+        val afternoonGreetings = listOf("Keep the rhythm going", "Midday melodies", "Afternoon vibes", "Tune in")
+        val eveningGreetings = listOf("Unwind and relax", "Evening tunes", "Set the mood", "Night vibes")
+        
+        when (hour) {
+            in 0..11 -> morningGreetings.random()
+            in 12..16 -> afternoonGreetings.random()
+            else -> eveningGreetings.random()
+        }
     }
-    val greetingText = if (!username.isNullOrEmpty()) "$greeting, $username!" else "$greeting!"
+    
+    val greetingText = if (!username.isNullOrEmpty()) "$greetingPrefix, $username!" else "$greetingPrefix!"
     
     if (showHistory && uiState is HomeUiState.Success) {
         val state = uiState as HomeUiState.Success
