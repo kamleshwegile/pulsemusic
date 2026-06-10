@@ -112,6 +112,9 @@ interface PulseApiService {
     @retrofit2.http.DELETE("api/v1/user/searches")
     suspend fun clearRecentSearches(): Map<String, String>
 
+    @retrofit2.http.DELETE("api/v1/user/searches/{query}")
+    suspend fun removeRecentSearch(@retrofit2.http.Path("query") query: String): Map<String, String>
+
     @GET("api/v1/user/recent-songs")
     suspend fun getRecentSongs(): List<Song>
 

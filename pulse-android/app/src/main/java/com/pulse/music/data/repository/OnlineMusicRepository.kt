@@ -125,4 +125,12 @@ class OnlineMusicRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun removeRecentSearch(query: String): Result<Map<String, String>> {
+        return try {
+            Result.success(apiService.removeRecentSearch(query))
+        } catch(e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

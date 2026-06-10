@@ -115,6 +115,10 @@ class SearchViewModel @Inject constructor(
     fun removeRecentSearch(query: String) {
         // Optimistically remove from UI immediately
         _uiState.update { it.copy(recentSearches = it.recentSearches.filter { s -> s != query }) }
+        
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            onlineRepo.removeRecentSearch(query)
+        }
     }
 
     fun setCategory(category: String) {
