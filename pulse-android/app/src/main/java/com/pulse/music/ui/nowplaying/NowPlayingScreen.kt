@@ -920,7 +920,10 @@ fun QueuePanel(
 
             // Song list
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                itemsIndexed(queue) { index, song ->
+                itemsIndexed(
+                    items = queue,
+                    key = { index, song -> "${song.id}_$index" }
+                ) { index, song ->
                     val isCurrent = index == currentIndex
                     Row(
                         modifier = Modifier
@@ -1007,7 +1010,10 @@ fun QueuePanel(
                             modifier = Modifier.padding(start = 20.dp, top = 24.dp, bottom = 12.dp)
                         )
                     }
-                    items(recommendations) { song ->
+                    items(
+                        items = recommendations,
+                        key = { song -> "rec_${song.id}" }
+                    ) { song ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

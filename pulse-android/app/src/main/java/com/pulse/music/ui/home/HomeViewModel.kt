@@ -77,7 +77,26 @@ class HomeViewModel @Inject constructor(
                 } catch (e: Exception) {}
 
                 val actualRecentSongs = repository.getRecentSongs().getOrNull() ?: emptyList()
-                val recentPlaysList = if (actualRecentSongs.isNotEmpty()) actualRecentSongs else localSongs
+                
+                // Merge local and backend songs, keeping the most recent first
+                val mergedList = (localSongs + actualRecentSongs).distinctBy { it.id }.take(20)
+                val recentPlaysList = mergedList
+                
+                // Sync any local songs to the backend if they are missing
+                val backendIds = actualRecentSongs.map { it.id }.toSet()
+                val missingInBackend = localSongs.filter { it.id !in backendIds }
+                if (missingInBackend.isNotEmpty()) {
+                    missingInBackend.reversed().forEach { song ->
+                        try { repository.addRecentSong(song) } catch(e: Exception) {}
+                    }
+                }
+
+                // Update local cache so it reflects the backend
+                try {
+                    val prefs = context.getSharedPreferences("pulse_actual_recent_plays", android.content.Context.MODE_PRIVATE)
+                    prefs.edit().putString("plays", com.google.gson.Gson().toJson(recentPlaysList)).apply()
+                } catch (e: Exception) {}
+
                 val actualRecentSong = recentPlaysList.firstOrNull()
                 
                 val suggestedDeferred = if (actualRecentSong != null) {
