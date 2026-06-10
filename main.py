@@ -84,17 +84,12 @@ class SearchResponse(BaseModel):
     albums: List['Album'] = []
     playlists: List[Playlist] = []
 
+class HomeModule(BaseModel):
+    title: str
+    items: List[Playlist]
+
 class HomeResponse(BaseModel):
-    featuredPlaylists: List[Playlist] = []
-    topPlaylists: List[Playlist] = []
-    englishHits: List[Playlist] = []
-    hindiHits: List[Playlist] = []
-    punjabiHits: List[Playlist] = []
-    topHits: List[Playlist] = []
-    popClassic: List[Playlist] = []
-    artists: List['Artist'] = []
-    kpop: List[Playlist] = []
-    trendingEnglish: List[Playlist] = []
+    modules: List[HomeModule]
 
 class Lyrics(BaseModel):
     plain: Optional[str] = None
@@ -919,16 +914,17 @@ def get_home():
         f_art = executor.submit(fetch_artists, "top artists")
 
         home_cache = HomeResponse(
-            featuredPlaylists=f_feat.result(),
-            topPlaylists=f_top_pl.result(),
-            englishHits=f_eng.result(),
-            hindiHits=f_hin.result(),
-            punjabiHits=f_pun.result(),
-            topHits=f_top.result(),
-            popClassic=f_pop.result(),
-            artists=f_art.result(),
-            kpop=f_kpop.result(),
-            trendingEnglish=f_trend_eng.result()
+            modules=[
+                HomeModule(title="Featured Playlists", items=f_feat.result()),
+                HomeModule(title="Top Playlists", items=f_top_pl.result()),
+                HomeModule(title="English Hits", items=f_eng.result()),
+                HomeModule(title="Hindi Hits", items=f_hin.result()),
+                HomeModule(title="Punjabi Hits", items=f_pun.result()),
+                HomeModule(title="Top Hits", items=f_top.result()),
+                HomeModule(title="Pop Classics", items=f_pop.result()),
+                HomeModule(title="K-Pop", items=f_kpop.result()),
+                HomeModule(title="Trending English", items=f_trend_eng.result())
+            ]
         )
         home_cache_time = time.time()
         
