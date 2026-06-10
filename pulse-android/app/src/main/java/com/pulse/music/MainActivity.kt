@@ -291,9 +291,9 @@ class MainActivity : ComponentActivity() {
                                                         indication = null
                                                     ) {
                                                         navController.navigate(route) {
-                                                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                                            popUpTo(navController.graph.startDestinationId) { saveState = false }
                                                             launchSingleTop = true
-                                                            restoreState = true
+                                                            restoreState = false
                                                         }
                                                     },
                                                 horizontalAlignment = Alignment.CenterHorizontally
