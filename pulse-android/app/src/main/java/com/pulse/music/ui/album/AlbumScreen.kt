@@ -137,7 +137,7 @@ fun AlbumScreen(
                             Icon(
                                 if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Favorite",
-                                tint = if (isFavorite) Color(0xFF1DB954) else Color.White.copy(alpha = 0.7f),
+                                tint = if (isFavorite) Color(0xFFF92839) else Color.White.copy(alpha = 0.7f),
                                 modifier = Modifier.size(22.dp).clickable { viewModel.toggleFavorite() }
                             )
                             Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))

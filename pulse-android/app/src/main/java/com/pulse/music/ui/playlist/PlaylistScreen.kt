@@ -190,7 +190,7 @@ fun PlaylistScreen(
                             Icon(
                                 if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Favorite",
-                                tint = if (isFavorite) Color(0xFF1DB954) else Color.White
+                                tint = if (isFavorite) Color(0xFFF92839) else Color.White
                             )
                         }
                         
@@ -251,7 +251,7 @@ fun PlaylistScreen(
 
                         FloatingActionButton(
                             onClick = { viewModel.playAll(playlistSongs) },
-                            containerColor = Color(0xFF1DB954),
+                            containerColor = Color(0xFFF92839),
                             shape = CircleShape,
                             modifier = Modifier
                                 .size(64.dp)
@@ -318,7 +318,7 @@ fun PlaylistScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = song.title,
-                                color = if (isActive) Color(0xFF1DB954) else Color.White,
+                                color = if (isActive) Color(0xFFF92839) else Color.White,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 16.sp,
@@ -407,6 +407,6 @@ fun EqBar(transition: InfiniteTransition, index: Int) {
         modifier = Modifier
             .width(3.dp)
             .fillMaxHeight(height)
-            .background(Color(0xFF1DB954), RoundedCornerShape(1.dp))
+            .background(Color(0xFFF92839), RoundedCornerShape(1.dp))
     )
 }

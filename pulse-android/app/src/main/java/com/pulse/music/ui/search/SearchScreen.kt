@@ -29,7 +29,7 @@ import coil.compose.AsyncImage
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.draw.*
 
-val PulseAccentSearch = Color(0xFF1ED760)
+val PulseAccentSearch = Color(0xFFF92839)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

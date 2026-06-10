@@ -107,7 +107,7 @@ fun ProfileScreen(
 @Composable
 private fun ProfileHero(username: String, profilePicUri: String?, onEditProfilePic: () -> Unit) {
     val gradientBrush = Brush.linearGradient(
-        colors = listOf(Color(0xFF1E3A8A).copy(alpha = 0.4f), Color(0xFF065F46).copy(alpha = 0.2f))
+        colors = listOf(Color(0xFF1E3A8A).copy(alpha = 0.4f), Color(0xFF8A0A21).copy(alpha = 0.2f))
     )
     
     Box(
@@ -158,14 +158,14 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFF10B981), Color(0xFF06B6D4))))
+                        .background(Brush.horizontalGradient(listOf(Color(0xFFF92839), Color(0xFF06B6D4))))
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text("PREMIUM", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
             
-            Text("@${username.lowercase()} • 120 Days Streak", color = Color(0xFF34D399), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+            Text("@${username.lowercase()} • 120 Days Streak", color = Color(0xFFFF4D5E), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -210,34 +210,34 @@ private fun PlaybackSettings(
                 icon = Icons.Default.HighQuality, 
                 title = "High Quality Streaming", 
                 description = "Always stream at 320kbps",
-                trailing = { Switch(checked = highQuality, onCheckedChange = { onUpdate(it, spatialAudio, gapless, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF10B981), checkedTrackColor = Color(0xFF10B981).copy(alpha = 0.5f))) }
+                trailing = { Switch(checked = highQuality, onCheckedChange = { onUpdate(it, spatialAudio, gapless, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFF92839), checkedTrackColor = Color(0xFFF92839).copy(alpha = 0.5f))) }
             )
             HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
             SettingRow(
                 icon = Icons.Default.Headphones, 
                 title = "Spatial Audio", 
                 description = "Enable immersive soundstage",
-                trailing = { Switch(checked = spatialAudio, onCheckedChange = { onUpdate(highQuality, it, gapless, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF10B981), checkedTrackColor = Color(0xFF10B981).copy(alpha = 0.5f))) }
+                trailing = { Switch(checked = spatialAudio, onCheckedChange = { onUpdate(highQuality, it, gapless, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFF92839), checkedTrackColor = Color(0xFFF92839).copy(alpha = 0.5f))) }
             )
             HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
             SettingRow(
                 icon = Icons.Default.SkipNext, 
                 title = "Gapless Playback", 
                 description = "Eliminate pauses between tracks",
-                trailing = { Switch(checked = gapless, onCheckedChange = { onUpdate(highQuality, spatialAudio, it, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF10B981), checkedTrackColor = Color(0xFF10B981).copy(alpha = 0.5f))) }
+                trailing = { Switch(checked = gapless, onCheckedChange = { onUpdate(highQuality, spatialAudio, it, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFF92839), checkedTrackColor = Color(0xFFF92839).copy(alpha = 0.5f))) }
             )
             HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Crossfade", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Text("${crossfade}s", color = Color(0xFF10B981), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("${crossfade}s", color = Color(0xFFF92839), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
                 Slider(
                     value = crossfade.toFloat(),
                     onValueChange = { onUpdate(highQuality, spatialAudio, gapless, it.toInt()) },
                     valueRange = 0f..12f,
                     steps = 11,
-                    colors = SliderDefaults.colors(thumbColor = Color(0xFF10B981), activeTrackColor = Color(0xFF10B981))
+                    colors = SliderDefaults.colors(thumbColor = Color(0xFFF92839), activeTrackColor = Color(0xFFF92839))
                 )
             }
         }
@@ -310,7 +310,7 @@ private fun SettingRow(
                 .background(Color.White.copy(alpha = 0.05f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = Color(0xFFF92839), modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
