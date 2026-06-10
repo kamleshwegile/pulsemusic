@@ -49,8 +49,10 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import kotlinx.coroutines.launch
@@ -282,7 +284,12 @@ class MainActivity : ComponentActivity() {
                                         )
                                         items.forEach { (label, icon, route) ->
                                             val selected = currentRoute == route
-                                            val color = if (selected) Color.White else Color.Gray
+                                            val color = if (selected) PulseRed else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f)
+                                            val scale by animateFloatAsState(
+                                                targetValue = if (selected) 1.1f else 1f,
+                                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                                                label = "nav_scale"
+                                            )
                                             
                                             Column(
                                                 modifier = Modifier
@@ -295,7 +302,8 @@ class MainActivity : ComponentActivity() {
                                                             launchSingleTop = true
                                                             restoreState = false
                                                         }
-                                                    },
+                                                    }
+                                                    .scale(scale),
                                                 horizontalAlignment = Alignment.CenterHorizontally
                                             ) {
                                                 Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
