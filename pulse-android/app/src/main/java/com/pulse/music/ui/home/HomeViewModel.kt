@@ -25,7 +25,8 @@ sealed class HomeUiState {
 class HomeViewModel @Inject constructor(
     private val repository: com.pulse.music.data.repository.OnlineMusicRepository,
     private val songDao: com.pulse.music.data.local.SongDao,
-    private val musicPlayerManager: MusicPlayerManager
+    private val musicPlayerManager: MusicPlayerManager,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     fun playSong(song: Song, contextSongs: List<Song>) {
@@ -36,10 +37,26 @@ class HomeViewModel @Inject constructor(
         var cachedUiState: HomeUiState.Success? = null
     }
 
-    private val _uiState = MutableStateFlow<HomeUiState>(cachedUiState ?: HomeUiState.Loading)
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
+        if (cachedUiState == null) {
+            val prefs = context.getSharedPreferences("pulse_home_cache", android.content.Context.MODE_PRIVATE)
+            val cachedJson = prefs.getString("home_state", null)
+            if (cachedJson != null) {
+                try {
+                    cachedUiState = com.google.gson.Gson().fromJson(cachedJson, HomeUiState.Success::class.java)
+                } catch (e: Exception) {
+                    // Ignore parsing error
+                }
+            }
+        }
+        
+        if (cachedUiState != null) {
+            _uiState.value = cachedUiState!!
+        }
+        
         loadData()
     }
 
@@ -51,7 +68,6 @@ class HomeViewModel @Inject constructor(
             try {
                 // Fetch recent song from DB for suggestions
                 val localSongsEntity = songDao.getAllSongs().reversed() // Most recent first
-                val recentSong = localSongsEntity.firstOrNull() // Pick the most recently saved song
 
                 val localSongs = localSongsEntity.map { entity ->
                     Song(
@@ -85,10 +101,6 @@ class HomeViewModel @Inject constructor(
                 val suggested = (rawSuggested + rawTrending).distinctBy { it.id }.take(4)
                 
                 val homeData = homeDeferred.await().getOrNull()
-                android.util.Log.d("PulseAPI", "homeData is null: ${homeData == null}, modules count: ${homeData?.modules?.size}")
-                homeData?.modules?.forEach { 
-                    android.util.Log.d("PulseAPI", "Module ${it.title} has ${it.items?.size} items")
-                }
                 
                 val successState = HomeUiState.Success(
                     recentPlays = limitedRecentPlays,
@@ -97,6 +109,15 @@ class HomeViewModel @Inject constructor(
                 )
                 cachedUiState = successState
                 _uiState.value = successState
+                
+                // Save to SharedPreferences for next cold boot
+                try {
+                    val prefs = context.getSharedPreferences("pulse_home_cache", android.content.Context.MODE_PRIVATE)
+                    prefs.edit().putString("home_state", com.google.gson.Gson().toJson(successState)).apply()
+                } catch (e: Exception) {
+                    // Ignore save error
+                }
+                
             } catch (e: Exception) {
                 android.util.Log.e("PulseAPI", "HomeViewModel error: ", e)
                 _uiState.value = HomeUiState.Error(e.message ?: "Unknown Error")
