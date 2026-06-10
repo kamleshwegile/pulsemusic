@@ -32,19 +32,11 @@ class HomeViewModel @Inject constructor(
         musicPlayerManager.playSongFromList(song, contextSongs)
     }
 
-    companion object {
-        var cachedUiState: HomeUiState.Success? = null
-    }
-
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        if (cachedUiState != null) {
-            _uiState.value = cachedUiState!!
-        } else {
-            loadData()
-        }
+        loadData()
     }
 
     fun loadData() {
@@ -97,7 +89,6 @@ class HomeViewModel @Inject constructor(
                     suggested = suggested,
                     modules = homeData?.modules ?: emptyList()
                 )
-                cachedUiState = successState
                 _uiState.value = successState
             } catch (e: Exception) {
                 android.util.Log.e("PulseAPI", "HomeViewModel error: ", e)
