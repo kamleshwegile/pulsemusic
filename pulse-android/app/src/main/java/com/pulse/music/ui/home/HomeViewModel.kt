@@ -66,20 +66,14 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = HomeUiState.Loading
             }
             try {
-                // Fetch recent song from DB for suggestions
-                val localSongsEntity = songDao.getAllSongs().reversed() // Most recent first
-
-                val localSongs = localSongsEntity.map { entity ->
-                    Song(
-                        id = entity.id,
-                        title = entity.title,
-                        artist = entity.artist,
-                        album = entity.album,
-                        albumArt = entity.albumArt,
-                        durationMs = null,
-                        source = entity.source
-                    )
-                }
+                // Fetch actual recently played songs from local SharedPreferences
+                var localSongs: List<Song> = emptyList()
+                try {
+                    val prefs = context.getSharedPreferences("pulse_actual_recent_plays", android.content.Context.MODE_PRIVATE)
+                    val json = prefs.getString("plays", "[]")
+                    val type = object : com.google.gson.reflect.TypeToken<List<Song>>() {}.type
+                    localSongs = com.google.gson.Gson().fromJson(json, type) ?: emptyList()
+                } catch (e: Exception) {}
 
                 val actualRecentSongs = repository.getRecentSongs().getOrNull() ?: emptyList()
                 val recentPlaysList = if (actualRecentSongs.isNotEmpty()) actualRecentSongs else localSongs

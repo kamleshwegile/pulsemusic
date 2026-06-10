@@ -87,13 +87,29 @@ class MusicPlayerManager @Inject constructor(
     }
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    private fun createExoPlayer(): ExoPlayer {
+    private fun createExoPlayer(processor: CrossfadeAudioProcessor): ExoPlayer {
         val audioAttributes = androidx.media3.common.AudioAttributes.Builder()
             .setUsage(androidx.media3.common.C.USAGE_MEDIA)
             .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
             
-        return ExoPlayer.Builder(context)
+        val audioSink = androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
+            .setAudioProcessors(arrayOf(processor))
+            .setEnableFloatOutput(true)
+            .build()
+            
+        val renderersFactory = object : androidx.media3.exoplayer.DefaultRenderersFactory(context) {
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean,
+                enableOffload: Boolean
+            ): androidx.media3.exoplayer.audio.AudioSink {
+                return audioSink
+            }
+        }
+
+        return ExoPlayer.Builder(context, renderersFactory)
             .setAudioAttributes(audioAttributes, false)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(context).setDataSourceFactory(sharedDataSourceFactory))
             .build().also { exo ->
@@ -101,8 +117,11 @@ class MusicPlayerManager @Inject constructor(
         }
     }
 
-    private val player1: ExoPlayer by lazy { createExoPlayer() }
-    private val player2: ExoPlayer by lazy { createExoPlayer() }
+    private val crossfadeProcessor1 = CrossfadeAudioProcessor()
+    private val crossfadeProcessor2 = CrossfadeAudioProcessor()
+    
+    private val player1: ExoPlayer by lazy { createExoPlayer(crossfadeProcessor1) }
+    private val player2: ExoPlayer by lazy { createExoPlayer(crossfadeProcessor2) }
     
     private val _activePlayerFlow = MutableStateFlow<ExoPlayer>(player1)
     val activePlayerFlow: StateFlow<ExoPlayer> = _activePlayerFlow.asStateFlow()
@@ -281,7 +300,14 @@ class MusicPlayerManager @Inject constructor(
                                             fadingPlayer!!.removeMediaItems(fadingIdx + 1, fadingPlayer!!.mediaItemCount)
                                         }
 
-                                        nextPlayer.volume = 0f
+                                        nextPlayer.volume = 1f
+                                        
+                                        val currentProcessor = if (player === player1) crossfadeProcessor1 else crossfadeProcessor2
+                                        val nextProcessor = if (player === player1) crossfadeProcessor2 else crossfadeProcessor1
+                                        
+                                        currentProcessor.startFadeOut(actualCrossfadeMs)
+                                        nextProcessor.startFadeIn(actualCrossfadeMs)
+                                        
                                         nextPlayer.play()
                                         android.util.Log.d("Crossfade", "Secondary player play() called.")
                                         
@@ -303,36 +329,16 @@ class MusicPlayerManager @Inject constructor(
                     }
                 } catch(e: Exception) {}
                 
-                // Headroom and ReplayGain simulation
-                val headroom = 0.707f // -3dB to prevent clipping during overlap sum
-                val replayGainOut = 1.0f // Placeholder: read from current track metadata
-                val replayGainIn = 1.0f  // Placeholder: read from next track metadata
-
                 if (isCrossfading && fadingPlayer != null) {
                     val elapsed = System.currentTimeMillis() - crossfadeStartTime
                     val crossfadeMs = crossfadeSecs * 1000L
-                    if (elapsed < crossfadeMs) {
-                        val fraction = elapsed.toFloat() / crossfadeMs.toFloat()
-                        // Equal-power crossfade using sine/cosine for Spotify-like transition
-                        val fadeOut = kotlin.math.cos((Math.PI / 2.0) * fraction).toFloat()
-                        val fadeIn = kotlin.math.sin((Math.PI / 2.0) * fraction).toFloat()
-                        
-                        fadingPlayer!!.volume = fadeOut * headroom * replayGainOut
-                        val nextPlayer = if (fadingPlayer === player1) player2 else player1
-                        nextPlayer.volume = fadeIn * headroom * replayGainIn
-                    } else {
+                    if (elapsed >= crossfadeMs) {
                         isCrossfading = false
-                        
-                        val nextPlayerTemp = player // Since we already swapped at the start, player is now the next player
-                        nextPlayerTemp.volume = 1f * headroom * replayGainIn
-                        
                         fadingPlayer!!.stop()
                         fadingPlayer!!.clearMediaItems()
                         fadingPlayer = null
                         android.util.Log.d("Crossfade", "Player swap completed.")
                     }
-                } else {
-                    player.volume = 1f * headroom * replayGainOut
                 }
                 
                 delay(16L) // ~60Hz update rate for smooth volume ramping
@@ -641,6 +647,7 @@ class MusicPlayerManager @Inject constructor(
     /** Play a song and set entire list as queue. */
     fun playSongFromList(song: Song, allSongs: List<Song>) {
         abortCrossfade()
+        saveRecentPlay(song)
         scope.launch {
             _queue.value = allSongs
             val idx = allSongs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
@@ -669,6 +676,7 @@ class MusicPlayerManager @Inject constructor(
     @OptIn(UnstableApi::class)
     fun playSong(song: Song) {
         abortCrossfade()
+        saveRecentPlay(song)
         scope.launch {
             val resolvedSource = resolveSongSource(song)
             val resolvedSong = song.copy(source = resolvedSource)
@@ -908,5 +916,27 @@ class MusicPlayerManager @Inject constructor(
         stopPositionPolling()
         player1.release()
         player2.release()
+    }
+
+    private fun saveRecentPlay(song: Song) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val prefs = context.getSharedPreferences("pulse_actual_recent_plays", Context.MODE_PRIVATE)
+                val json = prefs.getString("plays", "[]")
+                val type = object : com.google.gson.reflect.TypeToken<List<Song>>() {}.type
+                val currentPlays: MutableList<Song> = com.google.gson.Gson().fromJson(json, type) ?: mutableListOf()
+                
+                // Remove if already exists to move it to top
+                currentPlays.removeAll { it.id == song.id }
+                currentPlays.add(0, song) // Add to top
+                
+                // Keep only top 20
+                val limited = currentPlays.take(20)
+                prefs.edit().putString("plays", com.google.gson.Gson().toJson(limited)).apply()
+                
+                // Also update the backend if possible
+                try { onlineRepo.addRecentSong(song) } catch(e: Exception) {}
+            } catch (e: Exception) { }
+        }
     }
 }
