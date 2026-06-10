@@ -902,28 +902,37 @@ def get_home():
         return res.artists[:10]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        f_feat = executor.submit(fetch_playlists, "featured playlist")
-        f_top_pl = executor.submit(fetch_playlists, "top playlist")
-        f_eng = executor.submit(fetch_playlists, "english hits")
-        f_hin = executor.submit(fetch_playlists, "hindi hits")
-        f_pun = executor.submit(fetch_playlists, "punjabi hits")
-        f_top = executor.submit(fetch_playlists, "top hits")
-        f_pop = executor.submit(fetch_playlists, "pop classic")
-        f_kpop = executor.submit(fetch_playlists, "k-pop")
-        f_trend_eng = executor.submit(fetch_playlists, "trending english")
-        f_art = executor.submit(fetch_artists, "top artists")
+        f_ishq = executor.submit(fetch_playlists, "ishq wala love")
+        f_chill = executor.submit(fetch_playlists, "aao chill kare")
+        f_filmy = executor.submit(fetch_playlists, "filmy tadka")
+        f_hiphop = executor.submit(fetch_playlists, "ek number hip hop")
+        f_community = executor.submit(fetch_playlists, "from community")
+        f_new = executor.submit(fetch_playlists, "new releases")
+        f_mood = executor.submit(fetch_playlists, "made for your mood")
+        f_artist_station = executor.submit(fetch_playlists, "recommended artist station")
+        f_safar = executor.submit(fetch_playlists, "safarnama")
+        f_fresh = executor.submit(fetch_playlists, "fresh hits")
+        f_genre = executor.submit(fetch_playlists, "top genre and moods")
+        f_pop_hindi = executor.submit(fetch_playlists, "new releases pop hindi")
+        f_editors = executor.submit(fetch_playlists, "editors choice")
+        f_charts = executor.submit(fetch_playlists, "top charts")
 
         home_cache = HomeResponse(
             modules=[
-                HomeModule(title="Featured Playlists", items=f_feat.result()),
-                HomeModule(title="Top Playlists", items=f_top_pl.result()),
-                HomeModule(title="English Hits", items=f_eng.result()),
-                HomeModule(title="Hindi Hits", items=f_hin.result()),
-                HomeModule(title="Punjabi Hits", items=f_pun.result()),
-                HomeModule(title="Top Hits", items=f_top.result()),
-                HomeModule(title="Pop Classics", items=f_pop.result()),
-                HomeModule(title="K-Pop", items=f_kpop.result()),
-                HomeModule(title="Trending English", items=f_trend_eng.result())
+                HomeModule(title="Ishq Wala Love", items=f_ishq.result()),
+                HomeModule(title="Aao Chill Kare", items=f_chill.result()),
+                HomeModule(title="Filmy Tadka", items=f_filmy.result()),
+                HomeModule(title="Ek Number Hip Hop", items=f_hiphop.result()),
+                HomeModule(title="From Community", items=f_community.result()),
+                HomeModule(title="New Releases", items=f_new.result()),
+                HomeModule(title="Made For Your Mood", items=f_mood.result()),
+                HomeModule(title="Recommended Artist Station", items=f_artist_station.result()),
+                HomeModule(title="Safarnama", items=f_safar.result()),
+                HomeModule(title="Fresh Hits", items=f_fresh.result()),
+                HomeModule(title="Top Genre & Moods", items=f_genre.result()),
+                HomeModule(title="New Releases Pop-Hindi", items=f_pop_hindi.result()),
+                HomeModule(title="Editor's Choice", items=f_editors.result()),
+                HomeModule(title="Top Charts", items=f_charts.result())
             ]
         )
         home_cache_time = time.time()
