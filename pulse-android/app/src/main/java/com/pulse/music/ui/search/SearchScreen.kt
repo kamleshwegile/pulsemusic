@@ -42,9 +42,9 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        containercolor = Color.Black.copy(alpha = 0.1f),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Surface(color = Color.Black.copy(alpha = 0.1f), modifier = Modifier.fillMaxWidth()) {
+            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     Row(
                         modifier = Modifier
