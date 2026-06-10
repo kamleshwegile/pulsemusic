@@ -300,8 +300,10 @@ class MainActivity : ComponentActivity() {
                                             modifier = Modifier
                                                 .matchParentSize()
                                                 .graphicsLayer {
-                                                    renderEffect = androidx.compose.ui.graphics.RenderEffect.createBlurEffect(
-                                                        50f, 50f, androidx.compose.ui.graphics.TileMode.Mirror
+                                                    renderEffect = androidx.compose.ui.graphics.BlurEffect(
+                                                        radiusX = 50f,
+                                                        radiusY = 50f,
+                                                        edgeTreatment = androidx.compose.ui.graphics.TileMode.Mirror
                                                     )
                                                 }
                                                 .background(Color(0xFF1C1C1E).copy(alpha = 0.45f))
