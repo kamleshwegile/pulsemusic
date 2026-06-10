@@ -296,37 +296,40 @@ class MainActivity : ComponentActivity() {
                                         }
                                 ) {
 
-
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(top = 16.dp, bottom = 12.dp),
-                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                            .height(80.dp)
+                                            .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                                            .background(Color.Transparent)
+                                            .padding(bottom = 12.dp, top = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceAround,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         val items = listOf(
                                             Triple("Home", Icons.Default.Home, "home"),
                                             Triple("Search", Icons.Default.Search, "search"),
-                                            Triple("Library", Icons.Default.LibraryMusic, "library"),
-                                            Triple("Profile", Icons.Default.Person, "profile")
+                                            Triple("Your Library", Icons.Default.LibraryMusic, "library"),
+                                            Triple("Create", Icons.Default.AddBox, "profile")
                                         )
                                         items.forEach { (label, icon, route) ->
                                             val selected = currentRoute == route
-                                            val color = if (selected) PulseRed else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f)
+                                            val color = if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                                            val activeColor = if (selected) PulseRed else color
                                             val scale by animateFloatAsState(
-                                                targetValue = if (selected) 1.1f else 1f,
+                                                targetValue = if (selected) 1.05f else 1f,
                                                 animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
                                                 label = "nav_scale"
                                             )
                                             
                                             Column(
                                                 modifier = Modifier
+                                                    .weight(1f)
                                                     .clickable(
                                                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                                                         indication = null
                                                     ) {
                                                         if (selected && route == "search") {
-                                                            // Second tap on Search: focus the search bar
                                                             scope.launch {
                                                                 try { searchFocusRequester.requestFocus() } catch (e: Exception) {}
                                                             }
@@ -339,11 +342,12 @@ class MainActivity : ComponentActivity() {
                                                         }
                                                     }
                                                     .scale(scale),
-                                                horizontalAlignment = Alignment.CenterHorizontally
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
                                             ) {
-                                                Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
+                                                Icon(icon, contentDescription = label, tint = activeColor, modifier = Modifier.size(26.dp))
                                                 Spacer(modifier = Modifier.height(4.dp))
-                                                Text(label, color = color, fontSize = 10.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+                                                Text(label, color = activeColor, fontSize = 10.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium)
                                             }
                                         }
                                     }
