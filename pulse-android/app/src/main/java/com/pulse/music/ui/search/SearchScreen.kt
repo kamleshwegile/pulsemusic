@@ -160,47 +160,49 @@ fun SearchScreen(
                 
                 val allCategories = listOf("Romance", "Dance", "Workout", "Happy", "Chill", "Party", "Hip Hop", "EDM", "Travel", "Devotional", "Ghazal", "Wedding", "Sufi", "Kids", "Pop", "Indie", "Fusion", "Folk", "Retro", "Desi Hip Hop", "Top K-Pop", "Best Of 90s", "Best Of 2021", "Best Of 2022", "The 1990s", "The 2000s", "The 2010s", "Top JioTunes", "Throwback Top 20", "Carvaan", "Fresh Hits", "Mood Booster", "Road Trip", "Sleep", "Study", "Focus", "Gym Workout", "Relax", "Instrumental", "Lo-Fi", "Bollywood", "Punjabi Hits", "Hindi Hits", "Tamil Hits", "Telugu Hits", "Malayalam Hits", "Kannada Hits", "Marathi Hits", "Gujarati Hits", "Bengali Hits", "Bhojpuri Hits", "Haryanvi Hits", "Assamese Hits", "Odia Hits", "Rajasthani Hits", "International Hits", "Rock", "Jazz", "Classical", "Electronic", "Reggae", "Country", "Anime Songs", "K-Pop", "J-Pop", "Christmas", "Festival Songs", "Krishna Bhajans", "Hanuman Chalisa", "Shiv Bhajans", "Ganesh Bhajans", "Durga Bhajans", "Podcast Picks", "Comedy Podcasts", "True Crime", "Technology Podcasts", "Business Podcasts", "Motivational Podcasts", "News Podcasts", "Storytelling Podcasts", "Kids Stories", "Nursery Rhymes")
 
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Channels", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
-                        Text("See All", fontSize = 18.sp, color = PulseAccentSearch)
+                if (!isSearchBarFocused) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Channels", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+                            Text("See All", fontSize = 18.sp, color = PulseAccentSearch)
+                        }
                     }
-                }
 
-                val chunkedCategories = allCategories.chunked(2)
-                items(chunkedCategories) { rowItems ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        rowItems.forEach { query ->
-                            Box(modifier = Modifier.weight(1f)) {
-                                LaunchedEffect(query) {
-                                    viewModel.fetchCategoryPlaylist(query)
-                                }
-                                val data = viewModel.categoryPlaylists[query]
-                                val isLoading = viewModel.categoryLoading[query] ?: true
-                                
-                                if (isLoading) {
-                                    SkeletonCategoryCard()
-                                } else if (data != null) {
-                                    CategoryCard(
-                                        title = query,
-                                        imageUrl = data.image,
-                                        onClick = { onNavigateToAlbum(data.id) }
-                                    )
-                                } else {
-                                    // Empty state if API failed so we don't break layout
-                                    Box(modifier = Modifier.height(180.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF242424)))
+                    val chunkedCategories = allCategories.chunked(2)
+                    items(chunkedCategories) { rowItems ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                            rowItems.forEach { query ->
+                                Box(modifier = Modifier.weight(1f)) {
+                                    LaunchedEffect(query) {
+                                        viewModel.fetchCategoryPlaylist(query)
+                                    }
+                                    val data = viewModel.categoryPlaylists[query]
+                                    val isLoading = viewModel.categoryLoading[query] ?: true
+                                    
+                                    if (isLoading) {
+                                        SkeletonCategoryCard()
+                                    } else if (data != null) {
+                                        CategoryCard(
+                                            title = query,
+                                            imageUrl = data.image,
+                                            onClick = { onNavigateToAlbum(data.id) }
+                                        )
+                                    } else {
+                                        // Empty state if API failed so we don't break layout
+                                        Box(modifier = Modifier.height(180.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF242424)))
+                                    }
                                 }
                             }
+                            if (rowItems.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
                         }
-                        if (rowItems.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 item { Spacer(modifier = Modifier.height(140.dp)) }
