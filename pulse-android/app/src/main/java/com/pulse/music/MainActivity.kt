@@ -263,7 +263,11 @@ class MainActivity : ComponentActivity() {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(MaterialTheme.colorScheme.background)
+                                        .background(
+                                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                                colors = listOf(Color.Transparent, Color(0xE6000000), Color.Black)
+                                            )
+                                        )
                                 ) {
                                     Row(
                                         modifier = Modifier

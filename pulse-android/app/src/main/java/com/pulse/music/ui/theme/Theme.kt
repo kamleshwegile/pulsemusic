@@ -44,7 +44,7 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun PulseMusicTheme(
-    isDarkTheme: Boolean = false, // Set to false to make Light Theme the default
+    isDarkTheme: Boolean = true, // Set to true for Dark Theme (default)
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
