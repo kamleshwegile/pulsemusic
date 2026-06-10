@@ -42,9 +42,9 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containercolor = Color.Black.copy(alpha = 0.1f),
         topBar = {
-            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
+            Surface(color = Color.Black.copy(alpha = 0.1f), modifier = Modifier.fillMaxWidth()) {
                 Column {
                     Row(
                         modifier = Modifier
@@ -562,7 +562,7 @@ fun CategoryCard(
             val step = 15.dp.toPx()
             for (i in -w.toInt() until (w + h).toInt() step step.toInt()) {
                 drawLine(
-                    color = MaterialTheme.colorScheme.background,
+                    color = Color.Black.copy(alpha = 0.1f),
                     start = androidx.compose.ui.geometry.Offset(i.toFloat(), 0f),
                     end = androidx.compose.ui.geometry.Offset(i.toFloat() - h, h),
                     strokeWidth = 2.dp.toPx()
@@ -628,7 +628,7 @@ fun SkeletonCategoryCard() {
             val step = 15.dp.toPx()
             for (i in -w.toInt() until (w + h).toInt() step step.toInt()) {
                 drawLine(
-                    color = MaterialTheme.colorScheme.background,
+                    color = Color.Black.copy(alpha = 0.1f),
                     start = androidx.compose.ui.geometry.Offset(i.toFloat(), 0f),
                     end = androidx.compose.ui.geometry.Offset(i.toFloat() - h, h),
                     strokeWidth = 2.dp.toPx()

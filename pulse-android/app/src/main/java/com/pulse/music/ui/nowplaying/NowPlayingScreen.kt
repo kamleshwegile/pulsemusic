@@ -121,6 +121,7 @@ fun NowPlayingScreen(
                 animationSpec = androidx.compose.animation.core.tween(800),
                 label = "now_playing_crossfade"
             ) { art ->
+                val overlayColor = MaterialTheme.colorScheme.background.copy(alpha = 0.65f)
                 coil.compose.AsyncImage(
                     model = art,
                     contentDescription = null,
@@ -129,7 +130,7 @@ fun NowPlayingScreen(
                         .blur(radius = 80.dp)
                         .drawWithContent {
                             drawContent()
-                            drawRect(MaterialTheme.colorScheme.background.copy(alpha = 0.65f)) // Darken overlay
+                            drawRect(overlayColor) // Darken overlay
                         },
                     contentScale = ContentScale.Crop,
                     error = androidx.compose.ui.graphics.vector.rememberVectorPainter(androidx.compose.material.icons.Icons.Default.MusicNote)
@@ -448,7 +449,7 @@ fun MainPlayerContent(
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(20.dp))
-                .background(Color(0xFF242424)), 
+                .background(MaterialTheme.colorScheme.surfaceVariant), 
                 contentAlignment = Alignment.Center
             ) {
                 if (!currentSong?.albumArt.isNullOrEmpty()) {
@@ -460,12 +461,19 @@ fun MainPlayerContent(
                         .diskCachePolicy(coil.request.CachePolicy.ENABLED)
                         .build()
                         
-                    AsyncImage(
+                    coil.compose.SubcomposeAsyncImage(
                         model = imageRequest,
                         contentDescription = "Album Art",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
-                        error = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Default.MusicNote)
+                        loading = {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = PulseRed)
+                            }
+                        },
+                        error = {
+                            Icon(Icons.Default.MusicNote, contentDescription = "Music", tint = pureWhite.copy(alpha = 0.5f), modifier = Modifier.size(96.dp))
+                        }
                     )
                 } else {
                     Icon(Icons.Default.MusicNote, contentDescription = "Music", tint = pureWhite.copy(alpha = 0.5f), modifier = Modifier.size(96.dp))

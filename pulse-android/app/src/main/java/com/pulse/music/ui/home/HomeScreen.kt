@@ -87,7 +87,7 @@ fun HomeScreen(
                 is HomeUiState.Loading -> {
                     item { 
                         Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color(0xFF1ED760))
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
