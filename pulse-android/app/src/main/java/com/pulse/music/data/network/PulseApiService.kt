@@ -118,6 +118,9 @@ interface PulseApiService {
     @POST("api/v1/user/recent-songs")
     suspend fun addRecentSong(@Body song: Map<String, @JvmSuppressWildcards Any>): Map<String, String>
 
+    @retrofit2.http.DELETE("api/v1/user/recent-songs/{songId}")
+    suspend fun removeRecentSong(@Path("songId") songId: String): Map<String, String>
+
     @GET("api/v1/user/follows")
     suspend fun getFollowedArtists(): List<Map<String, String>>
 

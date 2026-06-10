@@ -138,4 +138,33 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+    fun removeRecentSong(song: Song) {
+        viewModelScope.launch {
+            try {
+                repository.removeRecentSong(song.id)
+                
+                val prefs = context.getSharedPreferences("pulse_actual_recent_plays", android.content.Context.MODE_PRIVATE)
+                val json = prefs.getString("plays", "[]")
+                val array = com.google.gson.Gson().fromJson(json, Array<Song>::class.java)
+                val localSongs = array?.toList() ?: emptyList()
+                
+                val newList = localSongs.filter { it.id != song.id }
+                prefs.edit().putString("plays", com.google.gson.Gson().toJson(newList)).apply()
+                
+                val currentState = _uiState.value
+                if (currentState is HomeUiState.Success) {
+                    val updatedAll = currentState.allRecentPlays.filter { it.id != song.id }
+                    val successState = currentState.copy(
+                        recentPlays = updatedAll.take(5),
+                        allRecentPlays = updatedAll
+                    )
+                    cachedUiState = successState
+                    _uiState.value = successState
+                    
+                    val cacheFile = java.io.File(context.cacheDir, "home_cache.json")
+                    cacheFile.writeText(com.google.gson.Gson().toJson(successState))
+                }
+            } catch (e: Exception) {}
+        }
+    }
 }

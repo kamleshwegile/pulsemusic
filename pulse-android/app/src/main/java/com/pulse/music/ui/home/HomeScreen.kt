@@ -42,6 +42,9 @@ fun HomeScreen(
             onSongClick = { song ->
                 viewModel.playSong(song, state.allRecentPlays ?: emptyList())
                 onNavigateToNowPlaying()
+            },
+            onRemoveSong = { song ->
+                viewModel.removeRecentSong(song)
             }
         )
         return
@@ -101,7 +104,9 @@ fun HomeScreen(
                             )
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
                                 items(state.recentPlays) { song ->
-                                    SongCard(song, onClick = {
+                                    SongCard(song, onRemove = {
+                                        viewModel.removeRecentSong(song)
+                                    }, onClick = {
                                         viewModel.playSong(song, state.recentPlays)
                                         onNavigateToNowPlaying()
                                     })
@@ -184,32 +189,46 @@ fun SectionTitle(title: String, onSeeAll: (() -> Unit)? = null) {
 }
 
 @Composable
-fun SongCard(song: Song, onClick: () -> Unit = {}) {
+fun SongCard(song: Song, onRemove: (() -> Unit)? = null, onClick: () -> Unit = {}) {
     Column(
         modifier = Modifier
             .width(150.dp)
             .clickable(onClick = onClick)
     ) {
-        if (!song.albumArt.isNullOrEmpty()) {
-            coil.compose.AsyncImage(
-                model = song.albumArt,
-                contentDescription = song.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF242424)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.MusicNote, contentDescription = "Music", tint = Color.Gray, modifier = Modifier.size(48.dp))
+        Box {
+            if (!song.albumArt.isNullOrEmpty()) {
+                coil.compose.AsyncImage(
+                    model = song.albumArt,
+                    contentDescription = song.title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF242424)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.MusicNote, contentDescription = "Music", tint = Color.Gray, modifier = Modifier.size(48.dp))
+                }
+            }
+            if (onRemove != null) {
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .size(24.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), androidx.compose.foundation.shape.CircleShape)
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.White, modifier = Modifier.size(16.dp))
+                }
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -330,7 +349,8 @@ fun ArtistCard(artist: com.pulse.music.domain.Artist, onClick: () -> Unit = {}) 
 fun RecentlyPlayedScreen(
     songs: List<Song>,
     onBack: () -> Unit,
-    onSongClick: (Song) -> Unit
+    onSongClick: (Song) -> Unit,
+    onRemoveSong: (Song) -> Unit
 ) {
     Scaffold(
         containerColor = Color.Black,
@@ -398,6 +418,9 @@ fun RecentlyPlayedScreen(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                    }
+                    IconButton(onClick = { onRemoveSong(song) }) {
+                        Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.Gray, modifier = Modifier.size(20.dp))
                     }
                 }
             }

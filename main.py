@@ -402,6 +402,14 @@ def add_recent_song(req: RecentlyPlayedSong, user_id: str = Depends(get_current_
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/api/v1/user/recent-songs/{song_id}")
+def remove_recent_song(song_id: str, user_id: str = Depends(get_current_user)):
+    try:
+        recently_played_collection.delete_one({"user_id": user_id, "song_id": song_id})
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Playlist Routes
 class SpotifyImportRequest(BaseModel):
     url: str

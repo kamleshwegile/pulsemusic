@@ -85,6 +85,14 @@ class OnlineMusicRepository @Inject constructor(
         }
     }
 
+    suspend fun removeRecentSong(songId: String): Result<Map<String, String>> {
+        return try {
+            Result.success(apiService.removeRecentSong(songId))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getAlbumInfo(id: String): Result<Album> {
         return try {
             Result.success(apiService.getAlbum(id))
