@@ -112,6 +112,11 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    fun removeRecentSearch(query: String) {
+        // Optimistically remove from UI immediately
+        _uiState.update { it.copy(recentSearches = it.recentSearches.filter { s -> s != query }) }
+    }
+
     fun setCategory(category: String) {
         _uiState.update { it.copy(activeCategory = category) }
     }

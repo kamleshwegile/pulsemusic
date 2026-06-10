@@ -138,6 +138,9 @@ fun SearchScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(tag, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { viewModel.removeRecentSearch(tag) }) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.Gray, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
                 
