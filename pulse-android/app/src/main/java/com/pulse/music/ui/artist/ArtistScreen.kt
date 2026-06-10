@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,9 +31,9 @@ import com.pulse.music.domain.Artist
 import com.pulse.music.domain.Song
 
 val PulseAccent = Color(0xFFFA2D48)
-val SurfaceContainer = Color(0xFF121212)
-val TextMuted = Color.White.copy(alpha = 0.5f)
-val TextSecondary = Color.White.copy(alpha = 0.6f)
+val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+val TextMuted = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+val TextSecondary = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
 
 @Composable
 fun ArtistScreen(
@@ -55,7 +56,7 @@ fun ArtistScreen(
     var showAllAlbums by remember { mutableStateOf(false) }
 
     if (artistInfo == null && topTracks.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = PulseAccent)
         }
         return
@@ -71,7 +72,7 @@ fun ArtistScreen(
         genres = emptyList()
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 120.dp) // Space for mini player
@@ -93,7 +94,7 @@ fun ArtistScreen(
                             .fillMaxSize()
                             .background(
                                 Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, Color.Black),
+                                    colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background),
                                     startY = 200f
                                 )
                             )
@@ -107,10 +108,10 @@ fun ArtistScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                         }
                         IconButton(onClick = {}) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+                            Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
                         }
                     }
 
@@ -122,7 +123,7 @@ fun ArtistScreen(
                     ) {
                         Text(
                             text = artist.name,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 40.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-1).sp
@@ -155,7 +156,7 @@ fun ArtistScreen(
                         FloatingActionButton(
                             onClick = { if (topTracks.isNotEmpty()) onSongClick(topTracks.first() as Song, topTracks.map { it as Song }) },
                             containerColor = PulseAccent,
-                            contentColor = Color.White,
+                            contentColor = MaterialTheme.colorScheme.onBackground,
                             shape = CircleShape,
                             modifier = Modifier.size(56.dp)
                         ) {
@@ -172,7 +173,7 @@ fun ArtistScreen(
                             },
                             modifier = Modifier.size(48.dp)
                         ) {
-                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = Color.White, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(28.dp))
                         }
                     }
 
@@ -182,17 +183,17 @@ fun ArtistScreen(
                     ) {
                         OutlinedButton(
                             onClick = { viewModel.toggleFollow(artist) },
-                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isFollowed) Color.Transparent else Color.White.copy(alpha = 0.5f)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isFollowed) Color.Transparent else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = if (isFollowed) Color.White.copy(alpha = 0.15f) else Color.Transparent,
-                                contentColor = Color.White
+                                containerColor = if (isFollowed) MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f) else Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onBackground
                             ),
                             modifier = Modifier.height(36.dp)
                         ) {
                             Text(if (isFollowed) "Following" else "Follow", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         }
                         IconButton(onClick = { }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White.copy(alpha = 0.8f))
+                            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f))
                         }
                     }
                 }
@@ -202,7 +203,7 @@ fun ArtistScreen(
             item {
                 Text(
                     text = "Popular",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 16.dp)
@@ -228,7 +229,7 @@ fun ArtistScreen(
                     ) {
                         Text(
                             text = "${index + 1}",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.width(32.dp)
@@ -250,7 +251,7 @@ fun ArtistScreen(
                         ) {
                             Text(
                                 text = song.title,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = 14.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -275,7 +276,7 @@ fun ArtistScreen(
                         ) {
                             Text(
                                 text = if (showAllTracks) "Show less" else "Show more",
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = 14.sp
                             )
                         }
@@ -294,7 +295,7 @@ fun ArtistScreen(
                 ) {
                     Text(
                         text = "Albums",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -334,7 +335,7 @@ fun ArtistScreen(
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Text(
                                             text = album.title,
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                             fontSize = 12.sp,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
@@ -372,7 +373,7 @@ fun ArtistScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = album.title,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 12.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -393,7 +394,7 @@ fun ArtistScreen(
                 item {
                     Text(
                         text = "You may also like",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 16.dp)
@@ -423,7 +424,7 @@ fun ArtistScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = similarArtist.name,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 11.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -438,7 +439,7 @@ fun ArtistScreen(
             item {
                 Text(
                     text = "About",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp)
@@ -461,20 +462,20 @@ fun ArtistScreen(
                         if (artist.genres.isNotEmpty()) {
                             Box(
                                 modifier = Modifier
-                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                                    .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f), CircleShape)
                                     .background(SurfaceContainer, CircleShape)
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
-                                Text(artist.genres.first(), color = Color.White, fontSize = 11.sp)
+                                Text(artist.genres.first(), color = MaterialTheme.colorScheme.onBackground, fontSize = 11.sp)
                             }
                         }
                         Box(
                             modifier = Modifier
-                                .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                                .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f), CircleShape)
                                 .background(SurfaceContainer, CircleShape)
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            Text("Artist info from Last.fm", color = Color.White, fontSize = 11.sp)
+                            Text("Artist info from Last.fm", color = MaterialTheme.colorScheme.onBackground, fontSize = 11.sp)
                         }
                     }
                 }

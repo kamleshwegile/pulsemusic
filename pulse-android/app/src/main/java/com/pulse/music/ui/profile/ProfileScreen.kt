@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,7 +59,7 @@ fun ProfileScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFF050505)
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -115,7 +116,7 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(gradientBrush)
-            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
             .padding(24.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -124,12 +125,12 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
                     .size(100.dp)
                     .clip(CircleShape)
                     .background(Color.DarkGray)
-                    .border(3.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+                    .border(3.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), CircleShape)
                     .clickable { onEditProfilePic() },
                 contentAlignment = Alignment.Center
             ) {
                 if (profilePicUri.isNullOrEmpty()) {
-                    Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color.White, modifier = Modifier.size(50.dp))
+                    Icon(Icons.Default.Person, contentDescription = "Profile", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(50.dp))
                 } else {
                     AsyncImage(
                         model = profilePicUri,
@@ -143,17 +144,17 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.3f)),
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Edit, contentDescription = "Edit Profile Picture", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), modifier = Modifier.size(24.dp))
                 }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
             
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                Text(username, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(username, color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
@@ -161,7 +162,7 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
                         .background(Brush.horizontalGradient(listOf(Color(0xFFF92839), Color(0xFF06B6D4))))
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
-                    Text("PREMIUM", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text("PREMIUM", color = MaterialTheme.colorScheme.onBackground, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
             
@@ -171,11 +172,11 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("128", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("128", color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     Text("HOURS/MO", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("4.2k", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("4.2k", color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     Text("FOLLOWERS", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
@@ -186,10 +187,10 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
 @Composable
 private fun DiscoveryInsights() {
     Column {
-        Text("Listening Insights", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
+        Text("Listening Insights", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
         SettingsCard {
             SettingRow(icon = Icons.Default.Explore, title = "Discovery Score", description = "You explore 40% more new music than average.")
-            Divider(color = Color.White.copy(alpha = 0.05f))
+            Divider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f))
             SettingRow(icon = Icons.Default.LibraryMusic, title = "Top Genres", description = "Punjabi Pop, Lo-Fi Chill, Bollywood")
         }
     }
@@ -204,7 +205,7 @@ private fun PlaybackSettings(
     onUpdate: (Boolean, Boolean, Boolean, Int) -> Unit
 ) {
     Column {
-        Text("Playback", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
+        Text("Playback", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
         SettingsCard {
             SettingRow(
                 icon = Icons.Default.HighQuality, 
@@ -212,24 +213,24 @@ private fun PlaybackSettings(
                 description = "Always stream at 320kbps",
                 trailing = { Switch(checked = highQuality, onCheckedChange = { onUpdate(it, spatialAudio, gapless, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFF92839), checkedTrackColor = Color(0xFFF92839).copy(alpha = 0.5f))) }
             )
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f))
             SettingRow(
                 icon = Icons.Default.Headphones, 
                 title = "Spatial Audio", 
                 description = "Enable immersive soundstage",
                 trailing = { Switch(checked = spatialAudio, onCheckedChange = { onUpdate(highQuality, it, gapless, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFF92839), checkedTrackColor = Color(0xFFF92839).copy(alpha = 0.5f))) }
             )
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f))
             SettingRow(
                 icon = Icons.Default.SkipNext, 
                 title = "Gapless Playback", 
                 description = "Eliminate pauses between tracks",
                 trailing = { Switch(checked = gapless, onCheckedChange = { onUpdate(highQuality, spatialAudio, it, crossfade) }, colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFFF92839), checkedTrackColor = Color(0xFFF92839).copy(alpha = 0.5f))) }
             )
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f))
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Crossfade", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text("Crossfade", color = MaterialTheme.colorScheme.onBackground, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text("${crossfade}s", color = Color(0xFFF92839), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
                 Slider(
@@ -261,14 +262,14 @@ private fun PremiumCard() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(28.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("ListenFree Premium", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("ListenFree Premium", color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text("Enjoy ad-free music listening, offline playback, and highest audio quality.", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+            Text("Enjoy ad-free music listening, offline playback, and highest audio quality.", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), fontSize = 14.sp)
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = { },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B), contentColor = Color.Black),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B), contentColor = MaterialTheme.colorScheme.background),
                 shape = RoundedCornerShape(50)
             ) {
                 Text("Manage Subscription", fontWeight = FontWeight.Bold)
@@ -283,8 +284,8 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.White.copy(alpha = 0.05f))
-            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f))
+            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
     ) {
         Column(modifier = Modifier.padding(8.dp), content = content)
     }
@@ -307,14 +308,14 @@ private fun SettingRow(
             modifier = Modifier
                 .size(40.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color.White.copy(alpha = 0.05f)),
+                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, contentDescription = null, tint = Color(0xFFF92839), modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(title, color = MaterialTheme.colorScheme.onBackground, fontSize = 15.sp, fontWeight = FontWeight.Medium)
             if (description != null) {
                 Text(description, color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
             }
@@ -331,7 +332,7 @@ private fun SettingRow(
 @Composable
 private fun AccountActions(onLogout: () -> Unit) {
     Column {
-        Text("Account", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
+        Text("Account", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
         SettingsCard {
             Box(
                 modifier = Modifier
@@ -372,7 +373,7 @@ private fun StorageSettings(onClearCache: () -> Unit) {
     }
 
     Column {
-        Text("Storage", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
+        Text("Storage", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
         SettingsCard {
             Box(
                 modifier = Modifier
@@ -391,7 +392,7 @@ private fun StorageSettings(onClearCache: () -> Unit) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         val formattedSize = String.format("%.1f MB", cacheSizeMb)
-                        Text("Clear Cache ($formattedSize)", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("Clear Cache ($formattedSize)", color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Text("Free up space by removing cached audio and images", color = Color.Gray, fontSize = 12.sp)
                     }
                 }

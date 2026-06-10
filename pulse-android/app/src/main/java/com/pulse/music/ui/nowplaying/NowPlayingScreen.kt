@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -94,7 +95,7 @@ fun NowPlayingScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.background)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onDragEnd = {
@@ -128,7 +129,7 @@ fun NowPlayingScreen(
                         .blur(radius = 80.dp)
                         .drawWithContent {
                             drawContent()
-                            drawRect(Color.Black.copy(alpha = 0.65f)) // Darken overlay
+                            drawRect(MaterialTheme.colorScheme.background.copy(alpha = 0.65f)) // Darken overlay
                         },
                     contentScale = ContentScale.Crop,
                     error = androidx.compose.ui.graphics.vector.rememberVectorPainter(androidx.compose.material.icons.Icons.Default.MusicNote)
@@ -195,7 +196,7 @@ fun NowPlayingScreen(
                 
                 Text(
                     text = "Lyrics",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 24.dp)
@@ -206,7 +207,7 @@ fun NowPlayingScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFF1A1A1A))
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(24.dp)
                         .clickable { showLyrics = true }
                 ) {
@@ -216,7 +217,7 @@ fun NowPlayingScreen(
                         is LyricsState.Loading -> "Loading lyrics..."
                         is LyricsState.Unavailable -> "Lyrics not available."
                     }
-                    Text(text = previewLines, color = Color.White.copy(alpha=0.7f), fontSize = 16.sp, lineHeight = 24.sp)
+                    Text(text = previewLines, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.7f), fontSize = 16.sp, lineHeight = 24.sp)
                 }
                 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -224,7 +225,7 @@ fun NowPlayingScreen(
                 if (recommendations.isNotEmpty()) {
                     Text(
                         text = "More like this",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 24.dp)
@@ -248,8 +249,8 @@ fun NowPlayingScreen(
                                 )
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(recSong.title, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text(recSong.artist, color = Color.White.copy(0.6f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(recSong.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(recSong.artist, color = MaterialTheme.colorScheme.onBackground.copy(0.6f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }
@@ -288,21 +289,21 @@ fun NowPlayingScreen(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(songTitle, color = Color.White.copy(alpha = collapseProgress), fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                            Text(songArtist, color = Color.White.copy(alpha = 0.6f * collapseProgress), fontSize = 12.sp, maxLines = 1)
+                            Text(songTitle, color = MaterialTheme.colorScheme.onBackground.copy(alpha = collapseProgress), fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Text(songArtist, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f * collapseProgress), fontSize = 12.sp, maxLines = 1)
                         }
                         IconButton(onClick = { viewModel.toggleLike() }) {
                             Icon(
                                 if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Like",
-                                tint = (if (isLiked) PulseRed else Color.White).copy(alpha = collapseProgress)
+                                tint = (if (isLiked) PulseRed else MaterialTheme.colorScheme.onBackground).copy(alpha = collapseProgress)
                             )
                         }
                         IconButton(onClick = { viewModel.togglePlayPause() }) {
                             Icon(
                                 if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                 contentDescription = "Play/Pause",
-                                tint = Color.White.copy(alpha = collapseProgress)
+                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = collapseProgress)
                             )
                         }
                     }
@@ -312,7 +313,7 @@ fun NowPlayingScreen(
                             .fillMaxWidth()
                             .height(2.dp)
                             .align(Alignment.BottomCenter)
-                            .background(Color.White.copy(alpha = 0.1f * collapseProgress))
+                            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f * collapseProgress))
                     ) {
                         Box(
                             modifier = Modifier
@@ -367,10 +368,10 @@ fun NowPlayingScreen(
             modifier = Modifier.align(Alignment.BottomCenter).zIndex(2f)
         ) {
             when (val state = lyricsState) {
-                is LyricsState.Loading -> Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(Color(0xFF1A1A1A), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PulseRed) }
+                is LyricsState.Loading -> Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PulseRed) }
                 is LyricsState.Synced -> LyricsPanel(lyrics = state.lines, highlightedIndex = highlightedIndex, onClose = { showLyrics = false }, onSeek = { viewModel.seekTo(it) })
                 is LyricsState.Plain -> LyricsPanel(lyrics = state.text.split("\n").map { LyricLine(0L, it) }, highlightedIndex = -1, onClose = { showLyrics = false }, onSeek = null)
-                is LyricsState.Unavailable -> Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(Color(0xFF1A1A1A), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(24.dp), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Lyrics not available", color = Color.White); Spacer(modifier = Modifier.height(16.dp)); Button(onClick = { showLyrics = false }, colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = Color.Black)) { Text("Close", fontWeight = FontWeight.Bold) } } }
+                is LyricsState.Unavailable -> Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(24.dp), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Lyrics not available", color = MaterialTheme.colorScheme.onBackground); Spacer(modifier = Modifier.height(16.dp)); Button(onClick = { showLyrics = false }, colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = MaterialTheme.colorScheme.background)) { Text("Close", fontWeight = FontWeight.Bold) } } }
             }
         }
     }
@@ -602,7 +603,7 @@ fun MainPlayerContent(
     if (showMoreMenu) {
         ModalBottomSheet(
             onDismissRequest = { showMoreMenu = false },
-            containerColor = Color(0xFF121212),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             dragHandle = { BottomSheetDefaults.DragHandle(color = Color.Gray) }
         ) {
@@ -762,7 +763,7 @@ fun DevicePanel(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.5f)
-            .background(Color(0xFF1A1A1A), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             .padding(top = 16.dp)
     ) {
         Column {
@@ -776,16 +777,16 @@ fun DevicePanel(
             ) {
                 Text(
                     "Select Output Device",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = onClose) {
-                    Icon(Icons.Default.Close, "Close", tint = Color.White)
+                    Icon(Icons.Default.Close, "Close", tint = MaterialTheme.colorScheme.onBackground)
                 }
             }
 
-            HorizontalDivider(color = Color.White.copy(alpha = 0.1f), thickness = 1.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), thickness = 1.dp)
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(devices) { device ->
@@ -810,7 +811,7 @@ fun DevicePanel(
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = device.productName.toString().takeIf { it.isNotBlank() } ?: "Unknown Device",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -848,7 +849,7 @@ fun WaveformSeekbar(
     ) {
         for (i in 0 until barCount) {
             val height = barHeights[i]
-            val color = if (i < playedUntil) PulseRed else Color.White.copy(alpha = 0.15f)
+            val color = if (i < playedUntil) PulseRed else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f)
 
             Box(
                 modifier = Modifier
@@ -885,7 +886,7 @@ fun QueuePanel(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.7f)
-            .background(Color(0xFF1A1A1A), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             .padding(top = 16.dp)
     ) {
         Column {
@@ -899,24 +900,24 @@ fun QueuePanel(
             ) {
                 Text(
                     "Queue",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "${queue.size} songs",
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, "Close", tint = Color.White)
+                        Icon(Icons.Default.Close, "Close", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             }
 
-            Divider(color = Color.White.copy(alpha = 0.1f), thickness = 1.dp)
+            Divider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), thickness = 1.dp)
 
             // Song list
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
@@ -948,7 +949,7 @@ fun QueuePanel(
                             } else {
                                 Text(
                                     "${index + 1}",
-                                    color = Color.White.copy(alpha = 0.4f),
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
                                     fontSize = 14.sp
                                 )
                             }
@@ -972,7 +973,7 @@ fun QueuePanel(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 song.title,
-                                color = if (isCurrent) PulseRed else Color.White,
+                                color = if (isCurrent) PulseRed else MaterialTheme.colorScheme.onBackground,
                                 fontSize = 15.sp,
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                                 maxLines = 1,
@@ -980,7 +981,7 @@ fun QueuePanel(
                             )
                             Text(
                                 song.artist,
-                                color = Color.White.copy(alpha = 0.5f),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                                 fontSize = 12.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -992,7 +993,7 @@ fun QueuePanel(
                                 Icon(
                                     Icons.Default.Close,
                                     contentDescription = "Remove",
-                                    tint = Color.White.copy(alpha = 0.4f),
+                                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -1004,7 +1005,7 @@ fun QueuePanel(
                     item {
                         Text(
                             text = "Recommended based on what's playing",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(start = 20.dp, top = 24.dp, bottom = 12.dp)
@@ -1038,14 +1039,14 @@ fun QueuePanel(
                             ) {
                                 Text(
                                     text = song.title,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 15.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = song.artist,
-                                    color = Color.White.copy(alpha = 0.5f),
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                                     fontSize = 12.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -1077,18 +1078,18 @@ fun LyricsPanel(lyrics: List<LyricLine>, highlightedIndex: Int, onClose: () -> U
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.9f)
-            .background(Color.Black.copy(alpha = 0.95f), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             .padding(24.dp)
     ) {
         Column {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = onClose) {
-                    Icon(Icons.Default.Close, "Close Lyrics", tint = Color.White)
+                    Icon(Icons.Default.Close, "Close Lyrics", tint = MaterialTheme.colorScheme.onBackground)
                 }
             }
             if (lyrics.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No lyrics available", color = Color.White)
+                    Text("No lyrics available", color = MaterialTheme.colorScheme.onBackground)
                 }
             } else {
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
@@ -1099,7 +1100,7 @@ fun LyricsPanel(lyrics: List<LyricLine>, highlightedIndex: Int, onClose: () -> U
 
                         Text(
                             text = line.text,
-                            color = Color.White.copy(alpha = alpha),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = alpha),
                             fontSize = fontSize.sp,
                             fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier

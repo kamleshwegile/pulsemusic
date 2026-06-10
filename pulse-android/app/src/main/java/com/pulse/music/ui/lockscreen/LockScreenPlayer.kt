@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -54,7 +55,7 @@ fun LockScreenPlayer(
     )
 
     // Dynamic background colors could be extracted from artwork, defaulting to black for now
-    val backgroundColor = Color.Black.copy(alpha = 0.6f + (0.3f * expansionProgress))
+    val backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = 0.6f + (0.3f * expansionProgress))
 
     Box(
         modifier = Modifier
@@ -97,10 +98,10 @@ fun LockScreenPlayer(
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
-                                0.0f to Color.Black.copy(alpha = 0.4f),
+                                0.0f to MaterialTheme.colorScheme.background.copy(alpha = 0.4f),
                                 0.3f to Color.Transparent, // Let system clock show through
-                                0.6f to Color.Black.copy(alpha = 0.7f),
-                                1.0f to Color.Black.copy(alpha = 0.95f)
+                                0.6f to MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
+                                1.0f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
                             )
                         )
                 )
@@ -189,7 +190,7 @@ fun CompactLockScreenCard(
             ) {
                 Text(
                     text = song.title,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     maxLines = 1,
@@ -197,7 +198,7 @@ fun CompactLockScreenCard(
                 )
                 Text(
                     text = song.artist,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     fontSize = 14.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -208,22 +209,22 @@ fun CompactLockScreenCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onPrev) {
-                    Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous", tint = Color.White)
+                    Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous", tint = MaterialTheme.colorScheme.onBackground)
                 }
                 IconButton(
                     onClick = onPlayPause,
                     modifier = Modifier
                         .size(48.dp)
-                        .background(Color.White, CircleShape)
+                        .background(MaterialTheme.colorScheme.onBackground, CircleShape)
                 ) {
                     Icon(
                         if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         contentDescription = "Play/Pause",
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.background
                     )
                 }
                 IconButton(onClick = onNext) {
-                    Icon(Icons.Rounded.SkipNext, contentDescription = "Next", tint = Color.White)
+                    Icon(Icons.Rounded.SkipNext, contentDescription = "Next", tint = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }
@@ -271,7 +272,7 @@ fun ExpandedLockScreenPlayer(
         
         Text(
             text = song.title,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp,
             maxLines = 1,
@@ -280,7 +281,7 @@ fun ExpandedLockScreenPlayer(
         
         Text(
             text = song.artist,
-            color = Color.White.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
             fontSize = 18.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -301,8 +302,8 @@ fun ExpandedLockScreenPlayer(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("This Phone", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
-                    Text("Media Output", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                    Text("This Phone", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f), fontSize = 14.sp)
+                    Text("Media Output", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f), fontSize = 14.sp)
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -312,9 +313,9 @@ fun ExpandedLockScreenPlayer(
                     value = if (duration > 0) progress.toFloat() / duration.toFloat() else 0f,
                     onValueChange = { onSeek((it * duration).toLong()) },
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color.White,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                        thumbColor = MaterialTheme.colorScheme.onBackground,
+                        activeTrackColor = MaterialTheme.colorScheme.onBackground,
+                        inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -323,8 +324,8 @@ fun ExpandedLockScreenPlayer(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(formatTime(progress), color = Color.White, fontSize = 12.sp)
-                    Text(formatTime(duration), color = Color.White, fontSize = 12.sp)
+                    Text(formatTime(progress), color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp)
+                    Text(formatTime(duration), color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp)
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -335,29 +336,29 @@ fun ExpandedLockScreenPlayer(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = {}) {
-                        Icon(Icons.Rounded.Shuffle, contentDescription = "Shuffle", tint = Color.White)
+                        Icon(Icons.Rounded.Shuffle, contentDescription = "Shuffle", tint = MaterialTheme.colorScheme.onBackground)
                     }
                     IconButton(onClick = onPrev) {
-                        Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(40.dp))
+                        Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(40.dp))
                     }
                     IconButton(
                         onClick = onPlayPause,
                         modifier = Modifier
                             .size(64.dp)
-                            .background(Color.White, CircleShape)
+                            .background(MaterialTheme.colorScheme.onBackground, CircleShape)
                     ) {
                         Icon(
                             if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                             contentDescription = "Play/Pause",
-                            tint = Color.Black,
+                            tint = MaterialTheme.colorScheme.background,
                             modifier = Modifier.size(32.dp)
                         )
                     }
                     IconButton(onClick = onNext) {
-                        Icon(Icons.Rounded.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(40.dp))
+                        Icon(Icons.Rounded.SkipNext, contentDescription = "Next", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(40.dp))
                     }
                     IconButton(onClick = {}) {
-                        Icon(Icons.Rounded.FavoriteBorder, contentDescription = "Like", tint = Color.White)
+                        Icon(Icons.Rounded.FavoriteBorder, contentDescription = "Like", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             }

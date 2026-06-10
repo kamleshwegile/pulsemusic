@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,9 +42,9 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Surface(color = Color.Black, modifier = Modifier.fillMaxWidth()) {
+            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     Row(
                         modifier = Modifier
@@ -52,7 +53,7 @@ fun SearchScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = { /* Back */ }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                         }
                         TextField(
                             value = uiState.query,
@@ -62,8 +63,8 @@ fun SearchScreen(
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color(0xFF242424),
                                 unfocusedContainerColor = Color(0xFF242424),
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
+                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
                                 cursorColor = PulseAccentSearch
@@ -99,7 +100,7 @@ fun SearchScreen(
                                 ) {
                                     Text(
                                         text = category,
-                                        color = if (isSelected) Color.Black else Color.White,
+                                        color = if (isSelected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onBackground,
                                         fontSize = 14.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
@@ -117,7 +118,7 @@ fun SearchScreen(
                 item { Spacer(modifier = Modifier.height(16.dp)) }
                 if (quickSearches.isNotEmpty()) {
                     item { 
-                        Text("Recent searches", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 16.dp))
+                        Text("Recent searches", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 16.dp))
                     }
                 } else {
                     item { 
@@ -133,7 +134,7 @@ fun SearchScreen(
                             Icon(Icons.Default.History, null, tint = Color.Gray, modifier = Modifier.size(24.dp))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(tag, color = Color.White, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                        Text(tag, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, modifier = Modifier.weight(1f))
                     }
                 }
                 
@@ -145,7 +146,7 @@ fun SearchScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Channels", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Channels", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
                         Text("See All", fontSize = 18.sp, color = PulseAccentSearch)
                     }
                 }
@@ -212,7 +213,7 @@ fun SearchScreen(
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
-                                Text(uiState.exactArtist!!.name, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                                Text(uiState.exactArtist!!.name, color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                                 Text("Artist", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
                             }
                         }
@@ -223,7 +224,7 @@ fun SearchScreen(
                 if (showAll || cat == "Songs") {
                     if (showAll && (uiState.songs.data.isNotEmpty() || uiState.songs.isLoading)) {
                         item {
-                            Text("Songs", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                            Text("Songs", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
                     }
                     if (uiState.songs.isLoading && uiState.songs.data.isEmpty()) {
@@ -244,7 +245,7 @@ fun SearchScreen(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(song.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(song.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Text(song.artist, color = Color.Gray, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                                 IconButton(onClick = {}) { Icon(Icons.Default.Add, null, tint = Color.Gray) }
@@ -259,7 +260,7 @@ fun SearchScreen(
                     if (showAll && (uiState.albums.data.isNotEmpty() || uiState.albums.isLoading)) {
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("Albums", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                            Text("Albums", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
                     }
                     
@@ -286,7 +287,7 @@ fun SearchScreen(
                                                 if (!album.coverArt.isNullOrEmpty()) AsyncImage(model = album.coverArt, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                             }
                                             Spacer(modifier = Modifier.height(8.dp))
-                                            Text(album.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(album.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                             Text("Album • ${album.artist}", color = Color.Gray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
@@ -306,7 +307,7 @@ fun SearchScreen(
                                     }
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column {
-                                        Text(album.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(album.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text("Album • ${album.artist}", color = Color.Gray, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
                                 }
@@ -320,7 +321,7 @@ fun SearchScreen(
                     if (showAll && (uiState.onlinePlaylists.data.isNotEmpty() || uiState.onlinePlaylists.isLoading)) {
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("Playlists", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                            Text("Playlists", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
                     }
                     if (uiState.onlinePlaylists.isLoading && uiState.onlinePlaylists.data.isEmpty()) {
@@ -347,11 +348,11 @@ fun SearchScreen(
                                                 if (!playlist.image.isNullOrEmpty()) {
                                                     AsyncImage(model = playlist.image, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                                 } else {
-                                                    Icon(Icons.Default.QueueMusic, null, tint = Color.White, modifier = Modifier.size(48.dp))
+                                                    Icon(Icons.Default.QueueMusic, null, tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(48.dp))
                                                 }
                                             }
                                             Spacer(modifier = Modifier.height(8.dp))
-                                            Text(playlist.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(playlist.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
@@ -369,11 +370,11 @@ fun SearchScreen(
                                         if (!playlist.image.isNullOrEmpty()) {
                                             AsyncImage(model = playlist.image, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                         } else {
-                                            Icon(Icons.Default.QueueMusic, null, tint = Color.White)
+                                            Icon(Icons.Default.QueueMusic, null, tint = MaterialTheme.colorScheme.onBackground)
                                         }
                                     }
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    Text(playlist.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                    Text(playlist.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
@@ -386,7 +387,7 @@ fun SearchScreen(
                     if (showAll && (otherArtists.isNotEmpty() || uiState.artists.isLoading)) {
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("Artists", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                            Text("Artists", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
                     }
                     if (uiState.artists.isLoading && uiState.artists.data.isEmpty()) {
@@ -414,7 +415,7 @@ fun SearchScreen(
                                                 if (!artist.image.isNullOrEmpty()) AsyncImage(model = artist.image, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                             }
                                             Spacer(modifier = Modifier.height(8.dp))
-                                            Text(artist.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(artist.name, color = MaterialTheme.colorScheme.onBackground, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
@@ -433,7 +434,7 @@ fun SearchScreen(
                                     }
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column {
-                                        Text(artist.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(artist.name, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text("Artist", color = Color.Gray, fontSize = 14.sp, maxLines = 1)
                                     }
                                 }
@@ -561,7 +562,7 @@ fun CategoryCard(
             val step = 15.dp.toPx()
             for (i in -w.toInt() until (w + h).toInt() step step.toInt()) {
                 drawLine(
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.background,
                     start = androidx.compose.ui.geometry.Offset(i.toFloat(), 0f),
                     end = androidx.compose.ui.geometry.Offset(i.toFloat() - h, h),
                     strokeWidth = 2.dp.toPx()
@@ -571,7 +572,7 @@ fun CategoryCard(
         
         Text(
             text = title,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = titleSize,
             fontWeight = FontWeight.Bold,
             maxLines = 2,
@@ -627,7 +628,7 @@ fun SkeletonCategoryCard() {
             val step = 15.dp.toPx()
             for (i in -w.toInt() until (w + h).toInt() step step.toInt()) {
                 drawLine(
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.background,
                     start = androidx.compose.ui.geometry.Offset(i.toFloat(), 0f),
                     end = androidx.compose.ui.geometry.Offset(i.toFloat() - h, h),
                     strokeWidth = 2.dp.toPx()
@@ -635,6 +636,6 @@ fun SkeletonCategoryCard() {
             }
         }
         
-        Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = alpha * 0.1f)))
+        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.onBackground.copy(alpha = alpha * 0.1f)))
     }
 }

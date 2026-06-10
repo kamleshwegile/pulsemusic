@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -100,7 +101,7 @@ fun LibraryScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top App Bar
             Row(
@@ -115,13 +116,13 @@ fun LibraryScreen(
                     Icon(
                         Icons.Default.GraphicEq, 
                         contentDescription = "Logo", 
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         "Library", 
-                        color = Color.White, 
+                        color = MaterialTheme.colorScheme.onBackground, 
                         fontSize = 22.sp, 
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.5).sp
@@ -131,7 +132,7 @@ fun LibraryScreen(
                     Icon(
                         Icons.Default.Search, 
                         contentDescription = "Search", 
-                        tint = Color.White.copy(alpha = 0.8f),
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                         modifier = Modifier.size(28.dp).clickable { }
                     )
                     Spacer(modifier = Modifier.width(16.dp))
@@ -139,7 +140,7 @@ fun LibraryScreen(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f), CircleShape)
                             .background(Color.DarkGray)
                     ) {
                         AsyncImage(
@@ -167,7 +168,7 @@ fun LibraryScreen(
                             .background(if (isSelected) PulseRed else Color.Transparent)
                             .border(
                                 width = if (isSelected) 0.dp else 0.5.dp,
-                                color = if (isSelected) Color.Transparent else Color.White.copy(alpha = 0.2f),
+                                color = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
                                 shape = CircleShape
                             )
                             .clickable { selectedFilter = filter }
@@ -176,7 +177,7 @@ fun LibraryScreen(
                     ) {
                         Text(
                             text = filter,
-                            color = if (isSelected) Color.Black else Color.White.copy(alpha = 0.6f),
+                            color = if (isSelected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                         )
@@ -197,13 +198,13 @@ fun LibraryScreen(
                         ) {
                             Icon(Icons.Default.Folder, contentDescription = "Folder", tint = PulseRed, modifier = Modifier.size(64.dp))
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("Access Local Music", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Access Local Music", color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Allow Pulse to scan your device for local audio files.", color = Color.White.copy(alpha = 0.6f), textAlign = TextAlign.Center)
+                            Text("Allow Pulse to scan your device for local audio files.", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), textAlign = TextAlign.Center)
                             Spacer(modifier = Modifier.height(24.dp))
                             Button(
                                 onClick = { permissionLauncher.launch(permission) },
-                                colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = Color.Black),
+                                colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = MaterialTheme.colorScheme.background),
                                 shape = CircleShape
                             ) {
                                 Text("Grant Permission", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
@@ -213,9 +214,9 @@ fun LibraryScreen(
                         CircularProgressIndicator(color = PulseRed, modifier = Modifier.align(Alignment.Center))
                     } else if (displaySongs.isEmpty()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.align(Alignment.Center)) {
-                            Icon(if (selectedFilter == "Liked Songs") Icons.Default.FavoriteBorder else Icons.Default.MusicOff, contentDescription = "Empty", tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(64.dp))
+                            Icon(if (selectedFilter == "Liked Songs") Icons.Default.FavoriteBorder else Icons.Default.MusicOff, contentDescription = "Empty", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), modifier = Modifier.size(64.dp))
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text(emptyMessage, color = Color.White, fontSize = 18.sp)
+                            Text(emptyMessage, color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp)
                         }
                     } else {
                         LazyColumn(
@@ -245,14 +246,14 @@ fun LibraryScreen(
                                                 contentScale = ContentScale.Crop
                                             )
                                         } else {
-                                            Icon(Icons.Default.MusicNote, contentDescription = "Audio", tint = Color.White, modifier = Modifier.size(24.dp))
+                                            Icon(Icons.Default.MusicNote, contentDescription = "Audio", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(24.dp))
                                         }
                                     }
                                     Spacer(modifier = Modifier.width(16.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(song.title, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
+                                        Text(song.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text(song.artist, color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(song.artist, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
                                 }
                             }
@@ -261,14 +262,14 @@ fun LibraryScreen(
                 } else if (selectedFilter == "Playlists") {
                     if (playlists.isEmpty()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.align(Alignment.Center)) {
-                            Icon(Icons.Default.QueueMusic, contentDescription = "Playlists", tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(64.dp))
+                            Icon(Icons.Default.QueueMusic, contentDescription = "Playlists", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), modifier = Modifier.size(64.dp))
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("No playlists yet", color = Color.White, fontSize = 18.sp)
-                            Text("Create one from the player!", color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp)
+                            Text("No playlists yet", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp)
+                            Text("Create one from the player!", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), fontSize = 14.sp)
                             Spacer(modifier = Modifier.height(24.dp))
                             Button(
                                 onClick = { showSpotifyDialog = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = Color.Black)
+                                colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = MaterialTheme.colorScheme.background)
                             ) {
                                 Text("Import from Spotify", fontWeight = FontWeight.Bold)
                             }
@@ -303,10 +304,10 @@ fun LibraryScreen(
                                         modifier = Modifier.aspectRatio(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.DarkGray),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(Icons.Default.QueueMusic, contentDescription = "Playlist", tint = Color.White, modifier = Modifier.size(48.dp))
+                                        Icon(Icons.Default.QueueMusic, contentDescription = "Playlist", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(48.dp))
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text(playlist.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                    Text(playlist.name, color = MaterialTheme.colorScheme.onBackground, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
@@ -314,10 +315,10 @@ fun LibraryScreen(
                 } else if (selectedFilter == "Artists") {
                     if (followedArtists.isEmpty()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.align(Alignment.Center)) {
-                            Icon(Icons.Default.PersonSearch, contentDescription = "Artists", tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(64.dp))
+                            Icon(Icons.Default.PersonSearch, contentDescription = "Artists", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), modifier = Modifier.size(64.dp))
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("No followed artists", color = Color.White, fontSize = 18.sp)
-                            Text("Follow artists to see them here!", color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp)
+                            Text("No followed artists", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp)
+                            Text("Follow artists to see them here!", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), fontSize = 14.sp)
                         }
                     } else {
                         LazyVerticalGrid(
@@ -346,11 +347,11 @@ fun LibraryScreen(
                                                 contentScale = ContentScale.Crop
                                             )
                                         } else {
-                                            Icon(Icons.Default.Person, contentDescription = "Artist", tint = Color.White, modifier = Modifier.size(48.dp))
+                                            Icon(Icons.Default.Person, contentDescription = "Artist", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(48.dp))
                                         }
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text(artist.name, color = Color.White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(artist.name, color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                         }
@@ -363,8 +364,8 @@ fun LibraryScreen(
             AlertDialog(
                 onDismissRequest = { if (!isImporting) showSpotifyDialog = false },
                 containerColor = Color(0xFF242424),
-                titleContentColor = Color.White,
-                textContentColor = Color.White,
+                titleContentColor = MaterialTheme.colorScheme.onBackground,
+                textContentColor = MaterialTheme.colorScheme.onBackground,
                 title = { Text("Import Spotify Playlist") },
                 text = {
                     Column {
@@ -376,8 +377,8 @@ fun LibraryScreen(
                             placeholder = { Text("https://open.spotify.com/playlist/...", color = Color.DarkGray) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
+                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                 focusedBorderColor = PulseRed,
                                 unfocusedBorderColor = Color.Gray
                             ),
@@ -397,7 +398,7 @@ fun LibraryScreen(
                 confirmButton = {
                     Button(
                         onClick = { viewModel.importSpotifyPlaylist(spotifyLink) },
-                        colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = Color.Black),
+                        colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = MaterialTheme.colorScheme.background),
                         enabled = spotifyLink.isNotBlank() && !isImporting
                     ) {
                         Text("Import", fontWeight = FontWeight.Bold)

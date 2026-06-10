@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,18 +52,18 @@ fun HomeScreen(
     }
     
     Scaffold(
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Pulse", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White) },
+                title = { Text("Pulse", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black,
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
                     IconButton(onClick = { /* Settings */ }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             )
@@ -77,7 +78,7 @@ fun HomeScreen(
                     text = "Good Morning!",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 16.dp)
                 )
             }
@@ -172,7 +173,7 @@ fun SectionTitle(title: String, onSeeAll: (() -> Unit)? = null) {
             text = title,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onBackground
         )
         if (onSeeAll != null) {
             Text(
@@ -225,9 +226,9 @@ fun SongCard(song: Song, onRemove: (() -> Unit)? = null, onClick: () -> Unit = {
                         .align(Alignment.TopEnd)
                         .padding(4.dp)
                         .size(24.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), androidx.compose.foundation.shape.CircleShape)
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f), androidx.compose.foundation.shape.CircleShape)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(16.dp))
                 }
             }
         }
@@ -236,7 +237,7 @@ fun SongCard(song: Song, onRemove: (() -> Unit)? = null, onClick: () -> Unit = {
             text = song.title,
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -285,7 +286,7 @@ fun PlaylistCard(playlist: com.pulse.music.domain.Playlist, onClick: () -> Unit 
             text = playlist.title,
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
@@ -337,7 +338,7 @@ fun ArtistCard(artist: com.pulse.music.domain.Artist, onClick: () -> Unit = {}) 
             text = artist.name,
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -353,17 +354,17 @@ fun RecentlyPlayedScreen(
     onRemoveSong: (Song) -> Unit
 ) {
     Scaffold(
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Recently Played", color = Color.White) },
+                title = { Text("Recently Played", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
@@ -406,7 +407,7 @@ fun RecentlyPlayedScreen(
                             text = song.title,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

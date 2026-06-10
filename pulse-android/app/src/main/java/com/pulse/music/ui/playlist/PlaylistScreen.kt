@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -67,7 +68,7 @@ fun PlaylistScreen(
                     AnimatedVisibility(visible = showCollapsedToolbarTitle, enter = fadeIn(), exit = fadeOut()) {
                         Text(
                             text = playlistInfo?.name ?: "Playlist",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -76,15 +77,15 @@ fun PlaylistScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (showCollapsedToolbarTitle) Color(0xFF121212) else Color.Transparent
+                    containerColor = if (showCollapsedToolbarTitle) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent
                 )
             )
         },
-        containerColor = Color.Black
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
             state = listState,
@@ -100,7 +101,7 @@ fun PlaylistScreen(
                             .height(280.dp)
                             .background(
                                 Brush.verticalGradient(
-                                    colors = listOf(Color.DarkGray.copy(alpha = 0.6f), Color.Black),
+                                    colors = listOf(Color.DarkGray.copy(alpha = 0.6f), MaterialTheme.colorScheme.background),
                                     startY = 0f,
                                     endY = Float.POSITIVE_INFINITY
                                 )
@@ -138,7 +139,7 @@ fun PlaylistScreen(
                         
                         Text(
                             text = playlistInfo?.name ?: "Playlist",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
@@ -150,7 +151,7 @@ fun PlaylistScreen(
                         
                         Text(
                             text = "Playlist",
-                            color = Color.White.copy(alpha = 0.9f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -159,7 +160,7 @@ fun PlaylistScreen(
                         val minutes = totalDurationMs / 60000
                         Text(
                             text = "2026 • ${playlistSongs.size} Songs • $minutes min",
-                            color = Color.White.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             fontSize = 13.sp
                         )
                     }
@@ -190,7 +191,7 @@ fun PlaylistScreen(
                             Icon(
                                 if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Favorite",
-                                tint = if (isFavorite) Color(0xFFF92839) else Color.White
+                                tint = if (isFavorite) Color(0xFFF92839) else MaterialTheme.colorScheme.onBackground
                             )
                         }
                         
@@ -202,13 +203,13 @@ fun PlaylistScreen(
                             }
                             context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                         }) {
-                            Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White)
+                            Icon(Icons.Default.Share, contentDescription = "Share", tint = MaterialTheme.colorScheme.onBackground)
                         }
                         
                         var expandedMenu by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { expandedMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Color.White)
+                                Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = MaterialTheme.colorScheme.onBackground)
                             }
                             DropdownMenu(
                                 expanded = expandedMenu,
@@ -240,7 +241,7 @@ fun PlaylistScreen(
                             onClick = { viewModel.shufflePlay(playlistSongs) },
                             modifier = Modifier.size(48.dp),
                             shape = CircleShape,
-                            colors = IconButtonDefaults.outlinedIconButtonColors(contentColor = Color.White)
+                            colors = IconButtonDefaults.outlinedIconButtonColors(contentColor = MaterialTheme.colorScheme.onBackground)
                         ) {
                             Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", modifier = Modifier.size(24.dp))
                         }
@@ -259,7 +260,7 @@ fun PlaylistScreen(
                                 .shadow(4.dp, CircleShape),
                             interactionSource = interactionSourcePlay
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.Black, modifier = Modifier.size(36.dp))
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = MaterialTheme.colorScheme.background, modifier = Modifier.size(36.dp))
                         }
                     }
                 }
@@ -268,7 +269,7 @@ fun PlaylistScreen(
             if (playlistSongs.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        Text("No songs in this playlist.", color = Color.White.copy(alpha = 0.5f))
+                        Text("No songs in this playlist.", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
                     }
                 }
             } else {
@@ -305,7 +306,7 @@ fun PlaylistScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(Color.Black.copy(alpha = 0.7f)),
+                                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     AnimatedEqualizer()
@@ -318,7 +319,7 @@ fun PlaylistScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = song.title,
-                                color = if (isActive) Color(0xFFF92839) else Color.White,
+                                color = if (isActive) Color(0xFFF92839) else MaterialTheme.colorScheme.onBackground,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 16.sp,
@@ -327,7 +328,7 @@ fun PlaylistScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = song.artist,
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 14.sp
@@ -343,7 +344,7 @@ fun PlaylistScreen(
 
                         Text(
                             text = durationText,
-                            color = Color.White.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             fontSize = 13.sp,
                             modifier = Modifier.padding(end = 8.dp)
                         )
@@ -351,7 +352,7 @@ fun PlaylistScreen(
                         var songMenu by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { songMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White.copy(alpha = 0.7f))
+                                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                             }
                             DropdownMenu(
                                 expanded = songMenu,
