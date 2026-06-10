@@ -71,8 +71,8 @@ class HomeViewModel @Inject constructor(
                 try {
                     val prefs = context.getSharedPreferences("pulse_actual_recent_plays", android.content.Context.MODE_PRIVATE)
                     val json = prefs.getString("plays", "[]")
-                    val type = object : com.google.gson.reflect.TypeToken<List<Song>>() {}.type
-                    localSongs = com.google.gson.Gson().fromJson(json, type) ?: emptyList()
+                    val array = com.google.gson.Gson().fromJson(json, Array<Song>::class.java)
+                    localSongs = array?.toList() ?: emptyList()
                 } catch (e: Exception) {}
 
                 val actualRecentSongs = repository.getRecentSongs().getOrNull() ?: emptyList()
