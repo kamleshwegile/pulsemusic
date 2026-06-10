@@ -32,6 +32,20 @@ fun HomeScreen(
     onNavigateToArtist: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showHistory by remember { mutableStateOf(false) }
+    
+    if (showHistory && uiState is HomeUiState.Success) {
+        val state = uiState as HomeUiState.Success
+        RecentlyPlayedScreen(
+            songs = state.allRecentPlays,
+            onBack = { showHistory = false },
+            onSongClick = { song ->
+                viewModel.playSong(song, state.allRecentPlays)
+                onNavigateToNowPlaying()
+            }
+        )
+        return
+    }
     
     Scaffold(
         containerColor = Color.Black,
@@ -81,7 +95,10 @@ fun HomeScreen(
                 is HomeUiState.Success -> {
                     if (state.recentPlays.isNotEmpty()) {
                         item {
-                            SectionTitle("Recently Played")
+                            SectionTitle(
+                                title = "Recently Played", 
+                                onSeeAll = if (state.allRecentPlays.size > 5) { { showHistory = true } } else null
+                            )
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
                                 items(state.recentPlays) { song ->
                                     SongCard(song, onClick = {
@@ -138,14 +155,32 @@ fun HomeScreen(
 }
 
 @Composable
-fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        fontSize = 22.sp,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 16.dp)
-    )
+fun SectionTitle(title: String, onSeeAll: (() -> Unit)? = null) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Text(
+            text = title,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+        if (onSeeAll != null) {
+            Text(
+                text = "See All",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Gray,
+                modifier = Modifier
+                    .clickable(onClick = onSeeAll)
+                    .padding(4.dp)
+            )
+        }
+    }
 }
 
 @Composable
@@ -287,5 +322,85 @@ fun ArtistCard(artist: com.pulse.music.domain.Artist, onClick: () -> Unit = {}) 
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RecentlyPlayedScreen(
+    songs: List<Song>,
+    onBack: () -> Unit,
+    onSongClick: (Song) -> Unit
+) {
+    Scaffold(
+        containerColor = Color.Black,
+        topBar = {
+            TopAppBar(
+                title = { Text("Recently Played", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Black
+                )
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            contentPadding = padding,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(songs) { song ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSongClick(song) }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (!song.albumArt.isNullOrEmpty()) {
+                        coil.compose.AsyncImage(
+                            model = song.albumArt,
+                            contentDescription = song.title,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF242424)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.Gray)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = song.title,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = song.artist,
+                            fontSize = 14.sp,
+                            color = Color.Gray,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
     }
 }

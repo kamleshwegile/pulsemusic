@@ -15,6 +15,7 @@ sealed class HomeUiState {
     object Loading : HomeUiState()
     data class Success(
         val recentPlays: List<Song>,
+        val allRecentPlays: List<Song>,
         val suggested: List<Song>,
         val modules: List<com.pulse.music.data.network.HomeModule>
     ) : HomeUiState()
@@ -87,8 +88,7 @@ class HomeViewModel @Inject constructor(
                 
                 val trendingDeferred = async { repository.getTrending() }
                 val homeDeferred = async { repository.getHome() }
-                
-                val limitedRecentPlays = recentPlaysList.take(2)
+                val limitedRecentPlays = recentPlaysList.take(5)
                 
                 val rawSuggested = suggestedDeferred.await().getOrNull() ?: emptyList()
                 val rawTrending = trendingDeferred.await().getOrNull() ?: emptyList()
@@ -98,6 +98,7 @@ class HomeViewModel @Inject constructor(
                 
                 val successState = HomeUiState.Success(
                     recentPlays = limitedRecentPlays,
+                    allRecentPlays = recentPlaysList,
                     suggested = suggested,
                     modules = homeData?.modules ?: emptyList()
                 )
