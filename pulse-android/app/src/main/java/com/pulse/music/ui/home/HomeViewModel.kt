@@ -42,14 +42,14 @@ class HomeViewModel @Inject constructor(
 
     init {
         if (cachedUiState == null) {
-            val prefs = context.getSharedPreferences("pulse_home_cache", android.content.Context.MODE_PRIVATE)
-            val cachedJson = prefs.getString("home_state", null)
-            if (cachedJson != null) {
-                try {
+            try {
+                val cacheFile = java.io.File(context.cacheDir, "home_cache.json")
+                if (cacheFile.exists()) {
+                    val cachedJson = cacheFile.readText()
                     cachedUiState = com.google.gson.Gson().fromJson(cachedJson, HomeUiState.Success::class.java)
-                } catch (e: Exception) {
-                    // Ignore parsing error
                 }
+            } catch (e: Exception) {
+                // Ignore parsing error
             }
         }
         
@@ -110,10 +110,10 @@ class HomeViewModel @Inject constructor(
                 cachedUiState = successState
                 _uiState.value = successState
                 
-                // Save to SharedPreferences for next cold boot
+                // Save to cache directory so it clears on Clear Cache
                 try {
-                    val prefs = context.getSharedPreferences("pulse_home_cache", android.content.Context.MODE_PRIVATE)
-                    prefs.edit().putString("home_state", com.google.gson.Gson().toJson(successState)).apply()
+                    val cacheFile = java.io.File(context.cacheDir, "home_cache.json")
+                    cacheFile.writeText(com.google.gson.Gson().toJson(successState))
                 } catch (e: Exception) {
                     // Ignore save error
                 }
