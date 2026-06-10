@@ -20,19 +20,19 @@ class AuthViewModel @Inject constructor(
 
     val token: StateFlow<String?> = repository.authToken.stateIn(
         viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
+        SharingStarted.Eagerly,
         null
     )
 
     val username: StateFlow<String?> = repository.username.stateIn(
         viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
+        SharingStarted.Eagerly,
         null
     )
 
     val profilePicUri: StateFlow<String?> = repository.profilePicUri.stateIn(
         viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
+        SharingStarted.Eagerly,
         null
     )
 

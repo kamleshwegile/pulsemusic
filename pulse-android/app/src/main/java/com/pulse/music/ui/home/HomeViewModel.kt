@@ -63,9 +63,9 @@ class HomeViewModel @Inject constructor(
         
         if (cachedUiState != null) {
             _uiState.value = cachedUiState!!
+        } else {
+            loadData()
         }
-        
-        loadData()
     }
 
     fun loadData() {

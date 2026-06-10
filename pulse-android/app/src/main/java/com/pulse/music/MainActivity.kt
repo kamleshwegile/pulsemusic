@@ -51,6 +51,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
@@ -284,6 +286,12 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .background(Color.Transparent)
+                                        .pointerInput(Unit) {
+                                            // Consume all touch events so content behind nav bar is not clickable
+                                            awaitEachGesture {
+                                                awaitFirstDown(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                                            }
+                                        }
                                 ) {
                                     Row(
                                         modifier = Modifier
