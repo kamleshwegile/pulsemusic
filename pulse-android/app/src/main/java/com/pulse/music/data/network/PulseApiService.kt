@@ -116,7 +116,7 @@ interface PulseApiService {
     suspend fun getRecentSongs(): List<Song>
 
     @POST("api/v1/user/recent-songs")
-    suspend fun addRecentSong(@Body song: Map<String, Any>): Map<String, String>
+    suspend fun addRecentSong(@Body song: Map<String, @JvmSuppressWildcards Any>): Map<String, String>
 
     @GET("api/v1/user/follows")
     suspend fun getFollowedArtists(): List<Map<String, String>>
