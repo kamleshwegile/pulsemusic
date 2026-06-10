@@ -37,7 +37,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 
-val PulseGreen = Color(0xFF1DB954)
+val PulseRed = Color(0xFFF92839)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -164,7 +164,7 @@ fun LibraryScreen(
                         modifier = Modifier
                             .height(32.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected) PulseGreen else Color.Transparent)
+                            .background(if (isSelected) PulseRed else Color.Transparent)
                             .border(
                                 width = if (isSelected) 0.dp else 0.5.dp,
                                 color = if (isSelected) Color.Transparent else Color.White.copy(alpha = 0.2f),
@@ -195,7 +195,7 @@ fun LibraryScreen(
                             horizontalAlignment = Alignment.CenterHorizontally, 
                             modifier = Modifier.align(Alignment.Center).padding(32.dp)
                         ) {
-                            Icon(Icons.Default.Folder, contentDescription = "Folder", tint = PulseGreen, modifier = Modifier.size(64.dp))
+                            Icon(Icons.Default.Folder, contentDescription = "Folder", tint = PulseRed, modifier = Modifier.size(64.dp))
                             Spacer(modifier = Modifier.height(16.dp))
                             Text("Access Local Music", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                             Spacer(modifier = Modifier.height(8.dp))
@@ -203,14 +203,14 @@ fun LibraryScreen(
                             Spacer(modifier = Modifier.height(24.dp))
                             Button(
                                 onClick = { permissionLauncher.launch(permission) },
-                                colors = ButtonDefaults.buttonColors(containerColor = PulseGreen, contentColor = Color.Black),
+                                colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = Color.Black),
                                 shape = CircleShape
                             ) {
                                 Text("Grant Permission", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                             }
                         }
                     } else if (isLoading && selectedFilter != "Liked Songs") {
-                        CircularProgressIndicator(color = PulseGreen, modifier = Modifier.align(Alignment.Center))
+                        CircularProgressIndicator(color = PulseRed, modifier = Modifier.align(Alignment.Center))
                     } else if (displaySongs.isEmpty()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.align(Alignment.Center)) {
                             Icon(if (selectedFilter == "Liked Songs") Icons.Default.FavoriteBorder else Icons.Default.MusicOff, contentDescription = "Empty", tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(64.dp))
@@ -268,7 +268,7 @@ fun LibraryScreen(
                             Spacer(modifier = Modifier.height(24.dp))
                             Button(
                                 onClick = { showSpotifyDialog = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = PulseGreen, contentColor = Color.Black)
+                                colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = Color.Black)
                             ) {
                                 Text("Import from Spotify", fontWeight = FontWeight.Bold)
                             }
@@ -284,8 +284,8 @@ fun LibraryScreen(
                             item(span = { GridItemSpan(2) }) {
                                 OutlinedButton(
                                     onClick = { showSpotifyDialog = true },
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PulseGreen),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, PulseGreen),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PulseRed),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, PulseRed),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
@@ -378,7 +378,7 @@ fun LibraryScreen(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = Color.White,
                                 unfocusedTextColor = Color.White,
-                                focusedBorderColor = PulseGreen,
+                                focusedBorderColor = PulseRed,
                                 unfocusedBorderColor = Color.Gray
                             ),
                             singleLine = true,
@@ -387,9 +387,9 @@ fun LibraryScreen(
                         if (isImporting) {
                             Spacer(modifier = Modifier.height(16.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(color = PulseGreen, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                CircularProgressIndicator(color = PulseRed, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text("Importing and matching tracks...", color = PulseGreen, fontSize = 14.sp)
+                                Text("Importing and matching tracks...", color = PulseRed, fontSize = 14.sp)
                             }
                         }
                     }
@@ -397,7 +397,7 @@ fun LibraryScreen(
                 confirmButton = {
                     Button(
                         onClick = { viewModel.importSpotifyPlaylist(spotifyLink) },
-                        colors = ButtonDefaults.buttonColors(containerColor = PulseGreen, contentColor = Color.Black),
+                        colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = Color.Black),
                         enabled = spotifyLink.isNotBlank() && !isImporting
                     ) {
                         Text("Import", fontWeight = FontWeight.Bold)

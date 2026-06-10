@@ -48,7 +48,7 @@ import com.pulse.music.domain.Song
 import com.pulse.music.player.RepeatMode
 import kotlin.random.Random
 
-val PulseGreen = Color(0xFF1ED760)
+val PulseRed = Color(0xFFF92839)
 
 @OptIn(ExperimentalMaterial3Api::class)
 
@@ -295,7 +295,7 @@ fun NowPlayingScreen(
                             Icon(
                                 if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Like",
-                                tint = (if (isLiked) PulseGreen else Color.White).copy(alpha = collapseProgress)
+                                tint = (if (isLiked) PulseRed else Color.White).copy(alpha = collapseProgress)
                             )
                         }
                         IconButton(onClick = { viewModel.togglePlayPause() }) {
@@ -318,7 +318,7 @@ fun NowPlayingScreen(
                             modifier = Modifier
                                 .fillMaxWidth(progress)
                                 .height(2.dp)
-                                .background(PulseGreen.copy(alpha = collapseProgress))
+                                .background(PulseRed.copy(alpha = collapseProgress))
                         )
                     }
                 }
@@ -367,10 +367,10 @@ fun NowPlayingScreen(
             modifier = Modifier.align(Alignment.BottomCenter).zIndex(2f)
         ) {
             when (val state = lyricsState) {
-                is LyricsState.Loading -> Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(Color(0xFF1A1A1A), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PulseGreen) }
+                is LyricsState.Loading -> Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(Color(0xFF1A1A1A), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = PulseRed) }
                 is LyricsState.Synced -> LyricsPanel(lyrics = state.lines, highlightedIndex = highlightedIndex, onClose = { showLyrics = false }, onSeek = { viewModel.seekTo(it) })
                 is LyricsState.Plain -> LyricsPanel(lyrics = state.text.split("\n").map { LyricLine(0L, it) }, highlightedIndex = -1, onClose = { showLyrics = false }, onSeek = null)
-                is LyricsState.Unavailable -> Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(Color(0xFF1A1A1A), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(24.dp), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Lyrics not available", color = Color.White); Spacer(modifier = Modifier.height(16.dp)); Button(onClick = { showLyrics = false }, colors = ButtonDefaults.buttonColors(containerColor = PulseGreen, contentColor = Color.Black)) { Text("Close", fontWeight = FontWeight.Bold) } } }
+                is LyricsState.Unavailable -> Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.7f).background(Color(0xFF1A1A1A), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(24.dp), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("Lyrics not available", color = Color.White); Spacer(modifier = Modifier.height(16.dp)); Button(onClick = { showLyrics = false }, colors = ButtonDefaults.buttonColors(containerColor = PulseRed, contentColor = Color.Black)) { Text("Close", fontWeight = FontWeight.Bold) } } }
             }
         }
     }
@@ -510,7 +510,7 @@ fun MainPlayerContent(
                     Icon(
                         if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Like",
-                        tint = if (isLiked) PulseGreen else pureWhite,
+                        tint = if (isLiked) PulseRed else pureWhite,
                         modifier = Modifier.size(24.dp).scale(heartScale)
                     )
                 }
@@ -563,7 +563,7 @@ fun MainPlayerContent(
                     Icon(Icons.Default.SkipNext, "Next", tint = pureWhite, modifier = Modifier.size(28.dp)) 
                 }
                 IconButton(onClick = { viewModel.cycleRepeatMode() }) { 
-                    val tintColor = if (repeatMode != RepeatMode.OFF) PulseGreen else pureWhite
+                    val tintColor = if (repeatMode != RepeatMode.OFF) PulseRed else pureWhite
                     Icon(
                         imageVector = when (repeatMode) { 
                             RepeatMode.ONE -> Icons.Default.RepeatOne 
@@ -661,7 +661,7 @@ fun MainPlayerContent(
                             .height(56.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(icon, contentDescription = null, tint = if (text.contains("Liked Songs") && isLiked) PulseGreen else pureWhite, modifier = Modifier.size(24.dp))
+                        Icon(icon, contentDescription = null, tint = if (text.contains("Liked Songs") && isLiked) PulseRed else pureWhite, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(text, color = pureWhite, fontSize = 16.sp)
                     }
@@ -701,11 +701,11 @@ fun MainPlayerContent(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(mode.label, color = if (isActive) PulseGreen else pureWhite, fontSize = 16.sp)
+                            Text(mode.label, color = if (isActive) PulseRed else pureWhite, fontSize = 16.sp)
                             
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isActive) {
-                                    Icon(Icons.Default.Check, contentDescription = null, tint = PulseGreen, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = PulseRed, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                 }
                                 if (mode.minutes != null) {
@@ -719,7 +719,7 @@ fun MainPlayerContent(
                                     }
                                     Text(
                                         text = timeText,
-                                        color = if (isActive) PulseGreen else Color.Gray,
+                                        color = if (isActive) PulseRed else Color.Gray,
                                         fontSize = 16.sp,
                                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                                     )
@@ -805,7 +805,7 @@ fun DevicePanel(
                                 Icons.Default.Speaker
                             },
                             contentDescription = "Device Type",
-                            tint = PulseGreen
+                            tint = PulseRed
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
@@ -848,7 +848,7 @@ fun WaveformSeekbar(
     ) {
         for (i in 0 until barCount) {
             val height = barHeights[i]
-            val color = if (i < playedUntil) PulseGreen else Color.White.copy(alpha = 0.15f)
+            val color = if (i < playedUntil) PulseRed else Color.White.copy(alpha = 0.15f)
 
             Box(
                 modifier = Modifier
@@ -928,7 +928,7 @@ fun QueuePanel(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(if (isCurrent) PulseGreen.copy(alpha = 0.1f) else Color.Transparent)
+                            .background(if (isCurrent) PulseRed.copy(alpha = 0.1f) else Color.Transparent)
                             .clickable { onSongClick(index) }
                             .padding(horizontal = 20.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -942,7 +942,7 @@ fun QueuePanel(
                                 Icon(
                                     Icons.Default.Equalizer,
                                     contentDescription = "Playing",
-                                    tint = PulseGreen,
+                                    tint = PulseRed,
                                     modifier = Modifier.size(20.dp)
                                 )
                             } else {
@@ -972,7 +972,7 @@ fun QueuePanel(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 song.title,
-                                color = if (isCurrent) PulseGreen else Color.White,
+                                color = if (isCurrent) PulseRed else Color.White,
                                 fontSize = 15.sp,
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                                 maxLines = 1,
@@ -1052,7 +1052,7 @@ fun QueuePanel(
                                 )
                             }
                             IconButton(onClick = { onAddToQueue(song) }) {
-                                Icon(Icons.Default.Add, contentDescription = "Add to Queue", tint = PulseGreen)
+                                Icon(Icons.Default.Add, contentDescription = "Add to Queue", tint = PulseRed)
                             }
                         }
                     }

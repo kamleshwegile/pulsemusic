@@ -10,9 +10,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = SpotifyGreen,
-    secondary = SpotifyGreen,
-    tertiary = SpotifyGreen,
+    primary = PulseRed,
+    secondary = PulseRed,
+    tertiary = PulseRed,
     background = DarkBackground,
     surface = SurfaceDark,
     surfaceVariant = SurfaceVariantDark,

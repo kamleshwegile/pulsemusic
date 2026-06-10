@@ -41,7 +41,7 @@ import com.pulse.music.player.MusicPlayerManager
 import com.pulse.music.ui.home.HomeScreen
 import com.pulse.music.ui.library.LibraryScreen
 import com.pulse.music.ui.nowplaying.NowPlayingScreen
-import com.pulse.music.ui.nowplaying.PulseGreen
+import com.pulse.music.ui.nowplaying.PulseRed
 import com.pulse.music.ui.search.SearchScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
