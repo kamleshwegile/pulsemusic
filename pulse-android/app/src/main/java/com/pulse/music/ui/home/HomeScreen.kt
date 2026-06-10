@@ -38,16 +38,18 @@ fun HomeScreen(
 
     val calendar = java.util.Calendar.getInstance()
     val hour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+    val dayOfYear = calendar.get(java.util.Calendar.DAY_OF_YEAR)
     
-    val greetingPrefix = remember(hour) {
+    val greetingPrefix = remember(hour, dayOfYear) {
         val morningGreetings = listOf("Rise and shine", "Start your day right", "Morning vibes", "Ready for the day")
         val afternoonGreetings = listOf("Keep the rhythm going", "Midday melodies", "Afternoon vibes", "Tune in")
         val eveningGreetings = listOf("Unwind and relax", "Evening tunes", "Set the mood", "Night vibes")
         
+        val seed = hour + dayOfYear
         when (hour) {
-            in 0..11 -> morningGreetings.random()
-            in 12..16 -> afternoonGreetings.random()
-            else -> eveningGreetings.random()
+            in 0..11 -> morningGreetings[seed % morningGreetings.size]
+            in 12..16 -> afternoonGreetings[seed % afternoonGreetings.size]
+            else -> eveningGreetings[seed % eveningGreetings.size]
         }
     }
     
