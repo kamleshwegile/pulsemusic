@@ -96,7 +96,11 @@ class MainActivity : ComponentActivity() {
                         Surface(color = Color.Black, modifier = Modifier.fillMaxSize()) {
                         NavHost(
                             navController = navController,
-                            startDestination = startDest
+                            startDestination = startDest,
+                            enterTransition = { androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(180)) },
+                            exitTransition = { androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(180)) },
+                            popEnterTransition = { androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(180)) },
+                            popExitTransition = { androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(180)) }
                         ) {
                             composable("auth_login") {
                                 com.pulse.music.ui.auth.LoginScreen(
@@ -137,7 +141,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                            composable("home") {
+                            composable(
+                                "home",
+                                enterTransition = { androidx.compose.animation.EnterTransition.None },
+                                exitTransition = { androidx.compose.animation.ExitTransition.None }
+                            ) {
                                 HomeScreen(
                                     onNavigateToNowPlaying = {
                                         navController.navigate("now_playing")
@@ -150,7 +158,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                            composable("search") {
+                            composable(
+                                "search",
+                                enterTransition = { androidx.compose.animation.EnterTransition.None },
+                                exitTransition = { androidx.compose.animation.ExitTransition.None }
+                            ) {
                                 SearchScreen(
                                     onNavigateToArtist = { artistName ->
                                         navController.navigate("artist/$artistName")
@@ -193,7 +205,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                            composable("library") {
+                            composable(
+                                "library",
+                                enterTransition = { androidx.compose.animation.EnterTransition.None },
+                                exitTransition = { androidx.compose.animation.ExitTransition.None }
+                            ) {
                                 LibraryScreen(
                                     onNavigateToNowPlaying = {
                                         navController.navigate("now_playing")
@@ -206,7 +222,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                            composable("profile") {
+                            composable(
+                                "profile",
+                                enterTransition = { androidx.compose.animation.EnterTransition.None },
+                                exitTransition = { androidx.compose.animation.ExitTransition.None }
+                            ) {
                                 com.pulse.music.ui.profile.ProfileScreen(
                                     onNavigateToAuth = {
                                         navController.navigate("auth_login") {
@@ -263,11 +283,7 @@ class MainActivity : ComponentActivity() {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(
-                                            androidx.compose.ui.graphics.Brush.verticalGradient(
-                                                colors = listOf(Color.Transparent, Color(0xE6000000), Color.Black)
-                                            )
-                                        )
+                                        .background(Color.Transparent)
                                 ) {
                                     Row(
                                         modifier = Modifier
