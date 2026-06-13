@@ -41,6 +41,12 @@ class LibraryViewModel @Inject constructor(
     private val _filter = MutableStateFlow("All")
     val filter: StateFlow<String> = _filter.asStateFlow()
 
+    fun createPlaylist(name: String) {
+        viewModelScope.launch {
+            playlistRepository.createPlaylist(name)
+        }
+    }
+
     private val _isImporting = MutableStateFlow(false)
     val isImporting: StateFlow<Boolean> = _isImporting.asStateFlow()
 
@@ -93,5 +99,9 @@ class LibraryViewModel @Inject constructor(
                 _importResult.emit("Failed to import playlist. Please check the URL and try again.")
             }
         }
+    }
+
+    fun getSongsForPlaylist(playlistId: Int): kotlinx.coroutines.flow.Flow<List<Song>> {
+        return playlistRepository.getSongsForPlaylist(playlistId)
     }
 }

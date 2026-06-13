@@ -43,7 +43,6 @@ class LocalMusicRepository @Inject constructor(
             val albumColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
             val albumIdColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
             val durationColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
-            val dataColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
 
             val albumArtUri = Uri.parse("content://media/external/audio/albumart")
 
@@ -54,7 +53,7 @@ class LocalMusicRepository @Inject constructor(
                 val album = it.getString(albumColumn)
                 val albumId = it.getLong(albumIdColumn)
                 val durationMs = it.getLong(durationColumn)
-                val uri = it.getString(dataColumn)
+                val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id.toLong()).toString()
 
                 // Build album art content URI
                 val artUri = ContentUris.withAppendedId(albumArtUri, albumId).toString()

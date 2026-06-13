@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +59,8 @@ fun NowPlayingScreen(
     viewModel: NowPlayingViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
     onNavigateToArtist: (String) -> Unit = {},
-    onNavigateToAlbum: (String) -> Unit = {}
+    onNavigateToAlbum: (String) -> Unit = {},
+    onNavigateToJam: () -> Unit = {}
 ) {
     val currentSong by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
@@ -73,6 +75,7 @@ fun NowPlayingScreen(
     val lyricsState by viewModel.lyricsState.collectAsState()
     val highlightedIndex by viewModel.highlightedLine.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
+    val isJamConnected by com.pulse.music.ui.jam.JamSessionManager.isConnected.collectAsState()
 
     var showQueue by remember { mutableStateOf(false) }
     var showDevices by remember { mutableStateOf(false) }
@@ -189,6 +192,7 @@ fun NowPlayingScreen(
                     onBack = onBack,
                     onNavigateToArtist = onNavigateToArtist,
                     onNavigateToAlbum = onNavigateToAlbum,
+                    onNavigateToJam = onNavigateToJam,
                     playlists = playlists,
                     formatTime = ::formatTime
                 )
@@ -400,11 +404,13 @@ fun MainPlayerContent(
     onBack: () -> Unit,
     onNavigateToArtist: (String) -> Unit,
     onNavigateToAlbum: (String) -> Unit,
+    onNavigateToJam: () -> Unit,
     playlists: List<com.pulse.music.data.local.PlaylistEntity>,
     formatTime: (Long) -> String
 ) {
     val songTitle = currentSong?.title ?: "Not Playing"
     val songArtist = currentSong?.artist ?: "Pulse Music"
+    val isJamConnected by com.pulse.music.ui.jam.JamSessionManager.isConnected.collectAsState()
 
     // Colors as requested
     val bgColor = Color.Transparent
@@ -413,6 +419,9 @@ fun MainPlayerContent(
 
     var showMoreMenu by remember { mutableStateOf(false) }
     var showSleepTimerDialog by remember { mutableStateOf(false) }
+    var showPlaylistSelector by remember { mutableStateOf(false) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var newPlaylistName by remember { mutableStateOf("") }
 
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         IconButton(
@@ -645,18 +654,26 @@ fun MainPlayerContent(
                 HorizontalDivider(color = Color(0xFF282828), thickness = 1.dp)
 
                 // Menu Options
-                val menuItems = listOf(
+                val menuItems = mutableListOf(
                     Triple(if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, if (isLiked) "Remove from Liked Songs" else "Add to Liked Songs", { viewModel.toggleLike() }),
-                    Triple(Icons.Default.PlaylistAdd, "Add to Playlist", { /* TODO */ }),
+                    Triple(Icons.Default.PlaylistAdd, "Add to Playlist", { showPlaylistSelector = true })
+                )
+                if (isJamConnected) {
+                    menuItems.add(Triple(Icons.Default.QueueMusic, "Add to Queue", { currentSong?.let { viewModel.addToQueue(it) }; showMoreMenu = false }))
+                }
+                menuItems.addAll(listOf(
                     Triple(Icons.Default.Snooze, "Sleep Timer", { showSleepTimerDialog = true }),
                     Triple(Icons.Default.Album, "Go to Album", { 
-                        val albumName = currentSong?.album
-                        if (!albumName.isNullOrBlank() && currentSong != null) {
+                        if (currentSong != null) {
                             onNavigateToAlbum(currentSong.id)
                         }
                     }),
-                    Triple(Icons.Default.Person, "Go to Artist", { currentSong?.artist?.split(",")?.firstOrNull()?.trim()?.let { onNavigateToArtist(it) } })
-                )
+                    Triple(Icons.Default.Person, "Go to Artist", { currentSong?.artist?.split(",")?.firstOrNull()?.trim()?.let { onNavigateToArtist(it) } }),
+                    Triple(Icons.Default.Group, "Start Jam", { 
+                        android.util.Log.d("NAVIGATION", "Clicked Start Jam")
+                        onNavigateToJam() 
+                    })
+                ))
 
                 menuItems.forEach { (icon, text, action) ->
                     Row(
@@ -677,6 +694,103 @@ fun MainPlayerContent(
                 }
             }
         }
+    }
+    
+    if (showPlaylistSelector) {
+        ModalBottomSheet(
+            onDismissRequest = { showPlaylistSelector = false },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Add to Playlist",
+                        color = pureWhite,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = { 
+                        showPlaylistSelector = false
+                        showCreatePlaylistDialog = true 
+                    }) {
+                        Icon(Icons.Default.Add, contentDescription = "Create Playlist", tint = pureWhite)
+                    }
+                }
+                LazyColumn {
+
+                    items(playlists.size) { index ->
+                        val playlist = playlists[index]
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (currentSong != null) {
+                                        viewModel.addSongToPlaylist(playlist.id, currentSong!!)
+                                    }
+                                    showPlaylistSelector = false
+                                }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = pureWhite, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(playlist.name, color = pureWhite, fontSize = 16.sp)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if (showCreatePlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showCreatePlaylistDialog = false 
+                newPlaylistName = ""
+            },
+            containerColor = Color(0xFF282828),
+            title = { Text("Create New Playlist", color = pureWhite, fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = newPlaylistName,
+                    onValueChange = { newPlaylistName = it },
+                    placeholder = { Text("Playlist Name", color = mutedGray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = pureWhite,
+                        unfocusedTextColor = pureWhite,
+                        focusedBorderColor = PulseRed,
+                        unfocusedBorderColor = mutedGray,
+                        cursorColor = PulseRed
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newPlaylistName.isNotBlank() && currentSong != null) {
+                        viewModel.createPlaylistAndAddSong(newPlaylistName, currentSong!!)
+                    }
+                    showCreatePlaylistDialog = false
+                    newPlaylistName = ""
+                }) {
+                    Text("Create", color = PulseRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showCreatePlaylistDialog = false 
+                    newPlaylistName = ""
+                }) {
+                    Text("Cancel", color = mutedGray)
+                }
+            }
+        )
     }
     val sleepTimerMode by viewModel.sleepTimerMode.collectAsState()
     val sleepTimerTimeLeft by viewModel.sleepTimerTimeLeft.collectAsState()

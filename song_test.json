@@ -1,0 +1,306 @@
+{
+  "success": true,
+  "data": [
+    {
+      "id": "BeXBcbVK",
+      "name": "Believer",
+      "type": "song",
+      "year": "2018",
+      "releaseDate": "2017-06-23",
+      "duration": 204,
+      "label": "Kid Ina Korner / Interscope",
+      "explicitContent": false,
+      "playCount": 92938926,
+      "language": "english",
+      "hasLyrics": false,
+      "lyricsId": null,
+      "url": "https://www.jiosaavn.com/song/believer/Mg0zcxdSYXg",
+      "copyright": "\u2117 2017 KIDinaKORNER/Interscope Records",
+      "album": {
+        "id": "13435951",
+        "name": "Evolve",
+        "url": "https://www.jiosaavn.com/album/evolve/gvCWqZLfVbs_"
+      },
+      "artists": {
+        "primary": [
+          {
+            "id": "599452",
+            "name": "Imagine Dragons",
+            "role": "primary_artists",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/artists/Imagine_Dragons_50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/artists/Imagine_Dragons_150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/artists/Imagine_Dragons_500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/imagine-dragons-songs/f0aFxsa231o_"
+          }
+        ],
+        "featured": [],
+        "all": [
+          {
+            "id": "599453",
+            "name": "Dan Reynolds",
+            "role": "music",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/048/Skipping-Stones-English-2018-20180620230710-50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/048/Skipping-Stones-English-2018-20180620230710-150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/048/Skipping-Stones-English-2018-20180620230710-500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/dan-reynolds-songs/xoeLrr0aTEU_"
+          },
+          {
+            "id": "599454",
+            "name": "Wayne Sermon",
+            "role": "music",
+            "image": [],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/wayne-sermon-songs/,WHkVDnJnD8_"
+          },
+          {
+            "id": "599455",
+            "name": "Ben Mckee",
+            "role": "music",
+            "image": [],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/ben-mckee-songs/EA7FaJms-k8_"
+          },
+          {
+            "id": "914898",
+            "name": "Daniel Platzman",
+            "role": "music",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/883/Best-F-r-iends-Original-Motion-Picture-Soundtrack-English-2019-20190128215540-50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/883/Best-F-r-iends-Original-Motion-Picture-Soundtrack-English-2019-20190128215540-150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/883/Best-F-r-iends-Original-Motion-Picture-Soundtrack-English-2019-20190128215540-500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/daniel-platzman-songs/hOWrEJ6eC9I_"
+          },
+          {
+            "id": "683491",
+            "name": "Robin Fredriksson",
+            "role": "music",
+            "image": [],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/robin-fredriksson-songs/jRGk4sF83Ko_"
+          },
+          {
+            "id": "634862",
+            "name": "Mattias Larsson",
+            "role": "music",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/277/Kom-Swedish-2017-20171009155644-50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/277/Kom-Swedish-2017-20171009155644-150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/277/Kom-Swedish-2017-20171009155644-500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/mattias-larsson-songs/d6thUM5GwSE_"
+          },
+          {
+            "id": "633532",
+            "name": "Justin Tranter",
+            "role": "music",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/916/The-Lego-Batman-Movie-Original-Motion-Picture-Soundtrack-English-2017-50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/916/The-Lego-Batman-Movie-Original-Motion-Picture-Soundtrack-English-2017-150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/916/The-Lego-Batman-Movie-Original-Motion-Picture-Soundtrack-English-2017-500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/justin-tranter-songs/MUdaah321CU_"
+          },
+          {
+            "id": "599453",
+            "name": "Dan Reynolds",
+            "role": "lyricist",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/048/Skipping-Stones-English-2018-20180620230710-50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/048/Skipping-Stones-English-2018-20180620230710-150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/048/Skipping-Stones-English-2018-20180620230710-500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/dan-reynolds-songs/xoeLrr0aTEU_"
+          },
+          {
+            "id": "599454",
+            "name": "Wayne Sermon",
+            "role": "lyricist",
+            "image": [],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/wayne-sermon-songs/,WHkVDnJnD8_"
+          },
+          {
+            "id": "599455",
+            "name": "Ben Mckee",
+            "role": "lyricist",
+            "image": [],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/ben-mckee-songs/EA7FaJms-k8_"
+          },
+          {
+            "id": "914898",
+            "name": "Daniel Platzman",
+            "role": "lyricist",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/883/Best-F-r-iends-Original-Motion-Picture-Soundtrack-English-2019-20190128215540-50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/883/Best-F-r-iends-Original-Motion-Picture-Soundtrack-English-2019-20190128215540-150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/883/Best-F-r-iends-Original-Motion-Picture-Soundtrack-English-2019-20190128215540-500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/daniel-platzman-songs/hOWrEJ6eC9I_"
+          },
+          {
+            "id": "683491",
+            "name": "Robin Fredriksson",
+            "role": "lyricist",
+            "image": [],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/robin-fredriksson-songs/jRGk4sF83Ko_"
+          },
+          {
+            "id": "634862",
+            "name": "Mattias Larsson",
+            "role": "lyricist",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/277/Kom-Swedish-2017-20171009155644-50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/277/Kom-Swedish-2017-20171009155644-150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/277/Kom-Swedish-2017-20171009155644-500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/mattias-larsson-songs/d6thUM5GwSE_"
+          },
+          {
+            "id": "633532",
+            "name": "Justin Tranter",
+            "role": "lyricist",
+            "image": [
+              {
+                "quality": "50x50",
+                "url": "https://c.saavncdn.com/916/The-Lego-Batman-Movie-Original-Motion-Picture-Soundtrack-English-2017-50x50.jpg"
+              },
+              {
+                "quality": "150x150",
+                "url": "https://c.saavncdn.com/916/The-Lego-Batman-Movie-Original-Motion-Picture-Soundtrack-English-2017-150x150.jpg"
+              },
+              {
+                "quality": "500x500",
+                "url": "https://c.saavncdn.com/916/The-Lego-Batman-Movie-Original-Motion-Picture-Soundtrack-English-2017-500x500.jpg"
+              }
+            ],
+            "type": "artist",
+            "url": "https://www.jiosaavn.com/artist/justin-tranter-songs/MUdaah321CU_"
+          }
+        ]
+      },
+      "image": [
+        {
+          "quality": "50x50",
+          "url": "https://c.saavncdn.com/248/Evolve-English-2018-20260605220036-50x50.jpg"
+        },
+        {
+          "quality": "150x150",
+          "url": "https://c.saavncdn.com/248/Evolve-English-2018-20260605220036-150x150.jpg"
+        },
+        {
+          "quality": "500x500",
+          "url": "https://c.saavncdn.com/248/Evolve-English-2018-20260605220036-500x500.jpg"
+        }
+      ],
+      "downloadUrl": [
+        {
+          "quality": "12kbps",
+          "url": "https://aac.saavncdn.com/248/46944eb7b4b31f5b0abf5eb2e1be2d2a_12.mp4"
+        },
+        {
+          "quality": "48kbps",
+          "url": "https://aac.saavncdn.com/248/46944eb7b4b31f5b0abf5eb2e1be2d2a_48.mp4"
+        },
+        {
+          "quality": "96kbps",
+          "url": "https://aac.saavncdn.com/248/46944eb7b4b31f5b0abf5eb2e1be2d2a_96.mp4"
+        },
+        {
+          "quality": "160kbps",
+          "url": "https://aac.saavncdn.com/248/46944eb7b4b31f5b0abf5eb2e1be2d2a_160.mp4"
+        },
+        {
+          "quality": "320kbps",
+          "url": "https://aac.saavncdn.com/248/46944eb7b4b31f5b0abf5eb2e1be2d2a_320.mp4"
+        }
+      ]
+    }
+  ]
+}

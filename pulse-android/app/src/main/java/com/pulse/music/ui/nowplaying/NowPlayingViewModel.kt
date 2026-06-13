@@ -38,9 +38,10 @@ class NowPlayingViewModel @Inject constructor(
     val queue: StateFlow<List<Song>> = musicPlayerManager.queue
     val currentIndex: StateFlow<Int> = musicPlayerManager.currentIndex
     
-    fun createPlaylist(name: String) {
+    fun createPlaylistAndAddSong(name: String, song: Song) {
         viewModelScope.launch {
-            playlistRepository.createPlaylist(name)
+            val id = playlistRepository.createPlaylist(name)
+            playlistRepository.addSongToPlaylist(id, song)
         }
     }
     
@@ -114,7 +115,12 @@ class NowPlayingViewModel @Inject constructor(
     fun removeFromQueue(index: Int) = musicPlayerManager.removeFromQueue(index)
     
     fun addToQueue(song: Song) {
-        musicPlayerManager.enqueue(song)
+        if (com.pulse.music.ui.jam.JamSessionManager.isConnected.value) {
+            // If in a jam session, add it to the shared queue instead!
+            com.pulse.music.ui.jam.JamSessionManager.addSongToQueue(song, "You")
+        } else {
+            musicPlayerManager.enqueue(song)
+        }
     }
 
     fun toggleLike() {

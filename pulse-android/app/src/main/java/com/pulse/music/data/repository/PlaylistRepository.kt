@@ -37,22 +37,39 @@ class PlaylistRepository @Inject constructor(
                 }
                 
                 val songs = pl["songs"] as? List<Map<String, Any>> ?: emptyList()
-                val existingSongs = playlistDao.getSongsForPlaylist(playlistId).first().map { it.songId }
+                val existingSongsList = playlistDao.getSongsForPlaylist(playlistId).first()
+                val existingSongs = existingSongsList.map { it.songId }
                 
                 songs.forEach { songData ->
                     val songId = songData["id"] as? String ?: return@forEach
+                    
+                    var durationMs = (songData["durationMs"] as? Number)?.toLong() ?: (songData["duration"] as? Number)?.toLong() ?: 0L
+                    if (durationMs == 0L) {
+                        val durationRaw = songData["durationMs"]?.toString()?.substringBefore(".") ?: songData["duration"]?.toString()?.substringBefore(".") ?: "0"
+                        durationMs = durationRaw.toLongOrNull() ?: 0L
+                    }
+                    if (durationMs < 10000 && durationMs > 0) durationMs *= 1000 // Convert seconds to ms if needed
+
+                    val title = songData["title"] as? String ?: ""
+                    val artist = songData["artist"] as? String ?: ""
+                    val album = songData["album"] as? String ?: ""
+                    val albumArt = songData["image"] as? String ?: songData["albumArt"] as? String ?: ""
+                    val source = songData["source"] as? String ?: "jiosaavn"
+
                     if (!existingSongs.contains(songId)) {
-                        val title = songData["title"] as? String ?: ""
-                        val artist = songData["artist"] as? String ?: ""
-                        val album = songData["album"] as? String ?: ""
-                        val albumArt = songData["image"] as? String ?: songData["albumArt"] as? String ?: ""
-                        
-                        val durationRaw = songData["duration"]?.toString() ?: "0"
-                        var durationMs = durationRaw.toLongOrNull() ?: 0L
-                        if (durationMs < 10000 && durationMs > 0) durationMs *= 1000 // Convert seconds to ms if needed
-                        
-                        val source = songData["source"] as? String ?: "jiosaavn"
-                        
+                        playlistDao.insertSongToPlaylist(PlaylistSongEntity(
+                            playlistId = playlistId,
+                            songId = songId,
+                            title = title,
+                            artist = artist,
+                            album = album,
+                            albumArt = albumArt,
+                            durationMs = durationMs,
+                            source = source
+                        ))
+                    } else if (existingSongsList.find { it.songId == songId }?.durationMs == 0L && durationMs > 0) {
+                        // Fix existing songs with 0 duration
+                        playlistDao.removeSongFromPlaylist(playlistId, songId)
                         playlistDao.insertSongToPlaylist(PlaylistSongEntity(
                             playlistId = playlistId,
                             songId = songId,
@@ -83,9 +100,37 @@ class PlaylistRepository @Inject constructor(
     }
 
     suspend fun deletePlaylist(playlistId: Int) {
+        val playlist = playlistDao.getAllPlaylists().first().find { it.id == playlistId }
+        val name = playlist?.name ?: return
+        
         playlistDao.deletePlaylist(playlistId)
-        // Wait, local ID is Int, remote ID is String. We need remote ID to delete!
-        // Right now the API uses remote string ID.
+        
+        try {
+            val remotePlaylists = apiService.getPlaylists()
+            val remoteId = remotePlaylists.find { it["name"] == name }?.get("id") as? String
+            if (remoteId != null) {
+                apiService.deletePlaylist(remoteId)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun renamePlaylist(playlistId: Int, newName: String) {
+        val playlist = playlistDao.getAllPlaylists().first().find { it.id == playlistId }
+        val oldName = playlist?.name ?: return
+        
+        playlistDao.renamePlaylist(playlistId, newName)
+        
+        try {
+            val remotePlaylists = apiService.getPlaylists()
+            val remoteId = remotePlaylists.find { it["name"] == oldName }?.get("id") as? String
+            if (remoteId != null) {
+                apiService.renamePlaylist(remoteId, newName)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun getSongsForPlaylist(playlistId: Int): Flow<List<Song>> {
@@ -116,11 +161,36 @@ class PlaylistRepository @Inject constructor(
             source = song.source
         )
         playlistDao.insertSongToPlaylist(entity)
-        // Need string playlist_id for apiService.addSongToPlaylist
+        
+        try {
+            val playlist = playlistDao.getAllPlaylists().first().find { it.id == playlistId }
+            if (playlist != null) {
+                val remotePlaylists = apiService.getPlaylists()
+                val remoteId = remotePlaylists.find { it["name"] == playlist.name }?.get("id") as? String
+                if (remoteId != null) {
+                    apiService.addSongToPlaylist(remoteId, song)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     suspend fun removeSongFromPlaylist(playlistId: Int, songId: String) {
         playlistDao.removeSongFromPlaylist(playlistId, songId)
+        
+        try {
+            val playlist = playlistDao.getAllPlaylists().first().find { it.id == playlistId }
+            if (playlist != null) {
+                val remotePlaylists = apiService.getPlaylists()
+                val remoteId = remotePlaylists.find { it["name"] == playlist.name }?.get("id") as? String
+                if (remoteId != null) {
+                    apiService.removeSongFromPlaylist(remoteId, songId)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     suspend fun importSpotifyPlaylist(url: String): Result<Boolean> {

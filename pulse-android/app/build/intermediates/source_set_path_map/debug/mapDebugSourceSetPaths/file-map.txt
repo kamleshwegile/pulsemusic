@@ -1,0 +1,78 @@
+com.pulse.music.app-play-services-base-18.0.1-0 C:\Users\Mehak\.gradle\caches\transforms-4\033fe21aed8cd7ce86506e85bb8b9df1\transformed\play-services-base-18.0.1\res
+com.pulse.music.app-ui-tooling-preview-release-1 C:\Users\Mehak\.gradle\caches\transforms-4\058e147d4e0aa73358199fad3116279c\transformed\ui-tooling-preview-release\res
+com.pulse.music.app-ui-release-2 C:\Users\Mehak\.gradle\caches\transforms-4\0c8f4fd5c3228ff1471814a912183396\transformed\ui-release\res
+com.pulse.music.app-media3-exoplayer-1.2.1-3 C:\Users\Mehak\.gradle\caches\transforms-4\1090c0fb1bcc94487f681a55be83a99b\transformed\media3-exoplayer-1.2.1\res
+com.pulse.music.app-coil-base-2.5.0-4 C:\Users\Mehak\.gradle\caches\transforms-4\111a8dc0f196496705cac077f2a67aa0\transformed\coil-base-2.5.0\res
+com.pulse.music.app-hilt-navigation-1.1.0-5 C:\Users\Mehak\.gradle\caches\transforms-4\12c2d335d43230e211724d96f76522d7\transformed\hilt-navigation-1.1.0\res
+com.pulse.music.app-navigation-compose-2.7.7-6 C:\Users\Mehak\.gradle\caches\transforms-4\12cc89886b345295a0a8bba68b51b338\transformed\navigation-compose-2.7.7\res
+com.pulse.music.app-startup-runtime-1.1.1-7 C:\Users\Mehak\.gradle\caches\transforms-4\14d01a2d2c54d37b7b7e80c4b4a308bd\transformed\startup-runtime-1.1.1\res
+com.pulse.music.app-room-runtime-2.6.1-8 C:\Users\Mehak\.gradle\caches\transforms-4\16e329b7dd4975704036ac775188735e\transformed\room-runtime-2.6.1\res
+com.pulse.music.app-material3-release-9 C:\Users\Mehak\.gradle\caches\transforms-4\174eee6fd44e3c353151c493e3238011\transformed\material3-release\res
+com.pulse.music.app-annotation-experimental-1.4.0-10 C:\Users\Mehak\.gradle\caches\transforms-4\1839a0eded647a21996c978e1799ea7b\transformed\annotation-experimental-1.4.0\res
+com.pulse.music.app-lifecycle-process-2.7.0-11 C:\Users\Mehak\.gradle\caches\transforms-4\25296cb2fccbac38e53f0c3a9a77b918\transformed\lifecycle-process-2.7.0\res
+com.pulse.music.app-datastore-preferences-1.0.0-12 C:\Users\Mehak\.gradle\caches\transforms-4\2704ff2a094b34993da24552f92d04ce\transformed\datastore-preferences-1.0.0\res
+com.pulse.music.app-savedstate-1.2.1-13 C:\Users\Mehak\.gradle\caches\transforms-4\2a4f9b5bf7034ba0c9b7965ab888e65a\transformed\savedstate-1.2.1\res
+com.pulse.music.app-lifecycle-viewmodel-ktx-2.7.0-14 C:\Users\Mehak\.gradle\caches\transforms-4\2b3476a6c632634dfdd054e3e44d113e\transformed\lifecycle-viewmodel-ktx-2.7.0\res
+com.pulse.music.app-sqlite-framework-2.4.0-15 C:\Users\Mehak\.gradle\caches\transforms-4\3205d0a1ee8b09a4c14ef95347cafb74\transformed\sqlite-framework-2.4.0\res
+com.pulse.music.app-datastore-1.0.0-16 C:\Users\Mehak\.gradle\caches\transforms-4\34332989662c18976f435ba94cd8cf15\transformed\datastore-1.0.0\res
+com.pulse.music.app-fragment-1.5.1-17 C:\Users\Mehak\.gradle\caches\transforms-4\34d25c76ae1b471472bc1cc0dbdeeaae\transformed\fragment-1.5.1\res
+com.pulse.music.app-facebook-login-17.0.0-18 C:\Users\Mehak\.gradle\caches\transforms-4\35532685040af15e5c65b4e5dff66c25\transformed\facebook-login-17.0.0\res
+com.pulse.music.app-runtime-saveable-release-19 C:\Users\Mehak\.gradle\caches\transforms-4\3744351480c196cff6e7e112638d0ce3\transformed\runtime-saveable-release\res
+com.pulse.music.app-facebook-common-17.0.0-20 C:\Users\Mehak\.gradle\caches\transforms-4\38f58c7c61d3a8d502044e4737d4a4a8\transformed\facebook-common-17.0.0\res
+com.pulse.music.app-sqlite-2.4.0-21 C:\Users\Mehak\.gradle\caches\transforms-4\3d597d2f7d9785b27c53a9077aef15f8\transformed\sqlite-2.4.0\res
+com.pulse.music.app-ui-unit-release-22 C:\Users\Mehak\.gradle\caches\transforms-4\41df136b189bfca7b5695eab924523fe\transformed\ui-unit-release\res
+com.pulse.music.app-emoji2-1.3.0-23 C:\Users\Mehak\.gradle\caches\transforms-4\478b036ba30930e957ce337339002129\transformed\emoji2-1.3.0\res
+com.pulse.music.app-material-icons-core-release-24 C:\Users\Mehak\.gradle\caches\transforms-4\4c69748ddf8be4a1ae423d954addb5a9\transformed\material-icons-core-release\res
+com.pulse.music.app-room-ktx-2.6.1-25 C:\Users\Mehak\.gradle\caches\transforms-4\4dd4e46a9e1ef2be4b16f6754e4e6e58\transformed\room-ktx-2.6.1\res
+com.pulse.music.app-activity-compose-1.8.2-26 C:\Users\Mehak\.gradle\caches\transforms-4\5172e57235a80525df802b29ab160c95\transformed\activity-compose-1.8.2\res
+com.pulse.music.app-emoji2-views-helper-1.3.0-27 C:\Users\Mehak\.gradle\caches\transforms-4\5233eacf183df255ba4c4a4197d587cf\transformed\emoji2-views-helper-1.3.0\res
+com.pulse.music.app-credentials-play-services-auth-1.2.2-28 C:\Users\Mehak\.gradle\caches\transforms-4\525f01fd55c0bd1b9364a44fbc8e1f73\transformed\credentials-play-services-auth-1.2.2\res
+com.pulse.music.app-browser-1.0.0-29 C:\Users\Mehak\.gradle\caches\transforms-4\5a6276d7d33056f328c4248def1df4bc\transformed\browser-1.0.0\res
+com.pulse.music.app-hilt-navigation-compose-1.1.0-30 C:\Users\Mehak\.gradle\caches\transforms-4\64d152ef5ddcc25085f28cae1a1e9368\transformed\hilt-navigation-compose-1.1.0\res
+com.pulse.music.app-material-ripple-release-31 C:\Users\Mehak\.gradle\caches\transforms-4\6c060b1c38f5b15fb3363e31de450a96\transformed\material-ripple-release\res
+com.pulse.music.app-ui-geometry-release-32 C:\Users\Mehak\.gradle\caches\transforms-4\6c3cb874d7a42624e955164030ebd5c6\transformed\ui-geometry-release\res
+com.pulse.music.app-foundation-layout-release-33 C:\Users\Mehak\.gradle\caches\transforms-4\747cd20e125d02a5516150c1cd8e4ca5\transformed\foundation-layout-release\res
+com.pulse.music.app-lifecycle-runtime-2.7.0-34 C:\Users\Mehak\.gradle\caches\transforms-4\7a8170fd82d7d9533eac80fc02710eb5\transformed\lifecycle-runtime-2.7.0\res
+com.pulse.music.app-activity-ktx-1.8.2-35 C:\Users\Mehak\.gradle\caches\transforms-4\80ed51f6aeeadf8a7c2de59aeaf5e30c\transformed\activity-ktx-1.8.2\res
+com.pulse.music.app-core-runtime-2.2.0-36 C:\Users\Mehak\.gradle\caches\transforms-4\88682db9bc0e8bcfa13b934ae826f7e3\transformed\core-runtime-2.2.0\res
+com.pulse.music.app-runtime-release-37 C:\Users\Mehak\.gradle\caches\transforms-4\8b1e93ac4178d9ee9ebc317f3376e50e\transformed\runtime-release\res
+com.pulse.music.app-navigation-runtime-ktx-2.7.7-38 C:\Users\Mehak\.gradle\caches\transforms-4\8d5b57c96af10b5349d16c8226511290\transformed\navigation-runtime-ktx-2.7.7\res
+com.pulse.music.app-cardview-1.0.0-39 C:\Users\Mehak\.gradle\caches\transforms-4\8edb404273f6fb568d6eed3f4e96c0ac\transformed\cardview-1.0.0\res
+com.pulse.music.app-material-icons-extended-release-40 C:\Users\Mehak\.gradle\caches\transforms-4\8ef9067f03515c9e7475cc6ef2356b1a\transformed\material-icons-extended-release\res
+com.pulse.music.app-ui-text-release-41 C:\Users\Mehak\.gradle\caches\transforms-4\98a0d51670c3ce27c51268ecf1e81d3c\transformed\ui-text-release\res
+com.pulse.music.app-animation-release-42 C:\Users\Mehak\.gradle\caches\transforms-4\9a857ce28aa7823fda10a22629f6ab7b\transformed\animation-release\res
+com.pulse.music.app-ui-graphics-release-43 C:\Users\Mehak\.gradle\caches\transforms-4\9b94438427a90236ff5e34c210b2a937\transformed\ui-graphics-release\res
+com.pulse.music.app-core-1.12.0-44 C:\Users\Mehak\.gradle\caches\transforms-4\9cd357c611ac73cc7837b0211cc60285\transformed\core-1.12.0\res
+com.pulse.music.app-activity-1.8.2-45 C:\Users\Mehak\.gradle\caches\transforms-4\9d8aa829d4497bd14dad86326dbcc89e\transformed\activity-1.8.2\res
+com.pulse.music.app-lifecycle-viewmodel-compose-2.7.0-46 C:\Users\Mehak\.gradle\caches\transforms-4\9e3aad69622ccccc019a570f1b5f62de\transformed\lifecycle-viewmodel-compose-2.7.0\res
+com.pulse.music.app-play-services-auth-20.7.0-47 C:\Users\Mehak\.gradle\caches\transforms-4\a839da6842327599fc5345a515e68539\transformed\play-services-auth-20.7.0\res
+com.pulse.music.app-lifecycle-livedata-core-2.7.0-48 C:\Users\Mehak\.gradle\caches\transforms-4\a8b252155983d04efca7a50781557ac7\transformed\lifecycle-livedata-core-2.7.0\res
+com.pulse.music.app-core-ktx-1.12.0-49 C:\Users\Mehak\.gradle\caches\transforms-4\a9592b96782fa1f067db04aa6ce4390f\transformed\core-ktx-1.12.0\res
+com.pulse.music.app-navigation-common-2.7.7-50 C:\Users\Mehak\.gradle\caches\transforms-4\a9d0d47671c46472d666c674ac842e30\transformed\navigation-common-2.7.7\res
+com.pulse.music.app-appcompat-resources-1.6.1-51 C:\Users\Mehak\.gradle\caches\transforms-4\aed4435bc0753e3c2b61cbbb510325fa\transformed\appcompat-resources-1.6.1\res
+com.pulse.music.app-lifecycle-viewmodel-2.7.0-52 C:\Users\Mehak\.gradle\caches\transforms-4\b47dd721e926d0e16ecee77df4f0d585\transformed\lifecycle-viewmodel-2.7.0\res
+com.pulse.music.app-savedstate-ktx-1.2.1-53 C:\Users\Mehak\.gradle\caches\transforms-4\b547ff1ae3ae90ca370a4814789d1410\transformed\savedstate-ktx-1.2.1\res
+com.pulse.music.app-lifecycle-livedata-core-ktx-2.7.0-54 C:\Users\Mehak\.gradle\caches\transforms-4\bc9ee33a10bc4aa23593084fe2e69a6b\transformed\lifecycle-livedata-core-ktx-2.7.0\res
+com.pulse.music.app-profileinstaller-1.3.1-55 C:\Users\Mehak\.gradle\caches\transforms-4\c149c06e739528c040ff289f5f49410e\transformed\profileinstaller-1.3.1\res
+com.pulse.music.app-coordinatorlayout-1.0.0-56 C:\Users\Mehak\.gradle\caches\transforms-4\c543a4b2dacb2f2668830d21ba9cc048\transformed\coordinatorlayout-1.0.0\res
+com.pulse.music.app-foundation-release-57 C:\Users\Mehak\.gradle\caches\transforms-4\c81796f49383393c8c00f0da2debae59\transformed\foundation-release\res
+com.pulse.music.app-lifecycle-runtime-ktx-2.7.0-58 C:\Users\Mehak\.gradle\caches\transforms-4\ce051e1a8565c07c4cb2a7705bec5f51\transformed\lifecycle-runtime-ktx-2.7.0\res
+com.pulse.music.app-lifecycle-livedata-2.7.0-59 C:\Users\Mehak\.gradle\caches\transforms-4\daf24b7f1266b639436987f292f0a6b6\transformed\lifecycle-livedata-2.7.0\res
+com.pulse.music.app-credentials-1.2.2-60 C:\Users\Mehak\.gradle\caches\transforms-4\dd2a9a3fa441c88cf1460ea6906d1cbe\transformed\credentials-1.2.2\res
+com.pulse.music.app-animation-core-release-61 C:\Users\Mehak\.gradle\caches\transforms-4\dd9c5dd2848e7fb00936e9531403580e\transformed\animation-core-release\res
+com.pulse.music.app-navigation-runtime-2.7.7-62 C:\Users\Mehak\.gradle\caches\transforms-4\dda14ef4233e95c630213792198d35f2\transformed\navigation-runtime-2.7.7\res
+com.pulse.music.app-media3-session-1.2.1-63 C:\Users\Mehak\.gradle\caches\transforms-4\e05abaf75bff53e8ac3d84261bda4e3f\transformed\media3-session-1.2.1\res
+com.pulse.music.app-lifecycle-viewmodel-savedstate-2.7.0-64 C:\Users\Mehak\.gradle\caches\transforms-4\e139260d25f32bd65437524d9a51c415\transformed\lifecycle-viewmodel-savedstate-2.7.0\res
+com.pulse.music.app-media-1.6.0-65 C:\Users\Mehak\.gradle\caches\transforms-4\e2e12e40a08eb8f2d51a011e7a24b506\transformed\media-1.6.0\res
+com.pulse.music.app-appcompat-1.6.1-66 C:\Users\Mehak\.gradle\caches\transforms-4\e4c055522a31a319431fe3361dfccb12\transformed\appcompat-1.6.1\res
+com.pulse.music.app-play-services-basement-18.2.0-67 C:\Users\Mehak\.gradle\caches\transforms-4\ef9ef014ae38f33523d3f0d583e3939c\transformed\play-services-basement-18.2.0\res
+com.pulse.music.app-customview-poolingcontainer-1.0.0-68 C:\Users\Mehak\.gradle\caches\transforms-4\f06a5a3f872ce05e2b7a357572205ef2\transformed\customview-poolingcontainer-1.0.0\res
+com.pulse.music.app-navigation-common-ktx-2.7.7-69 C:\Users\Mehak\.gradle\caches\transforms-4\f139f92f061386b03f651977f59af774\transformed\navigation-common-ktx-2.7.7\res
+com.pulse.music.app-ui-util-release-70 C:\Users\Mehak\.gradle\caches\transforms-4\f16849fada4f05e4bcf7906e65614641\transformed\ui-util-release\res
+com.pulse.music.app-pngs-71 C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\build\generated\res\pngs\debug
+com.pulse.music.app-resValues-72 C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\build\generated\res\resValues\debug
+com.pulse.music.app-packageDebugResources-73 C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.pulse.music.app-packageDebugResources-74 C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.pulse.music.app-debug-75 C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.pulse.music.app-debug-76 C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\debug\res
+com.pulse.music.app-main-77 C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\res

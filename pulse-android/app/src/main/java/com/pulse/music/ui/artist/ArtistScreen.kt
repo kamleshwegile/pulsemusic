@@ -52,6 +52,8 @@ fun ArtistScreen(
     val artistInfo by viewModel.artistInfo.collectAsState()
     val topTracks by viewModel.topTracks.collectAsState()
     val isFollowed by viewModel.isFollowed.collectAsState()
+    val currentSong by viewModel.currentSong.collectAsState()
+    val isPlaying by viewModel.isPlaying.collectAsState(initial = false)
     var showAllTracks by remember { mutableStateOf(false) }
     var showAllAlbums by remember { mutableStateOf(false) }
 
@@ -152,15 +154,27 @@ fun ArtistScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val displayTracksFAB = topTracks.map { it as Song }
+                        val isArtistPlaying = isPlaying && currentSong != null && displayTracksFAB.any { it.id == currentSong?.id }
                         // Play FAB
                         FloatingActionButton(
-                            onClick = { if (topTracks.isNotEmpty()) onSongClick(topTracks.first() as Song, topTracks.map { it as Song }) },
+                            onClick = {
+                                if (isArtistPlaying) {
+                                    viewModel.togglePlayPause()
+                                } else if (displayTracksFAB.isNotEmpty()) {
+                                    onSongClick(displayTracksFAB.first(), displayTracksFAB)
+                                }
+                            },
                             containerColor = PulseAccent,
                             contentColor = MaterialTheme.colorScheme.onBackground,
                             shape = CircleShape,
                             modifier = Modifier.size(56.dp)
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = "Play", modifier = Modifier.size(32.dp))
+                            Icon(
+                                if (isArtistPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = "Play/Pause",
+                                modifier = Modifier.size(32.dp)
+                            )
                         }
 
                         // Shuffle Button

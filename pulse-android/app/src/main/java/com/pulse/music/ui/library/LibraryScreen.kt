@@ -13,6 +13,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -45,7 +53,7 @@ fun LibraryScreen(
     onNavigateToPlaylist: (Int) -> Unit = {},
     onNavigateToArtist: (String) -> Unit = {}
 ) {
-    val filters = listOf("Playlists", "Podcasts", "Albums", "Artists", "Downloaded")
+    val filters = listOf("Playlists", "Albums", "Artists", "Local")
     var selectedFilter by remember { mutableStateOf("") }
 
     val localSongs by viewModel.localSongs.collectAsState()
@@ -53,6 +61,24 @@ fun LibraryScreen(
     val playlists by viewModel.playlists.collectAsState()
     val followedArtists by viewModel.followedArtists.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+
+    var isGridView by remember { mutableStateOf(false) }
+    var sortOption by remember { mutableStateOf("Recents") }
+    var showSortMenu by remember { mutableStateOf(false) }
+    var showAddMenu by remember { mutableStateOf(false) }
+    var isSearching by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var newPlaylistName by remember { mutableStateOf("") }
+
+    val basePlaylists = if (searchQuery.isBlank()) playlists else playlists.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    val baseArtists = if (searchQuery.isBlank()) followedArtists else followedArtists.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    val baseLocalSongs = if (searchQuery.isBlank()) localSongs else localSongs.filter { it.title.contains(searchQuery, ignoreCase = true) || (it.artist?.contains(searchQuery, ignoreCase = true) == true) }
+
+    val filteredPlaylists = if (sortOption == "Alphabetical") basePlaylists.sortedBy { it.name.lowercase() } else basePlaylists
+    val filteredArtists = if (sortOption == "Alphabetical") baseArtists.sortedBy { it.name.lowercase() } else baseArtists
+    val filteredLocalSongs = if (sortOption == "Alphabetical") baseLocalSongs.sortedBy { it.title.lowercase() } else baseLocalSongs
 
     val context = LocalContext.current
     val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -91,7 +117,7 @@ fun LibraryScreen(
     }
 
     LaunchedEffect(selectedFilter) {
-        if ((selectedFilter == "Downloaded") && !hasPermission && !hasAskedPermission) {
+        if ((selectedFilter == "Local") && !hasPermission && !hasAskedPermission) {
             hasAskedPermission = true
             permissionLauncher.launch(permission)
         }
@@ -107,42 +133,81 @@ fun LibraryScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Color.DarkGray)
-                    ) {
-                        AsyncImage(
-                            model = "https://lh3.googleusercontent.com/aida-public/AB6AXuAWvVSASo7gh7ddlxBOJXSuaKoJI7_Yyc57LqB2KJI6iQxUP_VKdIDdQJXUIPnDfu8RbqoHa6HxYr0uYiGUcRQbacQ-0JYfM_BiuBr_C_zkwnd243h4lg1V8_XbYxgOas07_A2BnjczCTeCONvMW1xamltiGAtn9ZuVOOSk-yCcDiyuHhl-E7LdN0TT5q0ZHDHwIL0QntvsXY8K_9uvNT6U3gAFLVZDZjQ6CvRP7marVSLD2yMUTf62VWXlkIKEb1_vcet7sj0cTAUI",
-                            contentDescription = "Profile",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                if (isSearching) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.weight(1f).padding(end = 16.dp),
+                        placeholder = { Text("Search in Library", color = Color.Gray) },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedContainerColor = Color(0xFF2A2A2A),
+                            unfocusedContainerColor = Color(0xFF2A2A2A),
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent
+                        ),
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = Color.Gray,
+                                modifier = Modifier.clickable { 
+                                    isSearching = false
+                                    searchQuery = ""
+                                }
+                            )
+                        }
+                    )
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Your Library", 
+                            color = MaterialTheme.colorScheme.onBackground, 
+                            fontSize = 34.sp, 
+                            fontWeight = FontWeight.Bold
                         )
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        "Your Library", 
-                        color = MaterialTheme.colorScheme.onBackground, 
-                        fontSize = 34.sp, 
-                        fontWeight = FontWeight.Bold
-                    )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Search, 
-                        contentDescription = "Search", 
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.size(28.dp).clickable { }
-                    )
-                    Spacer(modifier = Modifier.width(24.dp))
-                    Icon(
-                        Icons.Default.Add, 
-                        contentDescription = "Add", 
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.size(28.dp).clickable { showSpotifyDialog = true }
-                    )
+                if (!isSearching) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Search, 
+                            contentDescription = "Search", 
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.size(28.dp).clickable { isSearching = true }
+                        )
+                        Spacer(modifier = Modifier.width(24.dp))
+                        Box {
+                            Icon(
+                                Icons.Default.Add, 
+                                contentDescription = "Add", 
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.size(28.dp).clickable { showAddMenu = true }
+                            )
+                            DropdownMenu(
+                                expanded = showAddMenu,
+                                onDismissRequest = { showAddMenu = false },
+                                modifier = Modifier.background(Color(0xFF2A2A2A))
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Create Playlist", color = Color.White) },
+                                    onClick = {
+                                        showCreatePlaylistDialog = true
+                                        showAddMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Import from Spotify", color = Color.White) },
+                                    onClick = {
+                                        showSpotifyDialog = true
+                                        showAddMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -190,27 +255,55 @@ fun LibraryScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.SwapVert, contentDescription = "Sort", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Recents", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Box {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { showSortMenu = true }.padding(end = 8.dp)
+                    ) {
+                        Icon(Icons.Default.SwapVert, contentDescription = "Sort", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(sortOption, color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                        modifier = Modifier.background(Color(0xFF2A2A2A))
+                    ) {
+                        listOf("Recents", "Alphabetical").forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option, color = Color.White) },
+                                onClick = {
+                                    sortOption = option
+                                    showSortMenu = false
+                                }
+                            )
+                        }
+                    }
                 }
-                Icon(Icons.Default.GridView, contentDescription = "Grid", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(20.dp))
+                Icon(
+                    if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                    contentDescription = "Toggle View",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(20.dp).clickable { isGridView = !isGridView }
+                )
             }
 
             // Library Items
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(), 
-                contentPadding = PaddingValues(bottom = 140.dp)
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(if (isGridView) 2 else 1),
+                modifier = Modifier.fillMaxSize().padding(horizontal = if (isGridView) 16.dp else 0.dp), 
+                contentPadding = PaddingValues(bottom = 140.dp, top = 8.dp),
+                horizontalArrangement = if (isGridView) Arrangement.spacedBy(16.dp) else Arrangement.Start,
+                verticalArrangement = if (isGridView) Arrangement.spacedBy(16.dp) else Arrangement.Top
             ) {
                 // Liked Songs
                 if (selectedFilter.isEmpty() || selectedFilter == "Playlists") {
-                    item {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(84.dp)
-                                .clickable { }
+                                .clickable { onNavigateToPlaylist(-1) }
                                 .padding(horizontal = 24.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -239,119 +332,145 @@ fun LibraryScreen(
 
                 // Playlists
                 if (selectedFilter.isEmpty() || selectedFilter == "Playlists") {
-                    items(playlists) { playlist ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(84.dp)
-                                .clickable { onNavigateToPlaylist(playlist.id) }
-                                .padding(horizontal = 24.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.DarkGray),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.QueueMusic, contentDescription = "Playlist", tint = Color.White, modifier = Modifier.size(32.dp))
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(playlist.name, color = Color.White, fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text("Playlist • Rahul", color = Color(0xFFA7A7A7), fontSize = 16.sp)
-                            }
+                    items(filteredPlaylists) { playlist ->
+                        val songs by remember(playlist.id) {
+                            viewModel.getSongsForPlaylist(playlist.id)
+                        }.collectAsState(initial = emptyList())
+                        val totalMs = songs.sumOf { it.durationMs ?: 0L }
+                        val totalSecs = totalMs / 1000
+                        val hours = totalSecs / 3600
+                        val mins = (totalSecs % 3600) / 60
+                        val durationStr = when {
+                            totalMs == 0L -> ""
+                            hours > 0 -> " • ${hours}hr ${mins}min"
+                            else -> " • ${mins} min"
                         }
+                        val validCovers = songs.mapNotNull { it.albumArt }.filter { it.isNotEmpty() }
+                        
+                        LibraryItem(
+                            isGridView = isGridView,
+                            title = playlist.name,
+                            subtitle = "Playlist • ${songs.size} songs$durationStr",
+                            onClick = { onNavigateToPlaylist(playlist.id) },
+                            imageContent = {
+                                if (validCovers.size >= 4) {
+                                    Column(modifier = Modifier.fillMaxSize()) {
+                                        Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                            AsyncImage(model = validCovers[0], contentDescription = null, modifier = Modifier.weight(1f).fillMaxHeight(), contentScale = ContentScale.Crop)
+                                            AsyncImage(model = validCovers[1], contentDescription = null, modifier = Modifier.weight(1f).fillMaxHeight(), contentScale = ContentScale.Crop)
+                                        }
+                                        Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                            AsyncImage(model = validCovers[2], contentDescription = null, modifier = Modifier.weight(1f).fillMaxHeight(), contentScale = ContentScale.Crop)
+                                            AsyncImage(model = validCovers[3], contentDescription = null, modifier = Modifier.weight(1f).fillMaxHeight(), contentScale = ContentScale.Crop)
+                                        }
+                                    }
+                                } else if (validCovers.isNotEmpty()) {
+                                    AsyncImage(model = validCovers[0], contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                } else {
+                                    Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = "Playlist", tint = Color.White, modifier = Modifier.size(32.dp))
+                                }
+                            }
+                        )
                     }
                 }
 
                 // Artists
                 if (selectedFilter.isEmpty() || selectedFilter == "Artists") {
-                    items(followedArtists) { artist ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(84.dp)
-                                .clickable { onNavigateToArtist(artist.name) }
-                                .padding(horizontal = 24.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.DarkGray),
-                                contentAlignment = Alignment.Center
-                            ) {
+                    items(filteredArtists) { artist ->
+                        LibraryItem(
+                            isGridView = isGridView,
+                            title = artist.name,
+                            subtitle = "Artist",
+                            isCircle = true,
+                            onClick = { onNavigateToArtist(artist.name) },
+                            imageContent = {
                                 if (!artist.image.isNullOrEmpty()) {
-                                    AsyncImage(
-                                        model = artist.image,
-                                        contentDescription = artist.name,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                    AsyncImage(model = artist.image, contentDescription = artist.name, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                 } else {
                                     Icon(Icons.Default.Person, contentDescription = "Artist", tint = Color.White, modifier = Modifier.size(32.dp))
                                 }
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(artist.name, color = Color.White, fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text("Artist", color = Color(0xFFA7A7A7), fontSize = 16.sp)
-                            }
-                        }
+                        )
                     }
                 }
                 
                 // Downloaded / Local
-                if (selectedFilter == "Downloaded") {
-                    items(localSongs) { song ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(84.dp)
-                                .clickable { 
-                                    viewModel.playSong(song, localSongs)
-                                    onNavigateToNowPlaying() 
-                                }
-                                .padding(horizontal = 24.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.DarkGray),
-                                contentAlignment = Alignment.Center
-                            ) {
+                if (selectedFilter == "Local") {
+                    items(filteredLocalSongs) { song ->
+                        LibraryItem(
+                            isGridView = isGridView,
+                            title = song.title,
+                            subtitle = "Song • ${song.artist}",
+                            onClick = { 
+                                viewModel.playSong(song, filteredLocalSongs)
+                                onNavigateToNowPlaying() 
+                            },
+                            imageContent = {
                                 if (!song.albumArt.isNullOrEmpty()) {
-                                    AsyncImage(
-                                        model = song.albumArt,
-                                        contentDescription = song.title,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                    AsyncImage(model = song.albumArt, contentDescription = song.title, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                 } else {
                                     Icon(Icons.Default.MusicNote, contentDescription = "Audio", tint = Color.White, modifier = Modifier.size(24.dp))
                                 }
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(song.title, color = Color.White, fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text("Song • ${song.artist}", color = Color(0xFFA7A7A7), fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                        }
+                        )
                     }
                 }
             }
         }
         
         // Spotify Import Dialog
-        if (showSpotifyDialog) {
+        
+    if (showCreatePlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showCreatePlaylistDialog = false
+                newPlaylistName = ""
+            },
+            title = { Text("Create Playlist", color = Color.White) },
+            text = {
+                OutlinedTextField(
+                    value = newPlaylistName,
+                    onValueChange = { newPlaylistName = it },
+                    label = { Text("Playlist Name", color = Color.Gray) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF1DB954),
+                        unfocusedBorderColor = Color.Gray,
+                        focusedContainerColor = Color(0xFF2A2A2A),
+                        unfocusedContainerColor = Color(0xFF2A2A2A)
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newPlaylistName.isNotBlank()) {
+                            viewModel.createPlaylist(newPlaylistName)
+                            showCreatePlaylistDialog = false
+                            newPlaylistName = ""
+                        }
+                    }
+                ) {
+                    Text("Create", color = Color(0xFF1DB954))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showCreatePlaylistDialog = false
+                        newPlaylistName = ""
+                    }
+                ) {
+                    Text("Cancel", color = Color.Gray)
+                }
+            },
+            containerColor = Color(0xFF1E1E1E)
+        )
+    }
+
+    if (showSpotifyDialog) {
             AlertDialog(
                 onDismissRequest = { if (!isImporting) showSpotifyDialog = false },
                 containerColor = Color(0xFF2A2A2A),
@@ -401,6 +520,67 @@ fun LibraryScreen(
                     }
                 }
             )
+        }
+    }
+}
+
+
+@Composable
+fun LibraryItem(
+    isGridView: Boolean,
+    title: String,
+    subtitle: String,
+    isCircle: Boolean = false,
+    onClick: () -> Unit,
+    imageContent: @Composable () -> Unit
+) {
+    if (isGridView) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(if (isCircle) CircleShape else RoundedCornerShape(8.dp))
+                    .background(Color.DarkGray),
+                contentAlignment = Alignment.Center
+            ) {
+                imageContent()
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(title, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(subtitle, color = Color(0xFFA7A7A7), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(84.dp)
+                .clickable { onClick() }
+                .padding(horizontal = 24.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(if (isCircle) CircleShape else RoundedCornerShape(8.dp))
+                    .background(Color.DarkGray),
+                contentAlignment = Alignment.Center
+            ) {
+                imageContent()
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, color = Color.White, fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(subtitle, color = Color(0xFFA7A7A7), fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }

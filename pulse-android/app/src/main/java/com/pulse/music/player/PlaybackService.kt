@@ -22,7 +22,10 @@ class PlaybackService : MediaSessionService() {
     
     @Inject
     lateinit var musicPlayerManager: MusicPlayerManager
-    
+
+    // Observe shared JamSessionManager for network playback sync
+    private val jamSessionManager = com.pulse.music.ui.jam.JamSessionManager
+
     private var mediaSession: MediaSession? = null
     private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main)
     
@@ -31,6 +34,79 @@ class PlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         val player = musicPlayerManager.player
+        // Observe Jam incoming sync events and apply to local player
+        var ignoreNextSeek = false
+        var ignoreNextPlayChange = false
+
+        scope.launch {
+            jamSessionManager.incomingSync.collect { sync ->
+                sync?.let { (isPlaying, positionMs) ->
+                    if (player.playWhenReady != isPlaying) {
+                        ignoreNextPlayChange = true
+                        player.playWhenReady = isPlaying
+                    }
+                    if (Math.abs(player.currentPosition - positionMs) > 1000) {
+                        ignoreNextSeek = true
+                        player.seekTo(positionMs)
+                    }
+                }
+            }
+        }
+        scope.launch {
+            jamSessionManager.incomingSongWithSync.collect { data ->
+                data?.let { (song, syncInfo) ->
+                    val (isPlaying, positionMs) = syncInfo
+                    if (musicPlayerManager.currentSong.value?.id != song.id) {
+                        if (player.playWhenReady != isPlaying) {
+                            ignoreNextPlayChange = true
+                        }
+                        if (Math.abs(player.currentPosition - positionMs) > 1000) {
+                            ignoreNextSeek = true
+                        }
+                        musicPlayerManager.playSong(song, positionMs, isPlaying)
+                    }
+                }
+            }
+        }
+        scope.launch {
+            jamSessionManager.incomingSong.collect { song ->
+                song?.let { 
+                    if (musicPlayerManager.currentSong.value?.id != it.id) {
+                        musicPlayerManager.playSong(it)
+                    }
+                }
+            }
+        }
+        // Listen to local playback changes and broadcast to Jam participants
+        player.addListener(object : Player.Listener {
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                if (ignoreNextPlayChange) {
+                    ignoreNextPlayChange = false
+                    return
+                }
+                val position = player.currentPosition
+                jamSessionManager.broadcastPlayPause(playWhenReady, position)
+            }
+            
+            override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+                if (reason == Player.DISCONTINUITY_REASON_SEEK) {
+                    if (ignoreNextSeek) {
+                        ignoreNextSeek = false
+                        return
+                    }
+                    val position = newPosition.positionMs
+                    jamSessionManager.broadcastPlayPause(player.playWhenReady, position)
+                }
+            }
+
+            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                // If it transitioned locally, broadcast it
+                val currentSong = musicPlayerManager.currentSong.value
+                if (currentSong != null && jamSessionManager.isConnected.value) {
+                    jamSessionManager.broadcastPlaySong(currentSong)
+                }
+            }
+        })
         val intent = Intent(this, com.pulse.music.ui.lockscreen.LockScreenActivity::class.java)
         val options = android.app.ActivityOptions.makeBasic()
         if (android.os.Build.VERSION.SDK_INT >= 34) { // UPSIDE_DOWN_CAKE

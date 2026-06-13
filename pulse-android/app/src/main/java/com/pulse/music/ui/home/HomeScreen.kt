@@ -23,17 +23,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.pulse.music.domain.Song
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.pulse.music.R
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.shadow
+import coil.compose.AsyncImage
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToNowPlaying: () -> Unit = {},
     onNavigateToAlbum: (String) -> Unit = {},
-    onNavigateToArtist: (String) -> Unit = {}
+    onNavigateToArtist: (String) -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val username by viewModel.username.collectAsState()
+    val profilePicUri by viewModel.profilePicUri.collectAsState()
     var showHistory by remember { mutableStateOf(false) }
 
     val calendar = java.util.Calendar.getInstance()
@@ -75,15 +105,46 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Pulse", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground) },
+                title = {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                        contentDescription = "Pulse Music Logo",
+                        modifier = Modifier.size(36.dp)
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
                     actionIconContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
-                    IconButton(onClick = { /* Settings */ }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
+                    IconButton(onClick = onNavigateToProfile) {
+                        if (!profilePicUri.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = profilePicUri,
+                                contentDescription = "Profile",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                            )
+                        } else {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            ) {
+                                Text(
+                                    text = username?.firstOrNull()?.uppercaseChar()?.toString() ?: "P",
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
                     }
                 }
             )
@@ -136,15 +197,81 @@ fun HomeScreen(
                         }
                     }
 
-                    if (state.suggested.isNotEmpty()) {
-                        item {
-                            SectionTitle("Suggested For You")
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(horizontal = 16.dp)) {
-                                items(state.suggested) { song ->
-                                    SongCard(song, onClick = {
-                                        viewModel.playSong(song, state.suggested)
-                                        onNavigateToNowPlaying()
-                                    })
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Best Songs For You",
+                                fontSize = 34.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        
+                        val shimmerBrush = rememberShimmerBrush()
+                        val screenWidth = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp
+                        val pageWidth = screenWidth * 0.88f
+                        val pageCount = maxOf((state.suggested.size + 7) / 8, 2)
+                        val pagerState = rememberPagerState(pageCount = { pageCount })
+                        
+                        HorizontalPager(
+                            state = pagerState,
+                            pageSize = PageSize.Fixed(pageWidth),
+                            contentPadding = PaddingValues(horizontal = 24.dp),
+                            pageSpacing = 24.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { page ->
+                            Row(
+                                modifier = Modifier.width(pageWidth),
+                                horizontalArrangement = Arrangement.spacedBy(24.dp)
+                            ) {
+                                // Left column (4 songs)
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
+                                    for (rowIndex in 0 until 4) {
+                                        val songIndex = page * 8 + rowIndex
+                                        if (songIndex < state.suggested.size) {
+                                            val song = state.suggested[songIndex]
+                                            SongRowItem(song = song, onClick = {
+                                                viewModel.playSong(song, state.suggested)
+                                                onNavigateToNowPlaying()
+                                            })
+                                        } else {
+                                            ShimmerShelfSkeletonRowItem(shimmerBrush = shimmerBrush)
+                                        }
+                                    }
+                                }
+                                
+                                // Right column (4 songs)
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
+                                    for (rowIndex in 0 until 4) {
+                                        val songIndex = page * 8 + 4 + rowIndex
+                                        if (songIndex < state.suggested.size) {
+                                            val song = state.suggested[songIndex]
+                                            SongRowItem(song = song, onClick = {
+                                                viewModel.playSong(song, state.suggested)
+                                                onNavigateToNowPlaying()
+                                            })
+                                        } else {
+                                            ShimmerShelfSkeletonRowItem(shimmerBrush = shimmerBrush)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -271,6 +398,200 @@ fun SongCard(song: Song, onRemove: (() -> Unit)? = null, onClick: () -> Unit = {
         )
     }
 }
+
+@Composable
+fun rememberShimmerBrush(): Brush {
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
+    )
+    
+    val shimmerColors = listOf(
+        Color(0xFF1E1E1E),
+        Color(0xFF2C2C2C),
+        Color(0xFF1E1E1E)
+    )
+    
+    return Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset(10f, 10f),
+        end = Offset(translateAnim.value, translateAnim.value)
+    )
+}
+
+@Composable
+fun ShimmerShelfSkeletonRowItem(shimmerBrush: Brush) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(shimmerBrush)
+            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .height(14.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(shimmerBrush)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.4f)
+                        .height(11.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(shimmerBrush)
+                )
+            }
+        }
+        
+        HorizontalDivider(
+            modifier = Modifier.padding(start = 68.dp),
+            thickness = 1.dp,
+            color = Color.White.copy(alpha = 0.08f)
+        )
+    }
+}
+
+@Composable
+fun SongRowItem(song: Song, onClick: () -> Unit) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(animationSpec = tween(durationMillis = 500))
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val isPressed by interactionSource.collectIsPressedAsState()
+        val scale by androidx.compose.animation.core.animateFloatAsState(
+            targetValue = if (isPressed) 0.98f else 1f,
+            animationSpec = tween(durationMillis = 100),
+            label = "scale"
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .graphicsLayer(scaleX = scale, scaleY = scale)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = rememberRipple(),
+                    onClick = onClick
+                ),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                ) {
+                    if (!song.albumArt.isNullOrEmpty()) {
+                        coil.compose.AsyncImage(
+                            model = song.albumArt,
+                            contentDescription = song.title,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFF242424)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MusicNote,
+                                contentDescription = "Music",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = song.title,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = song.artist,
+                        fontSize = 14.sp,
+                        color = Color(0xFFA7A7A7),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                IconButton(
+                    onClick = { /* Menu action */ },
+                    modifier = Modifier.size(18.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Menu",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 68.dp),
+                thickness = 1.dp,
+                color = Color.White.copy(alpha = 0.08f)
+            )
+        }
+    }
+}
+
 
 @Composable
 fun PlaylistCard(playlist: com.pulse.music.domain.Playlist, onClick: () -> Unit = {}) {

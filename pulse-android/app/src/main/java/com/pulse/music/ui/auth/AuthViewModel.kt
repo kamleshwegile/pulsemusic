@@ -2,6 +2,7 @@ package com.pulse.music.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import com.pulse.music.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -44,6 +45,19 @@ class AuthViewModel @Inject constructor(
     fun updateProfilePic(uri: String) {
         viewModelScope.launch {
             repository.updateProfilePic(uri)
+        }
+    }
+
+    fun uploadProfilePic(context: Context, uri: String) {
+        viewModelScope.launch {
+            val result = repository.uploadProfilePic(context, uri)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                result.onSuccess {
+                    android.widget.Toast.makeText(context, "Profile picture updated successfully!", android.widget.Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    android.widget.Toast.makeText(context, "Upload failed: ${error.localizedMessage}", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
 

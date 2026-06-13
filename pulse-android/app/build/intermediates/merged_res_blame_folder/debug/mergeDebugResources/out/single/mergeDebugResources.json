@@ -1,0 +1,34 @@
+[
+    {
+        "merged": "com.pulse.music.app-debug-75:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.pulse.music.app-main-77:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.pulse.music.app-debug-75:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.pulse.music.app-main-77:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.pulse.music.app-debug-75:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.pulse.music.app-main-77:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\Mehak\\.gradle\\daemon\\8.7\\com.pulse.music.app-debug-75:\\drawable_circle_background.xml.flat",
+        "source": "C:\\Users\\Mehak\\.gradle\\daemon\\8.7\\com.pulse.music.app-main-77:\\drawable\\circle_background.xml"
+    },
+    {
+        "merged": "com.pulse.music.app-debug-75:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.pulse.music.app-main-77:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\Mehak\\.gradle\\daemon\\8.7\\com.pulse.music.app-debug-75:\\layout_notification_custom_pill.xml.flat",
+        "source": "C:\\Users\\Mehak\\.gradle\\daemon\\8.7\\com.pulse.music.app-main-77:\\layout\\notification_custom_pill.xml"
+    },
+    {
+        "merged": "C:\\Users\\Mehak\\.gradle\\daemon\\8.7\\com.pulse.music.app-debug-75:\\layout_notification_expanded.xml.flat",
+        "source": "C:\\Users\\Mehak\\.gradle\\daemon\\8.7\\com.pulse.music.app-main-77:\\layout\\notification_expanded.xml"
+    },
+    {
+        "merged": "C:\\Users\\Mehak\\.gradle\\daemon\\8.7\\com.pulse.music.app-debug-75:\\drawable_pill_background.xml.flat",
+        "source": "C:\\Users\\Mehak\\.gradle\\daemon\\8.7\\com.pulse.music.app-main-77:\\drawable\\pill_background.xml"
+    }
+]

@@ -1,7 +1,5 @@
 package com.pulse.music.domain
 
-
-
 data class Song(
     val id: String,
     val title: String,
@@ -58,4 +56,14 @@ data class SearchResponse(
     val artists: List<Artist> = emptyList(),
     val albums: List<Album> = emptyList(),
     val playlists: List<Playlist> = emptyList()
+)
+
+data class JamRoomInfo(
+    val jamId: String,
+    val roomCode: String,
+    val name: String,
+    val hostId: String,
+    val memberCount: Int = 0,
+    val isActive: Boolean = false,
+    val currentSongTitle: String? = null
 )

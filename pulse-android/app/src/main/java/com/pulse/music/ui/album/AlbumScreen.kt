@@ -42,6 +42,7 @@ fun AlbumScreen(
     val albumInfo by viewModel.albumInfo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val currentSong by viewModel.currentSong.collectAsState()
+    val isPlaying by viewModel.isPlaying.collectAsState(initial = false)
     val isFavorite by viewModel.isFavorite.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -68,7 +69,7 @@ fun AlbumScreen(
                 }
             }
         },
-        containerColor = MaterialTheme.colorScheme.background // Pure black background like the mockup
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         if (isLoading && albumInfo == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -76,6 +77,22 @@ fun AlbumScreen(
             }
         } else if (albumInfo != null) {
             val album = albumInfo!!
+
+            // Helper: format total duration
+            fun formatDuration(totalMs: Long): String {
+                val totalSecs = totalMs / 1000
+                val hours = totalSecs / 3600
+                val mins = (totalSecs % 3600) / 60
+                return when {
+                    totalMs == 0L -> ""
+                    hours > 0L -> "${hours}hr ${mins}min"
+                    else -> "${mins} min"
+                }
+            }
+
+            val totalAlbumMs = album.tracks.sumOf { it.durationMs ?: 0L }
+            val albumDurationStr = formatDuration(totalAlbumMs)
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -111,13 +128,19 @@ fun AlbumScreen(
                         )
                         Text(
                             text = album.artist,
-                            color = MaterialTheme.colorScheme.onBackground, // primary color in mockup is white
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(top = 4.dp)
                         )
+                        // Year · song count · total duration
+                        val subtitleParts = buildList {
+                            add("${album.year ?: "2024"}")
+                            add("${album.tracks.size} songs")
+                            if (albumDurationStr.isNotEmpty()) add(albumDurationStr)
+                        }
                         Text(
-                            text = "${album.year ?: "2024"} · ${album.tracks.size} songs",
+                            text = subtitleParts.joinToString(" · "),
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 4.dp)
@@ -143,9 +166,9 @@ fun AlbumScreen(
                             )
                             Icon(Icons.Default.Download, contentDescription = "Download", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
                             Icon(
-                                Icons.Default.Share, 
-                                contentDescription = "Share", 
-                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f), 
+                                Icons.Default.Share,
+                                contentDescription = "Share",
+                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 modifier = Modifier.size(22.dp).clickable {
                                     val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                         type = "text/plain"
@@ -168,14 +191,26 @@ fun AlbumScreen(
                             ) {
                                 Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(24.dp))
                             }
+                            val isAlbumPlaying = isPlaying && currentSong != null && album.tracks.any { it.id == currentSong?.id }
                             Box(
                                 modifier = Modifier
                                     .size(44.dp)
                                     .background(MaterialTheme.colorScheme.onBackground, RoundedCornerShape(22.dp))
-                                    .clickable { if(album.tracks.isNotEmpty()) onSongClick(album.tracks.first(), album.tracks) },
+                                    .clickable {
+                                        if (isAlbumPlaying) {
+                                            viewModel.togglePlayPause()
+                                        } else if (album.tracks.isNotEmpty()) {
+                                            onSongClick(album.tracks.first(), album.tracks)
+                                        }
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = MaterialTheme.colorScheme.background, modifier = Modifier.size(28.dp))
+                                Icon(
+                                    if (isAlbumPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = "Play/Pause",
+                                    tint = MaterialTheme.colorScheme.background,
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
                         }
                     }
@@ -184,7 +219,7 @@ fun AlbumScreen(
                 // Track List
                 itemsIndexed(album.tracks) { index, song ->
                     val isActive = currentSong?.id == song.id
-                    
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -206,8 +241,8 @@ fun AlbumScreen(
                                 Icon(Icons.Default.GraphicEq, contentDescription = "Playing", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(16.dp))
                             }
                         }
-                        
-                        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+
+                        Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
                             Text(
                                 text = song.title,
                                 color = MaterialTheme.colorScheme.onBackground,
@@ -226,19 +261,25 @@ fun AlbumScreen(
                                 )
                             }
                         }
-                        
+
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            if (song.durationMs != null) {
-                                val totalSecs = song.durationMs / 1000
+                            // Show duration only if it's a real value (> 0)
+                            val dms = song.durationMs ?: 0L
+                            if (dms > 0L) {
+                                val totalSecs = dms / 1000
                                 val m = totalSecs / 60
                                 val s = totalSecs % 60
-                                Text(String.format("%d:%02d", m, s), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), fontSize = 12.sp)
+                                Text(
+                                    String.format("%d:%02d", m, s),
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                                    fontSize = 12.sp
+                                )
                             }
                             Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
                         }
                     }
                 }
-                
+
                 // Footer Info
                 item {
                     Column(
@@ -247,7 +288,12 @@ fun AlbumScreen(
                             .padding(top = 48.dp, bottom = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("${album.tracks.size} songs", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), fontSize = 12.sp)
+                        val footerDuration = if (albumDurationStr.isNotEmpty()) " · $albumDurationStr" else ""
+                        Text(
+                            "${album.tracks.size} songs$footerDuration",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                            fontSize = 12.sp
+                        )
                         Text("Released ${album.year ?: "2024"}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
                         Text("© ${album.year ?: "2024"} Pulse Music Records", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f), fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
                     }

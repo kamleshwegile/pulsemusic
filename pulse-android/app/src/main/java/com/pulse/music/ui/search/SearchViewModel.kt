@@ -232,8 +232,16 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    fun playSong(song: Song, contextSongs: List<Song>) {
+    fun playSong(song: Song, contextList: List<Song>) {
         saveRecentSearch(_uiState.value.query)
-        musicPlayerManager.playSongFromList(song, contextSongs)
+        musicPlayerManager.playSongFromList(song, contextList)
+    }
+
+    fun addToQueue(song: Song) {
+        if (com.pulse.music.ui.jam.JamSessionManager.isConnected.value) {
+            com.pulse.music.ui.jam.JamSessionManager.addSongToQueue(song, "You")
+        } else {
+            musicPlayerManager.enqueue(song)
+        }
     }
 }

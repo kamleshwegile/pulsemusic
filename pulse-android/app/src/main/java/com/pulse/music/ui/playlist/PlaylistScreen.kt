@@ -52,10 +52,44 @@ fun PlaylistScreen(
     val playlistInfo by viewModel.playlistInfo.collectAsState()
     val playlistSongs by viewModel.playlistSongs.collectAsState()
     val currentSong by viewModel.currentSong.collectAsState()
+    val isPlaying by viewModel.isPlaying.collectAsState(initial = false)
     val isFavorite by viewModel.isFavorite.collectAsState()
     
     val context = LocalContext.current
     val listState = rememberLazyListState()
+
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var newPlaylistName by remember { mutableStateOf("") }
+
+    if (showRenameDialog) {
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text("Rename Playlist") },
+            text = {
+                OutlinedTextField(
+                    value = newPlaylistName,
+                    onValueChange = { newPlaylistName = it },
+                    label = { Text("Playlist Name") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newPlaylistName.isNotBlank()) {
+                        viewModel.renamePlaylist(newPlaylistName)
+                        showRenameDialog = false
+                    }
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     // Sticky header calculation
     val firstVisibleItemIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
@@ -215,20 +249,26 @@ fun PlaylistScreen(
                                 expanded = expandedMenu,
                                 onDismissRequest = { expandedMenu = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("Edit Playlist") },
-                                    onClick = { expandedMenu = false },
-                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Delete Playlist") },
-                                    onClick = { 
-                                        expandedMenu = false 
-                                        viewModel.deletePlaylist()
-                                        onBack()
-                                    },
-                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
-                                )
+                                if (playlistId != -1) {
+                                    DropdownMenuItem(
+                                        text = { Text("Edit Playlist") },
+                                        onClick = {
+                                            expandedMenu = false
+                                            newPlaylistName = playlistInfo?.name ?: ""
+                                            showRenameDialog = true
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Delete Playlist") },
+                                        onClick = { 
+                                            expandedMenu = false 
+                                            viewModel.deletePlaylist()
+                                            onBack()
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -249,9 +289,17 @@ fun PlaylistScreen(
                         val interactionSourcePlay = remember { MutableInteractionSource() }
                         val isPressedPlay by interactionSourcePlay.collectIsPressedAsState()
                         val scalePlay by animateFloatAsState(targetValue = if (isPressedPlay) 0.9f else 1f, label = "play_scale")
+                        
+                        val isPlaylistPlaying = isPlaying && currentSong != null && playlistSongs.any { it.id == currentSong?.id }
 
                         FloatingActionButton(
-                            onClick = { viewModel.playAll(playlistSongs) },
+                            onClick = {
+                                if (isPlaylistPlaying) {
+                                    viewModel.togglePlayPause()
+                                } else {
+                                    viewModel.playAll(playlistSongs)
+                                }
+                            },
                             containerColor = Color(0xFFF92839),
                             shape = CircleShape,
                             modifier = Modifier
@@ -260,7 +308,12 @@ fun PlaylistScreen(
                                 .shadow(4.dp, CircleShape),
                             interactionSource = interactionSourcePlay
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = MaterialTheme.colorScheme.background, modifier = Modifier.size(36.dp))
+                            Icon(
+                                if (isPlaylistPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = "Play/Pause",
+                                tint = MaterialTheme.colorScheme.background,
+                                modifier = Modifier.size(36.dp)
+                            )
                         }
                     }
                 }

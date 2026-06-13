@@ -46,6 +46,7 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsState()
     var isSearchBarFocused by remember { mutableStateOf(false) }
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val isJamConnected by com.pulse.music.ui.jam.JamSessionManager.isConnected.collectAsState()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -270,7 +271,9 @@ fun SearchScreen(
                                     Text(song.title, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Text(song.artist, color = Color.Gray, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
-                                IconButton(onClick = {}) { Icon(Icons.Default.Add, null, tint = Color.Gray) }
+                                if (isJamConnected) {
+                                    IconButton(onClick = { viewModel.addToQueue(song) }) { Icon(Icons.Default.Add, "Add to Queue", tint = Color.Gray) }
+                                }
                                 IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, null, tint = Color.Gray) }
                             }
                         }

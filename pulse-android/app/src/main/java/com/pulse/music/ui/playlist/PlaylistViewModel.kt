@@ -14,6 +14,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
+    private val likedSongsRepository: com.pulse.music.data.repository.LikedSongsRepository,
     private val musicPlayerManager: MusicPlayerManager
 ) : ViewModel() {
 
@@ -22,8 +23,12 @@ class PlaylistViewModel @Inject constructor(
     val playlistInfo: StateFlow<PlaylistEntity?> = _playlistId
         .filterNotNull()
         .flatMapLatest { id ->
-            playlistRepository.getAllPlaylists().map { playlists -> 
-                playlists.find { it.id == id } 
+            if (id == -1) {
+                flowOf(PlaylistEntity(id = -1, name = "Liked Songs"))
+            } else {
+                playlistRepository.getAllPlaylists().map { playlists -> 
+                    playlists.find { it.id == id } 
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -31,11 +36,16 @@ class PlaylistViewModel @Inject constructor(
     val playlistSongs: StateFlow<List<Song>> = _playlistId
         .filterNotNull()
         .flatMapLatest { id ->
-            playlistRepository.getSongsForPlaylist(id)
+            if (id == -1) {
+                likedSongsRepository.likedSongs
+            } else {
+                playlistRepository.getSongsForPlaylist(id)
+            }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val currentSong = musicPlayerManager.currentSong
+    val isPlaying = musicPlayerManager.isPlaying
     
     // Mocking favorite functionality since DB doesn't support it directly on PlaylistEntity
     private val _isFavorite = MutableStateFlow(false)
@@ -57,6 +67,10 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
+    fun togglePlayPause() {
+        musicPlayerManager.togglePlayPause()
+    }
+
     fun shufflePlay(contextSongs: List<Song>) {
         if (contextSongs.isNotEmpty()) {
             val shuffled = contextSongs.shuffled()
@@ -71,12 +85,19 @@ class PlaylistViewModel @Inject constructor(
     fun removeSong(songId: String) {
         val pId = _playlistId.value ?: return
         viewModelScope.launch {
-            playlistRepository.removeSongFromPlaylist(pId, songId)
+            if (pId == -1) {
+                likedSongsRepository.removeLikedSong(songId)
+            } else {
+                playlistRepository.removeSongFromPlaylist(pId, songId)
+            }
         }
     }
 
     fun renamePlaylist(newName: String) {
-        // Implementation for renaming playlist
+        val pId = _playlistId.value ?: return
+        viewModelScope.launch {
+            playlistRepository.renamePlaylist(pId, newName)
+        }
     }
 
     fun deletePlaylist() {

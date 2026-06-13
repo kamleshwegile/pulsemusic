@@ -277,8 +277,8 @@ fun RegisterScreen(
 
                 Button(
                     onClick = { 
-                        viewModel.register(username, email, password, onNavigateToHome, onError = {
-                            Toast.makeText(context, "user already exist", Toast.LENGTH_SHORT).show()
+                        viewModel.register(username, email, password, onNavigateToHome, onError = { errorMsg ->
+                            Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
                         }) 
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),

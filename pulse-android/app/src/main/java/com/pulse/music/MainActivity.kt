@@ -41,6 +41,7 @@ import com.pulse.music.player.MusicPlayerManager
 import com.pulse.music.ui.home.HomeScreen
 import com.pulse.music.ui.library.LibraryScreen
 import com.pulse.music.ui.nowplaying.NowPlayingScreen
+import com.pulse.music.ui.jam.JamScreen
 import com.pulse.music.ui.nowplaying.PulseRed
 import com.pulse.music.ui.search.SearchScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -159,6 +160,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onNavigateToArtist = { artistName ->
                                         navController.navigate("artist/$artistName")
+                                    },
+                                    onNavigateToProfile = {
+                                        navController.navigate("profile")
                                     }
                                 )
                             }
@@ -252,15 +256,31 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("now_playing") {
                                 NowPlayingScreen(
-                                    onBack = {
-                                        navController.popBackStack()
-                                    },
-                                    onNavigateToArtist = { artistName ->
-                                        navController.navigate("artist/$artistName")
-                                    },
-                                    onNavigateToAlbum = { albumId ->
-                                        navController.navigate("album/$albumId")
+                                    onBack = { navController.popBackStack() },
+                                    onNavigateToArtist = { artistName -> navController.navigate("artist/$artistName") },
+                                    onNavigateToAlbum = { albumId -> navController.navigate("album/$albumId") },
+                                    onNavigateToJam = { 
+                                        android.util.Log.d("NAVIGATION", "Navigating to jam")
+                                        navController.navigate("jam") 
                                     }
+                                )
+                            }
+                            composable(
+                                "jam?roomId={roomId}",
+                                arguments = listOf(androidx.navigation.navArgument("roomId") {
+                                    type = androidx.navigation.NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                }),
+                                deepLinks = listOf(
+                                    androidx.navigation.navDeepLink { uriPattern = "pulse://jam/{roomId}" },
+                                    androidx.navigation.navDeepLink { uriPattern = "https://pulsemusic.app/jam/{roomId}" }
+                                )
+                            ) { backStackEntry ->
+                                val roomId = backStackEntry.arguments?.getString("roomId")
+                                JamScreen(
+                                    roomId = roomId,
+                                    onNavigateBack = { navController.popBackStack() }
                                 )
                             }
                         }
@@ -310,7 +330,7 @@ class MainActivity : ComponentActivity() {
                                             Triple("Home", Icons.Default.Home, "home"),
                                             Triple("Search", Icons.Default.Search, "search"),
                                             Triple("Your Library", Icons.Default.LibraryMusic, "library"),
-                                            Triple("Create", Icons.Default.AddBox, "profile")
+                                            Triple("Profile", Icons.Default.Person, "profile")
                                         )
                                         items.forEach { (label, icon, route) ->
                                             val selected = currentRoute == route

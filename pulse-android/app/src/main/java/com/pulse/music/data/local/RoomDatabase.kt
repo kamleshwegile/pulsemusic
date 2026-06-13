@@ -64,6 +64,9 @@ interface PlaylistDao {
     @Query("DELETE FROM playlists WHERE id = :playlistId")
     suspend fun deletePlaylist(playlistId: Int)
 
+    @Query("UPDATE playlists SET name = :newName WHERE id = :playlistId")
+    suspend fun renamePlaylist(playlistId: Int, newName: String)
+
     @Query("SELECT * FROM playlist_songs WHERE playlistId = :playlistId ORDER BY addedAt DESC")
     fun getSongsForPlaylist(playlistId: Int): kotlinx.coroutines.flow.Flow<List<PlaylistSongEntity>>
 

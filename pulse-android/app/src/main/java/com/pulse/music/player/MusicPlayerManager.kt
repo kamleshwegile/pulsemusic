@@ -61,7 +61,7 @@ class MusicPlayerManager @Inject constructor(
         )
         val cacheDataSourceFactory = androidx.media3.datasource.cache.CacheDataSource.Factory()
             .setCache(cache)
-            .setUpstreamDataSourceFactory(androidx.media3.datasource.DefaultHttpDataSource.Factory())
+            .setUpstreamDataSourceFactory(androidx.media3.datasource.DefaultDataSource.Factory(context))
             .setFlags(androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
             
         androidx.media3.datasource.ResolvingDataSource.Factory(
@@ -110,10 +110,11 @@ class MusicPlayerManager @Inject constructor(
     
     val player: ExoPlayer get() = _activePlayerFlow.value
     private var mediaControllerFuture: com.google.common.util.concurrent.ListenableFuture<androidx.media3.session.MediaController>? = null
-    private var crossfadeSecs = 0
-    private var fadingPlayer: ExoPlayer? = null
-    private var isCrossfading = false
-    private var crossfadeStartTime = 0L
+    private val crossfadeManager = CrossfadeManager()
+    
+    // Legacy bridge properties to avoid breaking other parts of the file temporarily if any remain
+    private val crossfadeSecs: Int get() = crossfadeManager.crossfadeSecs
+    private val isCrossfading: Boolean get() = crossfadeManager.isCrossfading
 
     init {
         val sessionToken = androidx.media3.session.SessionToken(context, android.content.ComponentName(context, PlaybackService::class.java))
@@ -123,7 +124,7 @@ class MusicPlayerManager @Inject constructor(
             val cfKey = intPreferencesKey("crossfade")
             val gaplessKey = booleanPreferencesKey("gapless")
             context.dataStore.data.collect { prefs ->
-                crossfadeSecs = prefs[cfKey] ?: 0
+                crossfadeManager.crossfadeSecs = prefs[cfKey] ?: 0
                 val gapless = prefs[gaplessKey] ?: false
                 player1.skipSilenceEnabled = gapless
                 player2.skipSilenceEnabled = gapless
@@ -138,6 +139,8 @@ class MusicPlayerManager @Inject constructor(
 
     private var _currentIndex = MutableStateFlow(-1)
     val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
+
+    private val resolvedUrlCache = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     // ── Exposed state ────────────────────────────────────────────────────
 
@@ -262,30 +265,12 @@ class MusicPlayerManager @Inject constructor(
                                 android.util.Log.d("Crossfade", "Tick: timeLeft=$timeLeft, crossfadeMs=$actualCrossfadeMs, queueIdx=${player.currentMediaItemIndex}")
                             }
 
-                            if (actualCrossfadeMs > 0L && timeLeft <= actualCrossfadeMs && timeLeft > 0 && player.currentPosition > 15000L && player.currentMediaItemIndex < _queue.value.size - 1 && !isCrossfading && _repeatMode.value != RepeatMode.ONE && _sleepTimerMode.value != SleepTimerMode.END_OF_TRACK) {
+                            if (crossfadeManager.shouldStartCrossfade(timeLeft, player.currentPosition, player.currentMediaItemIndex >= _queue.value.size - 1, _repeatMode.value, _sleepTimerMode.value)) {
                                 val nextPlayer = if (player === player1) player2 else player1
                                 if (nextPlayer.mediaItemCount > 0) {
-                                    android.util.Log.d("Crossfade", "--- Crossfade Check ---")
-                                    android.util.Log.d("Crossfade", "currentPlayer.isPlaying: ${player.isPlaying}")
-                                    android.util.Log.d("Crossfade", "alternatePlayer.isPlaying: ${nextPlayer.isPlaying}")
-                                    android.util.Log.d("Crossfade", "alternatePlayer.playbackState: ${nextPlayer.playbackState}")
-                                    android.util.Log.d("Crossfade", "alternatePlayer.currentMediaItem: ${nextPlayer.currentMediaItem?.mediaId}")
-
                                     if (nextPlayer.playbackState == androidx.media3.common.Player.STATE_READY) {
                                         android.util.Log.d("Crossfade", "Secondary player is READY. Starting crossfade.")
-                                        isCrossfading = true
-                                        crossfadeStartTime = System.currentTimeMillis()
-                                        
-                                        fadingPlayer = player
-                                        val fadingIdx = fadingPlayer!!.currentMediaItemIndex
-                                        if (fadingIdx + 1 < fadingPlayer!!.mediaItemCount) {
-                                            fadingPlayer!!.removeMediaItems(fadingIdx + 1, fadingPlayer!!.mediaItemCount)
-                                        }
-
-                                        nextPlayer.volume = 1f
-                                        
-                                        nextPlayer.play()
-                                        android.util.Log.d("Crossfade", "Secondary player play() called.")
+                                        crossfadeManager.startCrossfade(player, nextPlayer)
                                         
                                         // Spotify-style: Swap UI to the next track immediately
                                         _activePlayerFlow.value = nextPlayer
@@ -300,7 +285,7 @@ class MusicPlayerManager @Inject constructor(
                                             }
                                         }
                                     } else {
-                                        android.util.Log.w("Crossfade", "Secondary player NOT READY (State: ${nextPlayer.playbackState}). Fallback: Continuing current track.")
+                                        android.util.Log.w("Crossfade", "Secondary player NOT READY. Fallback: Continuing current track.")
                                     }
                                 }
                             }
@@ -308,15 +293,10 @@ class MusicPlayerManager @Inject constructor(
                     }
                 } catch(e: Exception) {}
                 
-                if (isCrossfading && fadingPlayer != null) {
-                    val elapsed = System.currentTimeMillis() - crossfadeStartTime
-                    val crossfadeMs = crossfadeSecs * 1000L
-                    if (elapsed >= crossfadeMs) {
-                        isCrossfading = false
-                        fadingPlayer!!.stop()
-                        fadingPlayer!!.clearMediaItems()
-                        fadingPlayer = null
-                        android.util.Log.d("Crossfade", "Player swap completed.")
+                if (crossfadeManager.isCrossfading) {
+                    val completed = !crossfadeManager.updateCrossfade(player)
+                    if (completed) {
+                        preBufferAlternatePlayer()
                     }
                 }
                 
@@ -331,11 +311,11 @@ class MusicPlayerManager @Inject constructor(
     }
 
     private fun preBufferAlternatePlayer() {
+        if (crossfadeSecs <= 0) return
         val currentIdx = player.currentMediaItemIndex
         val nextIdx = currentIdx + 1
         val alternatePlayer = if (player === player1) player2 else player1
         if (nextIdx >= 0 && nextIdx < _queue.value.size) {
-            android.util.Log.d("Crossfade", "preBufferAlternatePlayer: Preparing nextIdx $nextIdx")
             alternatePlayer.setMediaItems(_queue.value.map { buildMediaItem(it) })
             alternatePlayer.seekTo(nextIdx, 0)
             alternatePlayer.prepare()
@@ -359,8 +339,7 @@ class MusicPlayerManager @Inject constructor(
         player2.pause()
         player2.stop()
         player2.clearMediaItems()
-        fadingPlayer = null
-        isCrossfading = false
+        crossfadeManager.abortCrossfade(player)
         stopPositionPolling()
     }
 
@@ -368,7 +347,10 @@ class MusicPlayerManager @Inject constructor(
         if (song.id.startsWith("local_") || song.source.contains("saavncdn.com") || song.source.endsWith(".mp3") || song.source.endsWith(".mp4") || song.source.endsWith(".m4a")) {
             return song.source
         }
-        return withContext(Dispatchers.IO) {
+        val cached = resolvedUrlCache[song.id]
+        if (cached != null) return cached
+
+        val resolved = withContext(Dispatchers.IO) {
             try {
                 val url = "https://music-api.albatross0071.workers.dev/api/songs/${song.id}"
                 val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
@@ -509,6 +491,8 @@ class MusicPlayerManager @Inject constructor(
             }
             return@withContext song.source
         }
+        resolvedUrlCache[song.id] = resolved
+        return resolved
     }
 
     // ── Player.Listener ──────────────────────────────────────────────────
@@ -647,7 +631,7 @@ class MusicPlayerManager @Inject constructor(
 
     /** Play a single song. */
     @OptIn(UnstableApi::class)
-    fun playSong(song: Song) {
+    fun playSong(song: Song, startPositionMs: Long = 0L, playWhenReady: Boolean = true) {
         abortCrossfade()
         saveRecentPlay(song)
         scope.launch {
@@ -663,9 +647,10 @@ class MusicPlayerManager @Inject constructor(
                 _currentSong.value = resolvedSong
                 
                 player.replaceMediaItem(idx, buildMediaItem(resolvedSong))
-                player.seekTo(idx, 0) // Force start from beginning
+                player.seekTo(idx, startPositionMs)
+                player.playWhenReady = playWhenReady
                 player.prepare()
-                player.play()
+                if (playWhenReady) player.play()
                 preBufferAlternatePlayer()
             } else {
                 val q = _queue.value.toMutableList()
@@ -677,9 +662,10 @@ class MusicPlayerManager @Inject constructor(
                 _currentSong.value = resolvedSong
                 
                 player.addMediaItem(buildMediaItem(resolvedSong))
-                player.seekTo(newIdx, 0)
+                player.seekTo(newIdx, startPositionMs)
+                player.playWhenReady = playWhenReady
                 player.prepare()
-                player.play()
+                if (playWhenReady) player.play()
                 preBufferAlternatePlayer()
             }
         }
@@ -726,12 +712,8 @@ class MusicPlayerManager @Inject constructor(
     }
 
     private fun abortCrossfade() {
-        if (isCrossfading) {
-            isCrossfading = false
-            fadingPlayer?.stop()
-            fadingPlayer?.clearMediaItems()
-            fadingPlayer = null
-            player.volume = 1f
+        if (crossfadeManager.isCrossfading) {
+            crossfadeManager.abortCrossfade(player)
         }
     }
 
@@ -761,17 +743,7 @@ class MusicPlayerManager @Inject constructor(
 
     /** Skip to the next track in the queue. */
     fun skipNext() {
-        if (isCrossfading) {
-            // Force complete the crossfade immediately
-            player.volume = 1f
-            fadingPlayer?.stop()
-            fadingPlayer?.clearMediaItems()
-            fadingPlayer = null
-            isCrossfading = false
-            
-            preBufferAlternatePlayer()
-            return
-        }
+        abortCrossfade()
         if (player.hasNextMediaItem()) {
             player.seekToNextMediaItem()
         }
@@ -892,6 +864,7 @@ class MusicPlayerManager @Inject constructor(
     }
 
     private fun saveRecentPlay(song: Song) {
+        if (song.id.startsWith("local_")) return
         scope.launch(Dispatchers.IO) {
             try {
                 val prefs = context.getSharedPreferences("pulse_actual_recent_plays", Context.MODE_PRIVATE)

@@ -48,29 +48,45 @@ class HomeViewModel @Inject constructor(
         initialValue = null
     )
 
+    val profilePicUri: StateFlow<String?> = authRepository.profilePicUri.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+
     init {
-        if (cachedUiState == null) {
+        // Check in-memory cache first
+        val memCacheValid = (cachedUiState?.suggested?.size ?: 0) >= 8
+        
+        if (!memCacheValid) {
+            cachedUiState = null
+            // Try disk cache
             try {
                 val cacheFile = java.io.File(context.cacheDir, "home_cache.json")
                 if (cacheFile.exists()) {
                     val cachedJson = cacheFile.readText()
-                    cachedUiState = com.google.gson.Gson().fromJson(cachedJson, HomeUiState.Success::class.java)
+                    val parsed = com.google.gson.Gson().fromJson(cachedJson, HomeUiState.Success::class.java)
+                    if (parsed != null && (parsed.suggested?.size ?: 0) >= 8) {
+                        cachedUiState = parsed
+                    } else {
+                        try { cacheFile.delete() } catch (e: Exception) {}
+                    }
                 }
-            } catch (e: Exception) {
-                // Ignore parsing error
-            }
+            } catch (e: Exception) { /* ignore */ }
         }
-        
+
         if (cachedUiState != null) {
+            // Show cache immediately, then refresh in background
             _uiState.value = cachedUiState!!
+            loadData(background = true)
         } else {
-            loadData()
+            loadData(background = false)
         }
     }
 
-    fun loadData() {
+    fun loadData(background: Boolean = false) {
         viewModelScope.launch {
-            if (cachedUiState == null) {
+            if (!background) {
                 _uiState.value = HomeUiState.Loading
             }
             try {
@@ -85,10 +101,10 @@ class HomeViewModel @Inject constructor(
                     val prefs = context.getSharedPreferences("pulse_actual_recent_plays", android.content.Context.MODE_PRIVATE)
                     val json = prefs.getString("plays", "[]")
                     val array = com.google.gson.Gson().fromJson(json, Array<Song>::class.java)
-                    localSongs = array?.toList() ?: emptyList()
+                    localSongs = array?.toList()?.filter { !it.id.startsWith("local_") } ?: emptyList()
                 } catch (e: Exception) {}
 
-                val actualRecentSongs = recentSongsDeferred.await().getOrNull() ?: emptyList()
+                val actualRecentSongs = (recentSongsDeferred.await().getOrNull() ?: emptyList()).filter { !it.id.startsWith("local_") }
                 
                 // Merge local and backend songs, keeping the most recent first
                 val mergedList = (localSongs + actualRecentSongs).distinctBy { it.id }.take(20)
@@ -111,19 +127,35 @@ class HomeViewModel @Inject constructor(
                     prefs.edit().putString("plays", com.google.gson.Gson().toJson(recentPlaysList)).apply()
                 } catch (e: Exception) {}
 
-                val actualRecentSong = recentPlaysList.firstOrNull()
-                
-                val suggestedDeferred = if (actualRecentSong != null) {
-                    async { repository.getRecommendations(actualRecentSong.artist, actualRecentSong.title) }
-                } else {
-                    async { repository.getTrending() } // Fallback
-                }
+                val suggestedDeferred1 = if (recentPlaysList.size > 0) {
+                    async { repository.getRecommendations(recentPlaysList[0].artist, recentPlaysList[0].title) }
+                } else null
+                val suggestedDeferred2 = if (recentPlaysList.size > 1) {
+                    async { repository.getRecommendations(recentPlaysList[1].artist, recentPlaysList[1].title) }
+                } else null
+                val suggestedDeferred3 = if (recentPlaysList.size > 2) {
+                    async { repository.getRecommendations(recentPlaysList[2].artist, recentPlaysList[2].title) }
+                } else null
                 
                 val limitedRecentPlays = recentPlaysList.take(5)
                 
-                val rawSuggested = suggestedDeferred.await().getOrNull() ?: emptyList()
+                val rawSuggested1 = suggestedDeferred1?.await()?.getOrNull() ?: emptyList()
+                val rawSuggested2 = suggestedDeferred2?.await()?.getOrNull() ?: emptyList()
+                val rawSuggested3 = suggestedDeferred3?.await()?.getOrNull() ?: emptyList()
                 val rawTrending = trendingDeferred.await().getOrNull() ?: emptyList()
-                val suggested = (rawSuggested + rawTrending).distinctBy { it.id }.take(4)
+
+                // If no recent songs (not logged in), bulk-fill with parallel genre searches
+                val extraSongs = if (recentPlaysList.isEmpty()) {
+                    val genres = listOf("top hits 2025", "best bollywood 2024", "popular hindi songs", "romantic songs")
+                    val deferreds = genres.map { q -> async { 
+                        try { repository.searchOnline(q).getOrNull()?.songs ?: emptyList() } catch(e: Exception) { emptyList() }
+                    }}
+                    deferreds.flatMap { it.await() }
+                } else emptyList()
+
+                val suggested = (rawSuggested1 + rawSuggested2 + rawSuggested3 + rawTrending + extraSongs)
+                    .distinctBy { it.id }
+                    .take(32)
                 
                 val homeData = homeDeferred.await().getOrNull()
                 

@@ -13,7 +13,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ArtistViewModel @Inject constructor(
     private val repository: MusicRepository,
-    private val followedArtistRepository: com.pulse.music.data.repository.FollowedArtistRepository
+    private val followedArtistRepository: com.pulse.music.data.repository.FollowedArtistRepository,
+    private val musicPlayerManager: com.pulse.music.player.MusicPlayerManager
 ) : ViewModel() {
 
     private val _artistInfo = MutableStateFlow<Any?>(null)
@@ -24,6 +25,9 @@ class ArtistViewModel @Inject constructor(
 
     private val _isFollowed = MutableStateFlow(false)
     val isFollowed: StateFlow<Boolean> = _isFollowed.asStateFlow()
+
+    val currentSong = musicPlayerManager.currentSong
+    val isPlaying = musicPlayerManager.isPlaying
 
     fun loadArtist(name: String) {
         viewModelScope.launch {
@@ -50,6 +54,23 @@ class ArtistViewModel @Inject constructor(
                 followedArtistRepository.addFollowedArtist(artist)
                 _isFollowed.value = true
             }
+        }
+    }
+
+    fun playAll(contextSongs: List<com.pulse.music.domain.Song>) {
+        if (contextSongs.isNotEmpty()) {
+            musicPlayerManager.playSongFromList(contextSongs.first(), contextSongs)
+        }
+    }
+
+    fun togglePlayPause() {
+        musicPlayerManager.togglePlayPause()
+    }
+
+    fun shufflePlay(contextSongs: List<com.pulse.music.domain.Song>) {
+        if (contextSongs.isNotEmpty()) {
+            val shuffled = contextSongs.shuffled()
+            musicPlayerManager.playSongFromList(shuffled.first(), shuffled)
         }
     }
 }

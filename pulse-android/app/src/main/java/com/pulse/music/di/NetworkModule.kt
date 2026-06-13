@@ -18,6 +18,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.pulse.music.data.repository.dataStore
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.runBlocking
 import com.pulse.music.BuildConfig // Automatically generated if configured in build.gradle
 
 @Module
@@ -38,8 +40,14 @@ object NetworkModule {
         val headerInterceptor = Interceptor { chain ->
             val original = chain.request()
             val tokenKey = stringPreferencesKey("jwt_token")
-            val token = kotlinx.coroutines.runBlocking { 
-                context.dataStore.data.map { it[tokenKey] }.first()
+            // NonCancellable prevents JobCancelledException when the calling
+            // coroutine/request is cancelled (e.g. back press, screen rotation)
+            val token = try {
+                runBlocking(NonCancellable) {
+                    context.dataStore.data.map { it[tokenKey] }.first()
+                }
+            } catch (e: Exception) {
+                null
             }
             val builder = original.newBuilder()
                 .header("X-App-Version", BuildConfig.VERSION_NAME)

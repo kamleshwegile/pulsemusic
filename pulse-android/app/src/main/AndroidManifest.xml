@@ -13,7 +13,8 @@
         android:name=".PulseApplication"
         android:allowBackup="true"
         android:usesCleartextTraffic="true"
-        android:icon="@android:drawable/ic_media_play"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="Pulse Music"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
@@ -24,6 +25,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pulse" android:host="jam" />
+                <data android:scheme="https" android:host="pulsemusic.app" android:pathPrefix="/jam" />
             </intent-filter>
         </activity>
         

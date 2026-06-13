@@ -10,7 +10,8 @@ import retrofit2.http.Query
 data class AuthResponse(
     val token: String,
     val username: String,
-    val email: String
+    val email: String,
+    val profilePic: String? = null
 )
 
 
@@ -142,9 +143,28 @@ interface PulseApiService {
     @retrofit2.http.DELETE("api/v1/user/playlists/{playlistId}")
     suspend fun deletePlaylist(@Path("playlistId") playlistId: String): Map<String, String>
 
+    @retrofit2.http.PUT("api/v1/user/playlists/{playlistId}")
+    suspend fun renamePlaylist(@Path("playlistId") playlistId: String, @Query("name") name: String): Map<String, String>
+
     @POST("api/v1/user/playlists/{playlistId}/songs")
     suspend fun addSongToPlaylist(@Path("playlistId") playlistId: String, @Body song: Song): Map<String, String>
 
     @retrofit2.http.DELETE("api/v1/user/playlists/{playlistId}/songs/{songId}")
     suspend fun removeSongFromPlaylist(@Path("playlistId") playlistId: String, @Path("songId") songId: String): Map<String, String>
+
+    @retrofit2.http.Multipart
+    @POST("api/v1/user/profile-pic")
+    suspend fun uploadProfilePic(
+        @retrofit2.http.Part file: okhttp3.MultipartBody.Part
+    ): Map<String, String>
+
+    // Jam APIs
+    @GET("api/v1/jam/my-jams")
+    suspend fun getMyJams(): List<com.pulse.music.domain.JamRoomInfo>
+
+    @POST("api/v1/jam/create")
+    suspend fun createJam(@Query("name") name: String): com.pulse.music.domain.JamRoomInfo
+
+    @retrofit2.http.DELETE("api/v1/jam/{jam_id}")
+    suspend fun deleteJam(@Path("jam_id") jamId: String): Map<String, String>
 }

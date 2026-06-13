@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 
 val Context.dataStore by preferencesDataStore(name = "auth_prefs")
 
@@ -40,6 +42,20 @@ class AuthRepository @Inject constructor(
 
     val authToken: Flow<String?> = context.dataStore.data.map { prefs ->
         prefs[TOKEN_KEY]
+    }
+
+    val userId: Flow<String?> = context.dataStore.data.map { prefs ->
+        val token = prefs[TOKEN_KEY]
+        if (token != null) {
+            try {
+                val parts = token.split(".")
+                if (parts.size == 3) {
+                    val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
+                    val json = org.json.JSONObject(payload)
+                    json.optString("sub")
+                } else null
+            } catch (e: Exception) { null }
+        } else null
     }
 
     val username: Flow<String?> = context.dataStore.data.map { prefs ->
@@ -133,6 +149,36 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    suspend fun uploadProfilePic(context: Context, uriString: String): Result<String> {
+        return try {
+            val uri = android.net.Uri.parse(uriString)
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+            
+            if (bytes == null) {
+                return Result.failure(Exception("Failed to read image data"))
+            }
+            
+            val requestFile = bytes.toRequestBody("image/*".toMediaTypeOrNull())
+            val body = okhttp3.MultipartBody.Part.createFormData("file", "profile.jpg", requestFile)
+            
+            val result = api.uploadProfilePic(body)
+            val serverUrl = result["profilePic"]
+            
+            if (!serverUrl.isNullOrEmpty()) {
+                context.dataStore.edit { prefs ->
+                    prefs[PROFILE_PIC_KEY] = serverUrl
+                }
+                Result.success(serverUrl)
+            } else {
+                Result.failure(Exception("Failed to retrieve profile image URL from server"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun updatePlaybackSettings(highQuality: Boolean, spatialAudio: Boolean, gapless: Boolean, crossfade: Int) {
         context.dataStore.edit { prefs ->
             prefs[HIGH_QUALITY_KEY] = highQuality
@@ -146,6 +192,9 @@ class AuthRepository @Inject constructor(
         context.dataStore.edit { prefs ->
             prefs[TOKEN_KEY] = response.token
             prefs[USERNAME_KEY] = response.username
+            response.profilePic?.let { pic ->
+                prefs[PROFILE_PIC_KEY] = pic
+            }
         }
     }
 }

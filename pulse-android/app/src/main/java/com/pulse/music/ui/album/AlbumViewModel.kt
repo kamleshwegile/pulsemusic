@@ -49,4 +49,8 @@ class AlbumViewModel @Inject constructor(
             musicPlayerManager.playSongFromList(shuffled.first(), shuffled)
         }
     }
+
+    fun togglePlayPause() {
+        musicPlayerManager.togglePlayPause()
+    }
 }

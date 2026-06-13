@@ -10,6 +10,11 @@ import coil.memory.MemoryCache
 
 @HiltAndroidApp
 class PulseApplication : Application(), ImageLoaderFactory {
+    override fun onCreate() {
+        super.onCreate()
+        com.pulse.music.ui.jam.JamSessionManager.applicationContext = this
+    }
+
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this)
             .memoryCache {

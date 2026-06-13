@@ -27,6 +27,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +36,7 @@ fun ProfileScreen(
     onNavigateToAuth: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val token by viewModel.token.collectAsState()
     val username by viewModel.username.collectAsState()
     val profilePicUri by viewModel.profilePicUri.collectAsState()
@@ -48,7 +50,7 @@ fun ProfileScreen(
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        uri?.let { viewModel.updateProfilePic(it.toString()) }
+        uri?.let { viewModel.uploadProfilePic(context, it.toString()) }
     }
     
     // If user somehow logs out, go to auth
@@ -89,7 +91,6 @@ fun ProfileScreen(
                 ) 
             }
             item {
-                val context = androidx.compose.ui.platform.LocalContext.current
                 StorageSettings(onClearCache = {
                     context.cacheDir.listFiles()?.forEach { file -> 
                         file.deleteRecursively() 
@@ -132,8 +133,20 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
                 if (profilePicUri.isNullOrEmpty()) {
                     Icon(Icons.Default.Person, contentDescription = "Profile", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(50.dp))
                 } else {
+                    android.util.Log.d("ProfileScreen", "Loading profile pic from: $profilePicUri")
                     AsyncImage(
-                        model = profilePicUri,
+                        model = coil.request.ImageRequest.Builder(LocalContext.current)
+                            .data(profilePicUri)
+                            .crossfade(true)
+                            .listener(
+                                onError = { _, result ->
+                                    android.util.Log.e("ProfileScreen", "Failed to load profile pic: ${result.throwable.message}", result.throwable)
+                                },
+                                onSuccess = { _, _ ->
+                                    android.util.Log.d("ProfileScreen", "Profile pic loaded successfully")
+                                }
+                            )
+                            .build(),
                         contentDescription = "Profile Picture",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
