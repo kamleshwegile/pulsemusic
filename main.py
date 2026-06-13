@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 from fastapi import FastAPI, Query, HTTPException, Depends, Header, File, UploadFile
+=======
+from fastapi import FastAPI, Query, HTTPException, Depends, Header, WebSocket, WebSocketDisconnect
 from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import WebSocket, WebSocketDisconnect
@@ -1669,6 +1672,213 @@ def get_home():
         
     return home_cache
 
+import string
+import random
+import json
+import time
+from typing import Dict, Any
+
+class JamSessionModel(BaseModel):
+    session_id: str
+    session_code: str
+    host_id: str
+
+class JamCreateRequest(BaseModel):
+    host_id: str
+
+class JamManager:
+    def __init__(self):
+        # session_code -> dict of session state
+        self.sessions: Dict[str, dict] = {}
+        # session_code -> { user_id -> WebSocket }
+        self.connections: Dict[str, Dict[str, WebSocket]] = {}
+
+    def generate_code(self) -> str:
+        while True:
+            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            if code not in self.sessions:
+                return code
+
+    def create_session(self, host_id: str) -> dict:
+        code = self.generate_code()
+        session_id = f"session_{code}"
+        session_state = {
+            "session_id": session_id,
+            "session_code": code,
+            "host_id": host_id,
+            "participants": {},
+            "queue": [],
+            "current_track": None,
+            "playback_state": "PAUSED",
+            "position_ms": 0,
+            "started_at_ms": int(time.time() * 1000)
+        }
+        self.sessions[code] = session_state
+        self.connections[code] = {}
+        return session_state
+
+    async def connect(self, websocket: WebSocket, session_code: str, user_id: str):
+        await websocket.accept()
+        if session_code not in self.sessions:
+            # Auto-create session if it doesn't exist to survive backend restarts
+            self.sessions[session_code] = {
+                "session_id": f"session_{session_code}",
+                "session_code": session_code,
+                "host_id": user_id,
+                "participants": {},
+                "queue": [],
+                "current_track": None,
+                "playback_state": "PAUSED",
+                "position_ms": 0,
+                "started_at_ms": int(time.time() * 1000)
+            }
+            self.connections[session_code] = {}
+
+        if session_code not in self.connections:
+            self.connections[session_code] = {}
+            
+        self.connections[session_code][user_id] = websocket
+        
+        # Add participant
+        if user_id not in self.sessions[session_code]["participants"]:
+            self.sessions[session_code]["participants"][user_id] = {
+                "user_id": user_id,
+                "role": "HOST" if user_id == self.sessions[session_code]["host_id"] else "PARTICIPANT",
+                "online": True
+            }
+        else:
+            self.sessions[session_code]["participants"][user_id]["online"] = True
+            
+        # Send current state to the joined user
+        await websocket.send_json({
+            "event": "session_state",
+            "session": self.sessions[session_code]
+        })
+        
+        # Broadcast user joined
+        await self.broadcast(session_code, {
+            "event": "user_joined",
+            "user_id": user_id,
+            "participants": self.sessions[session_code]["participants"]
+        })
+
+    async def disconnect(self, websocket: WebSocket, session_code: str, user_id: str):
+        if session_code in self.connections and user_id in self.connections[session_code]:
+            del self.connections[session_code][user_id]
+            if session_code in self.sessions and user_id in self.sessions[session_code]["participants"]:
+                self.sessions[session_code]["participants"][user_id]["online"] = False
+                await self.broadcast(session_code, {
+                    "event": "user_left",
+                    "user_id": user_id,
+                    "participants": self.sessions[session_code]["participants"]
+                })
+
+    async def broadcast(self, session_code: str, message: dict):
+        if session_code in self.connections:
+            for ws in list(self.connections[session_code].values()):
+                try:
+                    await ws.send_json(message)
+                except Exception:
+                    pass
+
+jam_manager = JamManager()
+
+@app.post("/api/v1/jam/create", response_model=JamSessionModel)
+def create_jam_session(req: JamCreateRequest):
+    state = jam_manager.create_session(req.host_id)
+    return JamSessionModel(**state)
+
+@app.websocket("/api/v1/jam/ws/{session_code}/{user_id}")
+async def jam_websocket(websocket: WebSocket, session_code: str, user_id: str):
+    await jam_manager.connect(websocket, session_code, user_id)
+    try:
+        while True:
+            data_str = await websocket.receive_text()
+            try:
+                data = json.loads(data_str)
+            except:
+                continue
+                
+            event = data.get("event")
+            session = jam_manager.sessions.get(session_code)
+            if not session: continue
+
+            if event == "play":
+                session["playback_state"] = "PLAYING"
+                session["position_ms"] = data.get("position_ms", 0)
+                session["started_at_ms"] = int(time.time() * 1000)
+                await jam_manager.broadcast(session_code, {
+                    "event": "playback_synced",
+                    "state": "PLAYING",
+                    "position_ms": session["position_ms"],
+                    "started_at_ms": session["started_at_ms"]
+                })
+            elif event == "pause":
+                session["playback_state"] = "PAUSED"
+                session["position_ms"] = data.get("position_ms", 0)
+                await jam_manager.broadcast(session_code, {
+                    "event": "playback_synced",
+                    "state": "PAUSED",
+                    "position_ms": session["position_ms"]
+                })
+            elif event == "add_song":
+                song = data.get("song")
+                if song:
+                    # check for duplicates
+                    if not any(s.get("song_id") == song.get("song_id") for s in session["queue"]):
+                        song["votes"] = 0
+                        song["added_by"] = user_id
+                        session["queue"].append(song)
+                        await jam_manager.broadcast(session_code, {
+                            "event": "queue_updated",
+                            "queue": session["queue"]
+                        })
+            elif event == "vote":
+                song_id = data.get("song_id")
+                for s in session["queue"]:
+                    if s.get("song_id") == song_id:
+                        s["votes"] += data.get("vote", 1)
+                        # Re-sort queue by votes
+                        session["queue"].sort(key=lambda x: x.get("votes", 0), reverse=True)
+                        await jam_manager.broadcast(session_code, {
+                            "event": "queue_updated",
+                            "queue": session["queue"]
+                        })
+                        break
+            elif event == "chat":
+                msg = {
+                    "message_id": ''.join(random.choices(string.ascii_letters, k=8)),
+                    "sender_id": user_id,
+                    "text": data.get("text", ""),
+                    "timestamp": int(time.time() * 1000)
+                }
+                await jam_manager.broadcast(session_code, {
+                    "event": "chat_received",
+                    "message": msg
+                })
+            elif event == "reaction":
+                await jam_manager.broadcast(session_code, {
+                    "event": "reaction_received",
+                    "sender_id": user_id,
+                    "emoji": data.get("emoji")
+                })
+            elif event == "track_changed":
+                session["current_track"] = data.get("track")
+                session["position_ms"] = 0
+                session["playback_state"] = "PLAYING"
+                session["started_at_ms"] = int(time.time() * 1000)
+                await jam_manager.broadcast(session_code, {
+                    "event": "track_changed",
+                    "track": session["current_track"],
+                    "started_at_ms": session["started_at_ms"]
+                })
+            else:
+                # pass other events directly to all users
+                await jam_manager.broadcast(session_code, data)
+                
+    except WebSocketDisconnect:
+        await jam_manager.disconnect(websocket, session_code, user_id)
+
 @app.head("/api/v1/health")
 @app.get("/api/v1/health")
 def health_v1():
@@ -1677,3 +1887,4 @@ def health_v1():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
