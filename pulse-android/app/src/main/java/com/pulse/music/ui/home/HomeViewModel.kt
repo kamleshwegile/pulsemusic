@@ -178,7 +178,15 @@ class HomeViewModel @Inject constructor(
                 
             } catch (e: Exception) {
                 android.util.Log.e("PulseAPI", "HomeViewModel error: ", e)
-                _uiState.value = HomeUiState.Error(e.message ?: "Unknown Error")
+                if (cachedUiState != null) {
+                    _uiState.value = cachedUiState!! // Seamless offline fallback
+                    
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        android.widget.Toast.makeText(context, "Offline Mode: Showing cached songs", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    _uiState.value = HomeUiState.Error(e.message ?: "Network error and no cache available")
+                }
             }
         }
     }
