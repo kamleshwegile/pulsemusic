@@ -124,9 +124,25 @@ object NetworkModule {
             response ?: chain.proceed(request)
         }
 
+        val cacheSize = 1000L * 1024L * 1024L * 1024L // 1 Terabyte (Effectively Unlimited)
+        val cache = okhttp3.Cache(java.io.File(context.cacheDir, "http_cache"), cacheSize)
+
+        val forceCacheInterceptor = Interceptor { chain ->
+            val response = chain.proceed(chain.request())
+            val cacheControl = okhttp3.CacheControl.Builder()
+                .maxAge(30, java.util.concurrent.TimeUnit.DAYS)
+                .build()
+            response.newBuilder()
+                .header("Cache-Control", cacheControl.toString())
+                .removeHeader("Pragma")
+                .build()
+        }
+
         return OkHttpClient.Builder()
+            .cache(cache)
             .addInterceptor(headerInterceptor)
             .addInterceptor(failoverInterceptor)
+            .addNetworkInterceptor(forceCacheInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
