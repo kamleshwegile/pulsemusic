@@ -20,7 +20,7 @@ object UpdateManager {
 
     // Real GitHub Repository
     private const val GITHUB_OWNER = "RAHUL-0568"
-    private const val GITHUB_REPO = "Pulse-Music-backend"
+    private const val GITHUB_REPO = "Pulse-Music-Releases"
     private const val GITHUB_API_URL = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
 
     data class UpdateInfo(val hasUpdate: Boolean, val newVersion: String, val downloadUrl: String)
@@ -37,7 +37,6 @@ object UpdateManager {
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
-            connection.setRequestProperty("Authorization", "token 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")
 
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                 val reader = BufferedReader(InputStreamReader(connection.inputStream))
