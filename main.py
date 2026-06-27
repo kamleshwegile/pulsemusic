@@ -1164,8 +1164,16 @@ def _search_songs_internal(q: str, type: str = "song"):
                         source="jiosaavn"
                     ))
                 
-                # Artists
                 artists_results = data_block.get("artists", {}).get("results", [])
+                
+                # Prepend topQuery artist if exists
+                top_query_results = data_block.get("topQuery", {}).get("results", [])
+                for tq in top_query_results:
+                    if tq.get("type") == "artist":
+                        # Check if already in list to avoid duplicates
+                        if not any(a.get("id") == tq.get("id") for a in artists_results):
+                            artists_results.insert(0, tq)
+                
                 artists = []
                 for a in artists_results:
                     images = a.get("image", [])
