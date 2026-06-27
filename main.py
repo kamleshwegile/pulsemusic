@@ -1168,6 +1168,8 @@ def _search_songs_internal(q: str, type: str = "song"):
                 for a in artists_results:
                     images = a.get("image", [])
                     cover = images[-1]["url"] if images else ""
+                    if "default" in cover and ".png" in cover:
+                        cover = ""
                     artists.append(Artist(
                         id=a["id"],
                         name=a["title"],
