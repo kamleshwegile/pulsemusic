@@ -650,11 +650,11 @@ def send_email_async(to_email: str, subject: str, body: str):
 @app.post("/api/v1/auth/register")
 def register(user: RegisterUser):
     # Check for existing email; also handle race condition via unique index
-    if users_collection.find_one({"email": user.email}):
+    if users_collection.find_one({"email": {"$regex": f"^{user.email.strip()}$", "$options": "i"}}):
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed_pw = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     try:
-        result = users_collection.insert_one({"username": user.username, "email": user.email, "passwordHash": hashed_pw})
+        result = users_collection.insert_one({"username": user.username, "email": user.email.strip(), "passwordHash": hashed_pw})
     except Exception as e:
         # DuplicateKeyError or other DB errors
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -665,7 +665,7 @@ def register(user: RegisterUser):
 
 @app.post("/api/v1/auth/login")
 def login(user: AuthUser):
-    db_user = users_collection.find_one({"email": user.email})
+    db_user = users_collection.find_one({"email": {"$regex": f"^{user.email.strip()}$", "$options": "i"}})
     if not db_user or not bcrypt.checkpw(user.password.encode('utf-8'), db_user['passwordHash'].encode('utf-8')):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     
@@ -755,14 +755,14 @@ reset_codes_collection = db["reset_codes"]
 
 @app.post("/api/v1/auth/forgot-password")
 def forgot_password(req: ForgotPasswordRequest):
-    db_user = users_collection.find_one({"email": req.email})
+    db_user = users_collection.find_one({"email": {"$regex": f"^{req.email.strip()}$", "$options": "i"}})
     
     if not db_user:
         return {"status": "error", "message": "user doesn't exist"}
     
     code = str(random.randint(100000, 999999))
     reset_codes_collection.update_one(
-        {"email": req.email},
+        {"email": req.email.strip().lower()},
         {"$set": {"code": code, "created_at": datetime.utcnow()}},
         upsert=True
     )
@@ -775,26 +775,26 @@ def forgot_password(req: ForgotPasswordRequest):
 
 @app.post("/api/v1/auth/verify-code")
 def verify_code(req: VerifyCodeRequest):
-    record = reset_codes_collection.find_one({"email": req.email, "code": req.code})
+    record = reset_codes_collection.find_one({"email": req.email.strip().lower(), "code": req.code})
     if not record:
         return {"status": "error", "message": "Invalid code"}
     
     created = record.get("created_at", datetime.utcnow())
     if (datetime.utcnow() - created).total_seconds() > 600:
-        reset_codes_collection.delete_one({"email": req.email})
+        reset_codes_collection.delete_one({"email": req.email.strip().lower()})
         return {"status": "error", "message": "Code expired"}
     
     return {"status": "success", "message": "Code verified"}
 
 @app.post("/api/v1/auth/reset-password")
 def reset_password(req: ResetPasswordRequest):
-    record = reset_codes_collection.find_one({"email": req.email, "code": req.code})
+    record = reset_codes_collection.find_one({"email": req.email.strip().lower(), "code": req.code})
     if not record:
         return {"status": "error", "message": "Invalid code"}
     
     hashed_pw = bcrypt.hashpw(req.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    users_collection.update_one({"email": req.email}, {"$set": {"passwordHash": hashed_pw}})
-    reset_codes_collection.delete_one({"email": req.email})
+    users_collection.update_one({"email": {"$regex": f"^{req.email.strip()}$", "$options": "i"}}, {"$set": {"passwordHash": hashed_pw}})
+    reset_codes_collection.delete_one({"email": req.email.strip().lower()})
     return {"status": "success", "message": "Password changed successfully"}
 
 # Liked Songs Routes
