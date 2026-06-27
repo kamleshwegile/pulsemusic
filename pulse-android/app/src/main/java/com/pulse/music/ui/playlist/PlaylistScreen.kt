@@ -364,7 +364,7 @@ fun PlaylistScreen(
                                         .background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    AnimatedEqualizer()
+                                    PlayingAnimation()
                                 }
                             }
                         }
@@ -434,7 +434,7 @@ fun PlaylistScreen(
 }
 
 @Composable
-fun AnimatedEqualizer() {
+fun PlayingAnimation() {
     Row(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.Bottom,
@@ -448,21 +448,4 @@ fun AnimatedEqualizer() {
     }
 }
 
-@Composable
-fun EqBar(transition: InfiniteTransition, index: Int) {
-    val height by transition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 400 + (index * 100), easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "eq_height_$index"
-    )
-    Box(
-        modifier = Modifier
-            .width(3.dp)
-            .fillMaxHeight(height)
-            .background(Color(0xFFF92839), RoundedCornerShape(1.dp))
-    )
-}
+

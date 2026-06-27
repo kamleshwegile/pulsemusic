@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pulse.music.ui.components.PlayingAnimation
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.pulse.music.domain.Song
@@ -233,7 +234,7 @@ fun AlbumScreen(
                             )
                             if (isActive) {
                                 Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)))
-                                Icon(Icons.Default.GraphicEq, contentDescription = "Playing", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(16.dp))
+                                PlayingAnimation()
                             }
                         }
 
