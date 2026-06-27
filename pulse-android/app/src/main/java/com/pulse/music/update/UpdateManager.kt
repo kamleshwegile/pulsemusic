@@ -30,10 +30,9 @@ object UpdateManager {
 
     fun cleanupOldUpdates(context: Context) {
         try {
-            val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), ("Pulse-update-" + System.currentTimeMillis() + ".apk"))
-            if (file.exists()) {
-                file.delete()
-            }
+            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val files = dir.listFiles { _, name -> name.startsWith("Pulse-update-") && name.endsWith(".apk") }
+            files?.forEach { it.delete() }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -45,7 +44,6 @@ object UpdateManager {
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
-            connection.setRequestProperty("Authorization", "Bearer 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")
 
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                 val reader = BufferedReader(InputStreamReader(connection.inputStream))
