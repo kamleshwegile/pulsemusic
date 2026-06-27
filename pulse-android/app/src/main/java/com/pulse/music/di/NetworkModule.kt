@@ -7,6 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -73,9 +74,9 @@ object NetworkModule {
             var currentIndex = prefs.getInt("active_backend_index", 0)
 
             var targetUrl = request.url.newBuilder()
-                .scheme(okhttp3.HttpUrl.Companion.get(fallbackUrls[currentIndex]).scheme)
-                .host(okhttp3.HttpUrl.Companion.get(fallbackUrls[currentIndex]).host)
-                .port(okhttp3.HttpUrl.Companion.get(fallbackUrls[currentIndex]).port)
+                .scheme(fallbackUrls[currentIndex].toHttpUrl().scheme)
+                .host(fallbackUrls[currentIndex].toHttpUrl().host)
+                .port(fallbackUrls[currentIndex].toHttpUrl().port)
                 .build()
 
             var finalRequest = request.newBuilder().url(targetUrl).build()
@@ -95,9 +96,9 @@ object NetworkModule {
                     currentIndex = (currentIndex + 1) % fallbackUrls.size
 
                     targetUrl = request.url.newBuilder()
-                        .scheme(okhttp3.HttpUrl.Companion.get(fallbackUrls[currentIndex]).scheme)
-                        .host(okhttp3.HttpUrl.Companion.get(fallbackUrls[currentIndex]).host)
-                        .port(okhttp3.HttpUrl.Companion.get(fallbackUrls[currentIndex]).port)
+                        .scheme(fallbackUrls[currentIndex].toHttpUrl().scheme)
+                        .host(fallbackUrls[currentIndex].toHttpUrl().host)
+                        .port(fallbackUrls[currentIndex].toHttpUrl().port)
                         .build()
 
                     finalRequest = request.newBuilder().url(targetUrl).build()
@@ -149,4 +150,6 @@ object NetworkModule {
         return retrofit.create(PulseApiService::class.java)
     }
 }
+
+
 
