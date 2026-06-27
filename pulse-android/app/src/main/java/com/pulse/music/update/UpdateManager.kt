@@ -45,6 +45,7 @@ object UpdateManager {
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            connection.setRequestProperty("Authorization", "Bearer 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")
 
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                 val reader = BufferedReader(InputStreamReader(connection.inputStream))
@@ -154,3 +155,4 @@ object UpdateManager {
         }
     }
 }
+
