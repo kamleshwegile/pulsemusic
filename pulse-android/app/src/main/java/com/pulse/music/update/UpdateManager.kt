@@ -18,9 +18,9 @@ import java.net.URL
 
 object UpdateManager {
 
-    // PLACEHOLDERS for the user to replace later!
-    private const val GITHUB_OWNER = "YOUR_GITHUB_USERNAME"
-    private const val GITHUB_REPO = "YOUR_REPO_NAME"
+    // Real GitHub Repository
+    private const val GITHUB_OWNER = "RAHUL-0568"
+    private const val GITHUB_REPO = "Pulse-Music-backend"
     private const val GITHUB_API_URL = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
 
     data class UpdateInfo(val hasUpdate: Boolean, val newVersion: String, val downloadUrl: String)
