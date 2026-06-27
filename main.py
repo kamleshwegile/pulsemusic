@@ -19,6 +19,12 @@ import json
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+
+def filter_jio_image(url):
+    if url and isinstance(url, str) and "default" in url and (".png" in url or ".jpg" in url):
+        return ""
+    return url
+
 import os
 from dotenv import load_dotenv
 
@@ -1150,9 +1156,7 @@ def _search_songs_internal(q: str, type: str = "song"):
                     if item.get("type") and item.get("type") != "song":
                         continue
                     images = item.get("image", [])
-                    cover = images[-1]["url"] if images else ""
-                    if "default" in cover and (".png" in cover or ".jpg" in cover):
-                        cover = ""
+                    cover = filter_jio_image(images[-1]["url"] if images else "")
                     artist = item.get("primaryArtists") or item.get("singers") or "Unknown"
                     songs.append(Song(
                         id=item["id"],
@@ -1177,9 +1181,7 @@ def _search_songs_internal(q: str, type: str = "song"):
                 artists = []
                 for a in artists_results:
                     images = a.get("image", [])
-                    cover = images[-1]["url"] if images else ""
-                    if "default" in cover and (".png" in cover or ".jpg" in cover):
-                        cover = ""
+                    cover = filter_jio_image(images[-1]["url"] if images else "")
                     artists.append(Artist(
                         id=a["id"],
                         name=a["title"],
@@ -1191,9 +1193,7 @@ def _search_songs_internal(q: str, type: str = "song"):
                 albums = []
                 for alb in albums_results:
                     images = alb.get("image", [])
-                    cover = images[-1]["url"] if images else ""
-                    if "default" in cover and (".png" in cover or ".jpg" in cover):
-                        cover = ""
+                    cover = filter_jio_image(images[-1]["url"] if images else "")
                     year_val = alb.get("year", 0)
                     if isinstance(year_val, str) and year_val.isdigit():
                         year_val = int(year_val)
@@ -1213,7 +1213,7 @@ def _search_songs_internal(q: str, type: str = "song"):
                 playlists = []
                 for p in playlists_results:
                     images = p.get("image", [])
-                    cover = images[-1]["url"] if images else ""
+                    cover = filter_jio_image(images[-1]["url"] if images else "")
                     playlists.append(Playlist(
                         id=p["id"],
                         title=p["title"],
@@ -1372,7 +1372,7 @@ def get_recommendations(artist: str, track: str):
                             if is_similar(title, track):
                                 continue
                             images = item.get("image", [])
-                            cover = images[-1]["url"] if images else ""
+                            cover = filter_jio_image(images[-1]["url"] if images else "")
                             p_artists = item.get("artists", {}).get("primary", []) if "artists" in item else [{"name": item.get("subtitle", "")}]
                             artist_names = ", ".join([a["name"] for a in p_artists]) if p_artists else "Unknown"
                             songs.append(Song(
@@ -1409,7 +1409,7 @@ def get_recommendations(artist: str, track: str):
                                 if is_similar(title, track):
                                     continue
                                 images = item.get("image", [])
-                                cover = images[-1]["url"] if images else ""
+                                cover = filter_jio_image(images[-1]["url"] if images else "")
                                 p_artists = item.get("artists", {}).get("primary", [])
                                 artist_names = ", ".join([a["name"] for a in p_artists]) if p_artists else "Unknown"
                                 songs.append(Song(
@@ -1445,11 +1445,11 @@ def get_artist(name: str):
         artist_name = data.get("name", artist_name)
         images = data.get("image", [])
         if images and isinstance(images, list):
-            artist_image = images[-1].get("url", artist_image)
+            artist_image = filter_jio_image(images[-1].get("url", artist_image))
             
         for alb in data.get("topAlbums", []):
             alb_images = alb.get("image", [])
-            alb_cover = alb_images[-1]["url"] if isinstance(alb_images, list) and alb_images else ""
+            alb_cover = filter_jio_image(alb_images[-1]["url"] if isinstance(alb_images, list) and alb_images else "")
             year_val = alb.get("year", 0)
             if isinstance(year_val, str) and year_val.isdigit():
                 year_val = int(year_val)
@@ -1462,7 +1462,7 @@ def get_artist(name: str):
                 sim_id = sim.get("id")
                 sim_name = sim.get("name", "")
                 sim_images = sim.get("image", [])
-                sim_cover = sim_images[-1]["url"] if isinstance(sim_images, list) and sim_images else ""
+                sim_cover = filter_jio_image(sim_images[-1]["url"] if isinstance(sim_images, list) and sim_images else "")
                 if sim_id and sim_name and str(sim_id) != sim_name:
                     similar_artists.append(Artist(id=str(sim_id), name=sim_name, image=sim_cover))
                     
@@ -1475,7 +1475,7 @@ def get_artist(name: str):
         for ts in data.get("topSongs", []):
             if isinstance(ts, dict):
                 ts_images = ts.get("image", [])
-                ts_cover = ts_images[-1]["url"] if isinstance(ts_images, list) and ts_images else ""
+                ts_cover = filter_jio_image(ts_images[-1]["url"] if isinstance(ts_images, list) and ts_images else "")
                 p_artists = ts.get("artists", {}).get("primary", []) if "artists" in ts else []
                 ts_artist_names = ", ".join([a["name"] for a in p_artists]) if p_artists else artist_name
                 top_tracks.append(Song(
@@ -1513,7 +1513,7 @@ def get_artist(name: str):
                     if best_match:
                         artist_id = best_match["id"]
                         images = best_match.get("image", [])
-                        artist_image = images[-1]["url"] if images else ""
+                        artist_image = filter_jio_image(images[-1]["url"] if images else "")
                         
                         try:
                             art_details_res = requests.get(f"https://music-api.albatross0071.workers.dev/api/artists?id={artist_id}", timeout=5)
@@ -1589,7 +1589,7 @@ def get_album(id: str):
             songs = []
             for item in alb.get("songs", []):
                 images = item.get("image", [])
-                cover = images[-1]["url"] if images else ""
+                cover = filter_jio_image(images[-1]["url"] if images else "")
                 
                 p_artists = item.get("artists", {}).get("primary", [])
                 artist_names = ", ".join([a["name"] for a in p_artists]) if p_artists else "Unknown"
@@ -1605,7 +1605,7 @@ def get_album(id: str):
                 ))
             
             images = alb.get("image", [])
-            cover = images[-1]["url"] if images else ""
+            cover = filter_jio_image(images[-1]["url"] if images else "")
             
             year_val = alb.get("year", 0)
             if isinstance(year_val, str) and year_val.isdigit():
