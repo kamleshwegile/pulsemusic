@@ -75,6 +75,28 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // Auto-clear cache if it exceeds 150MB
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                var sizeBytes = 0L
+                cacheDir.walkTopDown().filter { it.isFile }.forEach { sizeBytes += it.length() }
+                val cacheSizeMb = sizeBytes / (1024f * 1024f)
+                
+                if (cacheSizeMb > 150f) {
+                    cacheDir.listFiles()?.forEach { file -> 
+                        file.deleteRecursively() 
+                    }
+                    com.pulse.music.ui.home.HomeViewModel.cachedUiState = null
+                    
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        android.widget.Toast.makeText(this@MainActivity, "Auto-cleared cache ($cacheSizeMb MB)", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
