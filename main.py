@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-from fastapi import FastAPI, Query, HTTPException, Depends, Header, File, UploadFile
-=======
 from fastapi import FastAPI, Query, HTTPException, Depends, Header, WebSocket, WebSocketDisconnect
 from typing import List, Optional
 from pydantic import BaseModel
-from fastapi import WebSocket, WebSocketDisconnect
 import uvicorn
 import requests
 from pymongo import MongoClient
@@ -18,7 +14,6 @@ from email.mime.multipart import MIMEMultipart
 import threading
 import concurrent.futures
 import re
-import json
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
@@ -42,58 +37,19 @@ MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://user:pass@cluster.mongodb.net/
 client = MongoClient(MONGO_URL)
 db = client["pulse"]
 users_collection = db["users"]
-# Ensure email uniqueness at DB level
-try:
-    users_collection.create_index("email", unique=True)
-except Exception:
-    pass  # Index may already exist
 liked_songs_collection = db["liked_songs"]
 followed_artists_collection = db["followed_artists"]
 playlists_collection = db["playlists"]
 recent_searches_collection = db["recent_searches"]
 recently_played_collection = db["recently_played"]
-jams_collection = db["jams"]
-jam_members_collection = db["jam_members"]
-jam_messages_collection = db["jam_messages"]
 
-SECRET_KEY = os.getenv("SECRET_KEY", os.getenv("JWT_SECRET", "super-secret-fallback-key"))
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
 
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=30)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
-
-# ------------------- Jam Suggestions Endpoint -------------------
-@app.get("/api/v1/jam/suggestions/{room_id}")
-async def jam_suggestions(room_id: str, token: str = Header(None, alias="Authorization")):
-    """Return up‑to‑5 Spotify recommendations based on the current queue.
-    The token header must be a Bearer JWT (same as other secured routes)."""
-    # Verify token (reuse get_current_user logic)
-    if not token or not token.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    try:
-        payload = jwt.decode(token.split()[1], SECRET_KEY, algorithms=["HS256"])
-        user_id = str(payload.get("sub"))
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    room = jam_rooms.get(room_id)
-    if not room or not room.queue:
-        return {"suggestions": []}
-    # Use the first track as seed (fallback to first track's artist)
-    seed_track_id = room.queue[0].get("id")
-    try:
-        recs = sp.recommendations(seed_tracks=[seed_track_id], limit=5) if sp else {"tracks": []}
-        suggestions = [{
-            "id": t["id"],
-            "title": t["name"],
-            "artist": t["artists"][0]["name"] if t["artists"] else "",
-            "albumArt": t["album"]["images"][0]["url"] if t.get("album") else ""
-        } for t in recs.get("tracks", [])]
-        return {"suggestions": suggestions}
-    except Exception as e:
-        return {"suggestions": [], "error": str(e)}
 
 def get_current_user(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -104,444 +60,6 @@ def get_current_user(authorization: str = Header(None)):
         return str(payload.get("sub")) # user_id
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
-
-# ------------------- Jam Session (Real-Time Group) -------------------
-class JamRoom:
-    def __init__(self, room_id: str):
-        self.room_id = room_id
-        from typing import Dict, Any
-        self.connections: Dict[WebSocket, Dict[str, Any]] = {}
-        import time
-        
-        # Load from DB
-        jam_doc = jams_collection.find_one({"room_id": room_id})
-        if jam_doc:
-            self.queue = jam_doc.get("queue", [])
-            self.is_playing = jam_doc.get("is_playing", False)
-            self.position_ms = jam_doc.get("position_ms", 0)
-            self.started_at_ms = jam_doc.get("started_at_ms", 0)
-            self.current_song = jam_doc.get("current_song", None)
-            self.created_at = jam_doc.get("created_at", time.time())
-            self.last_active = jam_doc.get("last_active", time.time())
-        else:
-            self.queue = []
-            self.is_playing = False
-            self.position_ms = 0
-            self.started_at_ms = 0
-            self.current_song = None
-            self.created_at = time.time()
-            self.last_active = time.time()
-            jams_collection.insert_one({
-                "room_id": room_id,
-                "queue": self.queue,
-                "is_playing": self.is_playing,
-                "position_ms": self.position_ms,
-                "started_at_ms": self.started_at_ms,
-                "current_song": self.current_song,
-                "created_at": self.created_at,
-                "last_active": self.last_active
-            })
-
-    def sync_to_db(self):
-        import time
-        self.last_active = time.time()
-        jams_collection.update_one(
-            {"room_id": self.room_id},
-            {"$set": {
-                "queue": self.queue,
-                "is_playing": self.is_playing,
-                "position_ms": self.position_ms,
-                "started_at_ms": self.started_at_ms,
-                "current_song": self.current_song,
-                "last_active": self.last_active
-            }}
-        )
-
-    async def broadcast(self, message: dict, sender: WebSocket = None):
-        import json
-        msg_str = json.dumps(message)
-        for conn in list(self.connections.keys()):
-            if conn != sender:
-                try:
-                    await conn.send_text(msg_str)
-                except:
-                    pass
-
-jam_rooms: dict[str, JamRoom] = {}
-
-import time
-import asyncio
-
-@app.get("/api/v1/jam/my-jams")
-async def get_my_jams(user_id: str = Depends(get_current_user)):
-    memberships = list(jam_members_collection.find({"user_id": user_id}))
-    room_ids = [m["room_id"] for m in memberships]
-    jams = list(jams_collection.find({"room_id": {"$in": room_ids}}, {"_id": 0}))
-    
-    result = []
-    for j in jams:
-        members_count = jam_members_collection.count_documents({"room_id": j["room_id"]})
-        song_title = j.get("current_song", {}).get("title") if j.get("current_song") else None
-        result.append({
-            "jamId": j["room_id"],
-            "roomCode": j["room_id"],
-            "name": j.get("name", "My Jam"),
-            "hostId": j.get("host_id", ""),
-            "memberCount": members_count,
-            "isActive": j["room_id"] in jam_rooms,
-            "currentSongTitle": song_title
-        })
-    return result
-
-@app.post("/api/v1/jam/create")
-async def create_jam(name: str = Query("New Jam"), user_id: str = Depends(get_current_user)):
-    jam_count = jams_collection.count_documents({"host_id": user_id})
-    if jam_count >= 5:
-        raise HTTPException(status_code=400, detail="You can only create up to 5 jams.")
-
-    import uuid
-    room_id = str(uuid.uuid4()).replace("-", "")[:6].upper()
-    
-    # Pre-insert jam details so JamRoom picks it up, or just let JamRoom update it.
-    jams_collection.insert_one({
-        "room_id": room_id,
-        "name": name,
-        "host_id": user_id,
-        "queue": [],
-        "is_playing": False,
-        "position_ms": 0,
-        "started_at_ms": 0,
-        "current_song": None,
-        "created_at": time.time(),
-        "last_active": time.time()
-    })
-    
-    room = JamRoom(room_id)
-    jam_rooms[room_id] = room
-    jam_members_collection.insert_one({
-        "room_id": room_id,
-        "user_id": user_id,
-        "role": "HOST",
-        "joined_at": time.time()
-    })
-    return {
-        "jamId": room_id,
-        "roomCode": room_id,
-        "name": name,
-        "hostId": user_id,
-        "memberCount": 1,
-        "isActive": True,
-        "currentSongTitle": None
-    }
-
-@app.delete("/api/v1/jam/{room_id}")
-async def delete_jam(room_id: str, user_id: str = Depends(get_current_user)):
-    jam = jams_collection.find_one({"room_id": room_id})
-    if not jam or jam.get("host_id") != user_id:
-        raise HTTPException(status_code=403, detail="Only host can delete jam")
-    
-    jams_collection.delete_one({"room_id": room_id})
-    jam_members_collection.delete_many({"room_id": room_id})
-    jam_messages_collection.delete_many({"room_id": room_id})
-    
-    if room_id in jam_rooms:
-        room = jam_rooms[room_id]
-        for ws in list(room.connections.keys()):
-            try:
-                await ws.close(code=1000, reason="Jam deleted by host")
-            except:
-                pass
-        del jam_rooms[room_id]
-        
-    return {"message": "Jam deleted successfully"}
-
-@app.post("/api/v1/jam/{room_id}/kick")
-async def kick_user(room_id: str, payload: dict, user_id: str = Depends(get_current_user)):
-    target_user_id = payload.get("target_user_id")
-    if not target_user_id:
-        raise HTTPException(status_code=400, detail="Missing target_user_id")
-        
-    member = jam_members_collection.find_one({"room_id": room_id, "user_id": user_id})
-    if not member or member.get("role") != "HOST":
-        raise HTTPException(status_code=403, detail="Only host can kick users")
-        
-    jam_members_collection.delete_one({"room_id": room_id, "user_id": target_user_id})
-    
-    if room_id in jam_rooms:
-        room = jam_rooms[room_id]
-        target_ws = None
-        for ws, info in list(room.connections.items()):
-            if info["user_id"] == target_user_id:
-                target_ws = ws
-                break
-        if target_ws:
-            try:
-                await target_ws.send_text(json.dumps({"event": "removed"}))
-                await target_ws.close(code=1000, reason="Kicked by host")
-            except:
-                pass
-            if target_ws in room.connections:
-                del room.connections[target_ws]
-            
-            await room.broadcast({
-                "event": "user_left",
-                "participants": {info["user_id"]: info for info in room.connections.values()}
-            })
-            
-    return {"message": "User kicked successfully"}
-
-@app.websocket("/api/v1/jam/ws/{room_id}/{username}")
-async def jam_websocket(websocket: WebSocket, room_id: str, username: str, action: str = Query(None), token: str = Query(None)):
-    # Try to extract real user_id from token if available
-    auth_header = websocket.headers.get("authorization")
-    print(f"WS connect: username={username}, auth_header={auth_header}, token_query={token}")
-    user_id = username
-    
-    # Priority 1: Query param token
-    # Priority 2: Header token
-    real_token = token
-    if not real_token and auth_header and auth_header.startswith("Bearer "):
-        real_token = auth_header.split(" ")[1]
-        
-    if real_token:
-        try:
-            payload = jwt.decode(real_token, SECRET_KEY, algorithms=["HS256"])
-            user_id = str(payload.get("sub"))
-            print(f"Extracted user_id from token: {user_id}")
-        except Exception as e:
-            print(f"JWT Decode error: {e}")
-            pass
-
-    # Enforce current_active_session_id
-    if ObjectId.is_valid(user_id):
-        users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": {"current_active_session_id": room_id}})
-    
-    # Disconnect from any other jams in memory
-    for r_id, r in list(jam_rooms.items()):
-        if r_id != room_id:
-            for ws, info in list(r.connections.items()):
-                if info.get("user_id") == user_id:
-                    try:
-                        await ws.close(code=1000, reason="Joined another jam")
-                    except:
-                        pass
-                    if ws in r.connections:
-                        del r.connections[ws]
-                    
-    room = jam_rooms.get(room_id)
-    if not room:
-        room = JamRoom(room_id)
-        jam_rooms[room_id] = room
-
-    await websocket.accept()
-    
-    member_doc = jam_members_collection.find_one({"room_id": room_id, "user_id": user_id})
-    is_host = False
-    role = "PENDING"
-    if member_doc:
-        role = member_doc.get("role", "GUEST")
-        is_host = (role == "HOST")
-    else:
-        count = jam_members_collection.count_documents({"room_id": room_id})
-        if count == 0:
-            role = "HOST"
-            is_host = True
-        
-        jam_members_collection.insert_one({
-            "room_id": room_id,
-            "user_id": user_id,
-            "role": role,
-            "joined_at": time.time(),
-            "online": True
-        })
-
-    participant_info = {
-        "user_id": user_id,
-        "role": role,
-        "online": True
-    }
-    room.connections[websocket] = participant_info
-
-    if is_host or role == "GUEST":
-        session_state = {
-            "event": "session_state",
-            "session": {
-                "room_id": room_id,
-                "playback_state": "PLAYING" if room.is_playing else "PAUSED",
-                "position_ms": room.position_ms,
-                "started_at_ms": room.started_at_ms,
-                "queue": room.queue,
-                "current_song": room.current_song,
-                "participants": {info["user_id"]: info for info in room.connections.values() if info["role"] != "PENDING"}
-            }
-        }
-        await websocket.send_text(json.dumps(session_state))
-        
-        if role == "GUEST":
-            await room.broadcast({
-                "event": "user_joined",
-                "participants": {info["user_id"]: info for info in room.connections.values() if info["role"] != "PENDING"}
-            }, sender=websocket)
-    else:
-        await websocket.send_text(json.dumps({"event": "pending_approval"}))
-        for conn, info in room.connections.items():
-            if info["role"] == "HOST":
-                await conn.send_text(json.dumps({
-                    "event": "join_request",
-                    "user_id": user_id
-                }))
-
-    try:
-        while True:
-            data = await websocket.receive_text()
-            msg = json.loads(data)
-            event = msg.get("event")
-            
-            if event == "approve_join":
-                target_user_id = msg.get("target_user_id")
-                jam_members_collection.update_one(
-                    {"room_id": room_id, "user_id": target_user_id},
-                    {"$set": {"role": "GUEST"}}
-                )
-                target_ws = None
-                for conn, info in room.connections.items():
-                    if info["user_id"] == target_user_id:
-                        info["role"] = "GUEST"
-                        target_ws = conn
-                        break
-                
-                if target_ws:
-                    session_state = {
-                        "event": "session_state",
-                        "session": {
-                            "room_id": room_id,
-                            "playback_state": "PLAYING" if room.is_playing else "PAUSED",
-                            "position_ms": room.position_ms,
-                            "started_at_ms": room.started_at_ms,
-                            "queue": room.queue,
-                            "current_song": room.current_song,
-                            "participants": {info["user_id"]: info for info in room.connections.values() if info["role"] != "PENDING"}
-                        }
-                    }
-                    await target_ws.send_text(json.dumps(session_state))
-                    await room.broadcast({
-                        "event": "user_joined",
-                        "participants": {info["user_id"]: info for info in room.connections.values() if info["role"] != "PENDING"}
-                    }, sender=target_ws)
-                    
-            elif event == "reject_join":
-                target_user_id = msg.get("target_user_id")
-                jam_members_collection.delete_one({"room_id": room_id, "user_id": target_user_id})
-                target_ws = None
-                for conn, info in room.connections.items():
-                    if info["user_id"] == target_user_id:
-                        target_ws = conn
-                        break
-                if target_ws:
-                    await target_ws.send_text(json.dumps({"event": "join_rejected"}))
-                    
-            elif event == "remove_participant":
-                target_user_id = msg.get("target_user_id")
-                jam_members_collection.delete_one({"room_id": room_id, "user_id": target_user_id})
-                target_ws = None
-                for conn, info in room.connections.items():
-                    if info["user_id"] == target_user_id:
-                        target_ws = conn
-                        break
-                if target_ws:
-                    await target_ws.send_text(json.dumps({"event": "removed"}))
-
-            if room.connections[websocket]["role"] == "PENDING":
-                continue
-
-            if event == "play":
-                room.is_playing = True
-                room.position_ms = msg.get("position_ms", room.position_ms)
-                room.started_at_ms = int(time.time() * 1000)
-                room.sync_to_db()
-                await room.broadcast({
-                    "event": "playback_synced",
-                    "state": "PLAYING",
-                    "position_ms": room.position_ms,
-                    "started_at_ms": room.started_at_ms
-                }, sender=websocket)
-            
-            elif event == "pause":
-                room.is_playing = False
-                room.position_ms = msg.get("position_ms", room.position_ms)
-                room.started_at_ms = 0
-                room.sync_to_db()
-                await room.broadcast({
-                    "event": "playback_synced",
-                    "state": "PAUSED",
-                    "position_ms": room.position_ms,
-                    "started_at_ms": 0
-                }, sender=websocket)
-                
-            elif event == "playback_sync":
-                state = msg.get("state")
-                room.is_playing = state == "PLAYING"
-                room.position_ms = msg.get("position_ms", room.position_ms)
-                room.started_at_ms = int(time.time() * 1000) if room.is_playing else 0
-                room.sync_to_db()
-                await room.broadcast({
-                    "event": "playback_synced",
-                    "state": "PLAYING" if room.is_playing else "PAUSED",
-                    "position_ms": room.position_ms,
-                    "started_at_ms": room.started_at_ms
-                }, sender=websocket)
-                
-            elif event == "play_song":
-                room.current_song = msg.get("song")
-                room.sync_to_db()
-                await room.broadcast(msg, sender=websocket)
-
-            elif event == "add_song":
-                song = msg.get("song")
-                if song:
-                    room.queue.append(song)
-                    room.sync_to_db()
-                    await room.broadcast({
-                        "event": "queue_updated",
-                        "queue": room.queue
-                    })
-                    await websocket.send_text(json.dumps({
-                        "event": "queue_updated",
-                        "queue": room.queue
-                    }))
-                    
-            elif event == "chat":
-                chat_msg = {
-                    "room_id": room_id,
-                    "sender_id": user_id,
-                    "text": msg.get("text", ""),
-                    "timestamp": time.time()
-                }
-                jam_messages_collection.insert_one(chat_msg)
-                
-                chat_payload = {
-                    "event": "chat_received",
-                    "message": {
-                        "sender_id": user_id,
-                        "sender": username,
-                        "text": msg.get("text", "")
-                    }
-                }
-                await websocket.send_text(json.dumps(chat_payload))
-                await room.broadcast(chat_payload, sender=websocket)
-
-    except WebSocketDisconnect:
-        if websocket in room.connections:
-            del room.connections[websocket]
-        
-        if not room.connections:
-            if room_id in jam_rooms:
-                del jam_rooms[room_id]
-        else:
-            await room.broadcast({
-                "event": "user_left",
-                "participants": {info["user_id"]: info for info in room.connections.values()}
-            })
 
 # Models
 class Song(BaseModel):
@@ -565,22 +83,6 @@ class SearchResponse(BaseModel):
     artists: List['Artist'] = []
     albums: List['Album'] = []
     playlists: List[Playlist] = []
-
-# ------------------- JamViewModel – Player Listener Hook -------------------
-# // Add a Flow to receive sync events from the backend and forward them to the local player.
-# private val _incomingSync = MutableStateFlow<Pair<Boolean, Long>?>(null)
-# val incomingSync: StateFlow<Pair<Boolean, Long>?> = _incomingSync.asStateFlow()
-#
-# // Call this from the UI when a sync message arrives via the WebSocket listener.
-# fun handleIncomingSync(isPlaying: Boolean, positionMs: Long) {
-#     _incomingSync.value = Pair(isPlaying, positionMs)
-# }
-#
-# // Existing onMessage implementation should forward PLAYBACK_SYNC messages:
-# // val json = JSONObject(text)
-# // if (json.getString("type") == "PLAYBACK_SYNC") {
-# //     handleIncomingSync(json.getBoolean("isPlaying"), json.getLong("positionMs"))
-# // }
 
 class HomeModule(BaseModel):
     title: str
@@ -625,16 +127,20 @@ class RegisterUser(BaseModel):
 EMAIL_SENDER = os.getenv("EMAIL_SENDER", "") 
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
 
-def send_email_async(to_email: str, subject: str, body: str):
+def send_email_async(to_email: str, subject: str, body: str, html_body: str = None):
     def send():
         try:
-            msg = MIMEMultipart()
+            msg = MIMEMultipart('alternative')
             msg['From'] = EMAIL_SENDER
             msg['To'] = to_email
             msg['Subject'] = subject
             msg.attach(MIMEText(body, 'plain'))
             
+            if html_body:
+                msg.attach(MIMEText(html_body, 'html'))
+            
             server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             server.send_message(msg)
             server.quit()
@@ -644,21 +150,94 @@ def send_email_async(to_email: str, subject: str, body: str):
     threading.Thread(target=send).start()
 
 # Auth Routes
+# Registration OTP Collection
+register_codes_collection = db["register_codes"]
+
+class RequestRegisterOtp(BaseModel):
+    email: str
+
+class RegisterUserWithOtp(BaseModel):
+    username: str
+    email: str
+    password: str
+    code: str
+
+@app.post("/api/v1/auth/request-register-otp")
+def request_register_otp(req: RequestRegisterOtp):
+    if users_collection.find_one({"email": req.email}):
+        raise HTTPException(status_code=400, detail="Email already registered")
+        
+    code = str(random.randint(100000, 999999))
+    register_codes_collection.update_one(
+        {"email": req.email},
+        {"$set": {"code": code, "created_at": datetime.utcnow()}},
+        upsert=True
+    )
+    
+    html_template = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #FF4081; margin: 0; font-size: 28px;">Pulse Music</h1>
+        </div>
+        <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; margin-top: 0;">Welcome to Pulse!</h2>
+            <p style="color: #555; font-size: 16px; line-height: 1.5;">Thank you for signing up. To complete your registration, please use the following 6-digit verification code:</p>
+            <div style="background-color: #f0f0f0; padding: 15px; border-radius: 6px; text-align: center; margin: 25px 0;">
+                <span style="font-size: 32px; font-weight: bold; color: #FF4081; letter-spacing: 5px;">{code}</span>
+            </div>
+            <p style="color: #888; font-size: 14px; text-align: center;">This code will expire in 10 minutes.</p>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <p style="color: #aaa; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+        </div>
+    </div>
+    """
+    
+    send_email_async(
+        req.email, 
+        "Pulse Music - Registration Code", 
+        f"Welcome to Pulse Music! Your registration code is: {code}\n\nThis code will expire in 10 minutes.",
+        html_template
+    )
+    return {"status": "success", "message": "Code sent to your email"}
+
 @app.post("/api/v1/auth/register")
-def register(user: RegisterUser):
-    # Check for existing email; also handle race condition via unique index
+def register(user: RegisterUserWithOtp):
     if users_collection.find_one({"email": user.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
+        
+    record = register_codes_collection.find_one({"email": user.email, "code": user.code})
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+        
+    created = record.get("created_at", datetime.utcnow())
+    if (datetime.utcnow() - created).total_seconds() > 600:
+        register_codes_collection.delete_one({"email": user.email})
+        raise HTTPException(status_code=400, detail="Verification code expired")
+        
     hashed_pw = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    try:
-        result = users_collection.insert_one({"username": user.username, "email": user.email, "passwordHash": hashed_pw})
-    except Exception as e:
-        # DuplicateKeyError or other DB errors
-        raise HTTPException(status_code=400, detail="Email already registered")
+    result = users_collection.insert_one({"username": user.username, "email": user.email, "passwordHash": hashed_pw})
     user_id = str(result.inserted_id)
     token = create_access_token({"sub": user_id})
-    send_email_async(user.email, "Welcome to Pulse Music!", "Thanks for signing up to Pulse Music! We're excited to have you.")
-    return {"token": token, "username": user.username, "email": user.email, "profilePic": ""}
+    
+    # Clean up the OTP
+    register_codes_collection.delete_one({"email": user.email})
+    
+    welcome_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #FF4081; margin: 0; font-size: 28px;">Pulse Music</h1>
+        </div>
+        <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; margin-top: 0;">Welcome to Pulse Music! 🎵</h2>
+            <p style="color: #555; font-size: 16px; line-height: 1.5;">Hi {user.username},</p>
+            <p style="color: #555; font-size: 16px; line-height: 1.5;">Your account has been successfully created. You can now start streaming, creating playlists, and finding your new favorite tracks.</p>
+            <p style="color: #555; font-size: 16px; line-height: 1.5;">Happy listening!</p>
+        </div>
+    </div>
+    """
+    send_email_async(user.email, "Welcome to Pulse Music!", "Thanks for signing up to Pulse Music! We're excited to have you.", welcome_html)
+    return {"token": token, "username": user.username, "email": user.email}
 
 @app.post("/api/v1/auth/login")
 def login(user: AuthUser):
@@ -667,9 +246,21 @@ def login(user: AuthUser):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     
     token = create_access_token({"sub": str(db_user['_id'])})
-    send_email_async(user.email, "New Login Alert", "We noticed a new login to your Pulse Music account.")
+    login_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #FF4081; margin: 0; font-size: 28px;">Pulse Music</h1>
+        </div>
+        <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; margin-top: 0;">Security Alert</h2>
+            <p style="color: #555; font-size: 16px; line-height: 1.5;">We noticed a new login to your Pulse Music account.</p>
+            <p style="color: #555; font-size: 16px; line-height: 1.5;">If this was you, no action is needed. If you did not authorize this login, please reset your password immediately.</p>
+        </div>
+    </div>
+    """
+    send_email_async(user.email, "New Login Alert", "We noticed a new login to your Pulse Music account.", login_html)
     username = db_user.get("username", user.email.split("@")[0])
-    return {"token": token, "username": username, "email": user.email, "profilePic": db_user.get("profilePic", "")}
+    return {"token": token, "username": username, "email": user.email}
 
 class SocialLoginRequest(BaseModel):
     token: str
@@ -689,19 +280,14 @@ def google_login(req: SocialLoginRequest):
         db_user = users_collection.find_one({"email": email})
         if not db_user:
             username = token_info.get("name", email.split("@")[0])
-            profile_pic = token_info.get("picture", "")
-            result = users_collection.insert_one({"username": username, "email": email, "passwordHash": "", "profilePic": profile_pic})
+            result = users_collection.insert_one({"username": username, "email": email, "passwordHash": ""})
             user_id = str(result.inserted_id)
         else:
             username = db_user.get("username", email.split("@")[0])
             user_id = str(db_user["_id"])
-            profile_pic = db_user.get("profilePic", "")
-            if not profile_pic:
-                profile_pic = token_info.get("picture", "")
-                users_collection.update_one({"_id": db_user["_id"]}, {"$set": {"profilePic": profile_pic}})
             
         token = create_access_token({"sub": user_id})
-        return {"token": token, "username": username, "email": email, "profilePic": profile_pic}
+        return {"token": token, "username": username, "email": email}
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Google verification failed: {str(e)}")
 
@@ -722,14 +308,12 @@ def facebook_login(req: SocialLoginRequest):
             username = token_info.get("name", email.split("@")[0])
             result = users_collection.insert_one({"username": username, "email": email, "passwordHash": ""})
             user_id = str(result.inserted_id)
-            profile_pic = ""
         else:
             username = db_user.get("username", email.split("@")[0])
             user_id = str(db_user["_id"])
-            profile_pic = db_user.get("profilePic", "")
             
         token = create_access_token({"sub": user_id})
-        return {"token": token, "username": username, "email": email, "profilePic": profile_pic}
+        return {"token": token, "username": username, "email": email}
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Facebook verification failed: {str(e)}")
 
@@ -763,10 +347,30 @@ def forgot_password(req: ForgotPasswordRequest):
         {"$set": {"code": code, "created_at": datetime.utcnow()}},
         upsert=True
     )
+    html_template = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #FF4081; margin: 0; font-size: 28px;">Pulse Music</h1>
+        </div>
+        <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; margin-top: 0;">Password Reset</h2>
+            <p style="color: #555; font-size: 16px; line-height: 1.5;">We received a request to reset your password. Please use the following 6-digit verification code to proceed:</p>
+            <div style="background-color: #f0f0f0; padding: 15px; border-radius: 6px; text-align: center; margin: 25px 0;">
+                <span style="font-size: 32px; font-weight: bold; color: #FF4081; letter-spacing: 5px;">{code}</span>
+            </div>
+            <p style="color: #888; font-size: 14px; text-align: center;">This code will expire in 10 minutes.</p>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <p style="color: #aaa; font-size: 12px;">If you didn't request a password reset, you can safely ignore this email.</p>
+        </div>
+    </div>
+    """
+
     send_email_async(
         req.email,
         "Pulse Music - Password Reset Code",
-        f"Your password reset code is: {code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email."
+        f"Your password reset code is: {code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this, please ignore this email.",
+        html_template
     )
     return {"status": "success", "message": "Code sent to your email"}
 
@@ -910,7 +514,8 @@ def add_recent_song(req: RecentlyPlayedSong, user_id: str = Depends(get_current_
                     "albumArt": req.albumArt,
                     "source": req.source,
                     "timestamp": req.timestamp
-                }
+                },
+                "$inc": {"play_count": 1}
             },
             upsert=True
         )
@@ -923,6 +528,48 @@ def remove_recent_song(song_id: str, user_id: str = Depends(get_current_user)):
     try:
         recently_played_collection.delete_one({"user_id": user_id, "song_id": song_id})
         return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/user/music-capsule")
+def get_music_capsule(user_id: str = Depends(get_current_user)):
+    try:
+        rows = list(recently_played_collection.find({"user_id": user_id}))
+        
+        total_songs = sum(r.get("play_count", 1) for r in rows)
+        
+        # Sort by play_count (or timestamp if play_count is missing)
+        sorted_by_plays = sorted(rows, key=lambda x: x.get("play_count", 1), reverse=True)
+        top_songs = []
+        for r in sorted_by_plays[:5]:
+            top_songs.append({
+                "id": r["song_id"],
+                "title": r.get("title", ""),
+                "artist": r.get("artist", ""),
+                "albumArt": r.get("albumArt", ""),
+                "playCount": r.get("play_count", 1)
+            })
+            
+        artist_counts = {}
+        for r in rows:
+            artists_str = r.get("artist", "")
+            if artists_str:
+                for a in [x.strip() for x in artists_str.split(",")]:
+                    artist_counts[a] = artist_counts.get(a, 0) + r.get("play_count", 1)
+                    
+        top_artists = []
+        for a, count in sorted(artist_counts.items(), key=lambda x: x[1], reverse=True)[:5]:
+            top_artists.append({
+                "name": a,
+                "playCount": count
+            })
+            
+        return {
+            "totalPlays": total_songs,
+            "topSongs": top_songs,
+            "topArtists": top_artists,
+            "uniqueSongs": len(rows)
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -941,9 +588,8 @@ def search_jiosaavn(track_name, artist_name):
                 "id": song.id if hasattr(song, "id") else song["id"],
                 "title": song.title if hasattr(song, "title") else song["title"],
                 "artist": song.artist if hasattr(song, "artist") else song["artist"],
-                "album": song.album if hasattr(song, "album") else song.get("album", ""),
-                "albumArt": song.albumArt if hasattr(song, "albumArt") else song.get("albumArt", ""),
-                "durationMs": song.durationMs if hasattr(song, "durationMs") else song.get("durationMs", 0),
+                "album": song.album if hasattr(song, "album") else song["album"],
+                "albumArt": song.albumArt if hasattr(song, "albumArt") else song["albumArt"],
                 "source": "jiosaavn"
             }
     except Exception:
@@ -986,25 +632,21 @@ def import_spotify_playlist(req: SpotifyImportRequest, user_id: str = Depends(ge
     tracks_to_search = []
     for track in track_list:
         title = track.get("title", "")
+        # subtitle contains artist names separated by non-breaking spaces and commas
         subtitle = track.get("subtitle", "").replace("\u00a0", " ").strip()
+        # Take only the first artist
         artist = subtitle.split(",")[0].strip() if subtitle else ""
-        duration_ms = int(track.get("duration", track.get("duration_ms", 0))) 
         if title:
-            tracks_to_search.append((title, artist, duration_ms))
+            tracks_to_search.append((title, artist))
             
     matched_songs = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {}
-        for name, artist, duration_ms in tracks_to_search:
-            futures[executor.submit(search_jiosaavn, name, artist)] = duration_ms
-            
+        futures = []
+        for name, artist in tracks_to_search:
+            futures.append(executor.submit(search_jiosaavn, name, artist))
         for future in concurrent.futures.as_completed(futures):
             res = future.result()
             if res:
-                # Override duration with Spotify's duration if JioSaavn returned 0
-                spotify_duration = futures[future]
-                if not res.get("durationMs") and spotify_duration:
-                    res["durationMs"] = spotify_duration
                 matched_songs.append(res)
                 
     if not matched_songs:
@@ -1052,69 +694,6 @@ def create_playlist(name: str, user_id: str = Depends(get_current_user)):
 def delete_playlist(playlist_id: str, user_id: str = Depends(get_current_user)):
     playlists_collection.delete_one({"_id": ObjectId(playlist_id), "user_id": user_id})
     return {"status": "success"}
-
-@app.put("/api/v1/user/playlists/{playlist_id}")
-def rename_playlist(playlist_id: str, name: str, user_id: str = Depends(get_current_user)):
-    playlists_collection.update_one(
-        {"_id": ObjectId(playlist_id), "user_id": user_id},
-        {"$set": {"name": name}}
-    )
-    return {"status": "success"}
-
-@app.post("/api/v1/user/profile-pic")
-def upload_profile_pic(file: UploadFile = File(...), user_id: str = Depends(get_current_user)):
-    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME")
-    api_key = os.getenv("CLOUDINARY_API_KEY")
-    api_secret = os.getenv("CLOUDINARY_API_SECRET")
-    
-    if not cloud_name or not api_key or not api_secret:
-        raise HTTPException(
-            status_code=500, 
-            detail="Cloudinary credentials are not configured in backend environment"
-        )
-        
-    try:
-        import time
-        import hashlib
-        
-        file_content = file.file.read()
-        
-        timestamp = int(time.time())
-        params_to_sign = f"timestamp={timestamp}"
-        signature_str = f"{params_to_sign}{api_secret}"
-        signature = hashlib.sha1(signature_str.encode('utf-8')).hexdigest()
-        
-        files = {"file": (file.filename, file_content, file.content_type)}
-        data = {
-            "api_key": api_key,
-            "timestamp": timestamp,
-            "signature": signature
-        }
-        
-        response = requests.post(
-            f"https://api.cloudinary.com/v1_1/{cloud_name}/image/upload",
-            files=files,
-            data=data
-        )
-        
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=f"Cloudinary upload failed: {response.text}")
-            
-        res_data = response.json()
-        secure_url = res_data.get("secure_url")
-        
-        if not secure_url:
-            raise HTTPException(status_code=500, detail="Did not receive secure_url from Cloudinary response")
-            
-        users_collection.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$set": {"profilePic": secure_url}}
-        )
-        
-        return {"status": "success", "profilePic": secure_url}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/api/v1/user/playlists/{playlist_id}/songs")
 def add_song_to_playlist(playlist_id: str, song: Song, user_id: str = Depends(get_current_user)):
@@ -1216,21 +795,8 @@ def _search_songs_internal(q: str, type: str = "song"):
 
 @app.get("/api/v1/trending", response_model=List[Song])
 def get_trending(country: str = "IN"):
-    seen_ids = set()
-    songs = []
-    queries = ["top hits 2026", "best bollywood 2025", "new hindi songs 2026", "popular songs india"]
-    for q in queries:
-        try:
-            batch = search_songs(q, "song").songs
-            for s in batch:
-                if s.id not in seen_ids:
-                    seen_ids.add(s.id)
-                    songs.append(s)
-            if len(songs) >= 20:
-                break
-        except Exception:
-            pass
-    return songs[:20]
+    # Using search as fallback since ListenFree doesn't have a direct trending endpoint documented here
+    return search_songs("top hits 2026", "song").songs[:20]
 
 @app.get("/api/v1/lyrics", response_model=Lyrics)
 async def get_lyrics(title: str, artist: str, songId: str = None):
@@ -1309,19 +875,6 @@ def get_recommendations(artist: str, track: str):
         s2 = re.sub(r'[^a-zA-Z0-9]', '', t2.lower())
         return s1 in s2 or s2 in s1
 
-    # // ------------------- Deep Link Handling for Jam Sessions -------------------
-    # // In AndroidManifest.xml you would add an intent filter like:
-    # // <action android:name="android.intent.action.VIEW" />
-    # // <category android:name="android.intent.category.DEFAULT" />
-    # // <category android:name="android.intent.category.BROWSABLE" />
-    # // <data android:scheme="pulse" android:host="jam" />
-    # // Then in MainActivity's onCreate you can capture the URI:
-    # // val data = intent?.data
-    # // if (data?.scheme == "pulse" && data.host == "jam") {
-    # //     val roomId = data.getQueryParameter("room") ?: ""
-    # //     // Navigate to JamScreen with the roomId (using NavHost)
-    # // }
-
     try:
         if sp:
             try:
@@ -1373,7 +926,7 @@ def get_recommendations(artist: str, track: str):
                                 durationMs=int(item.get("duration", 0)) * 1000,
                                 source="jiosaavn"
                             ))
-                            if len(songs) >= 20:
+                            if len(songs) >= 5:
                                 break
                     if songs:
                         return songs
@@ -1410,7 +963,7 @@ def get_recommendations(artist: str, track: str):
                                     durationMs=int(item.get("duration", 0)) * 1000,
                                     source="jiosaavn"
                                 ))
-                                if len(songs) >= 20:
+                                if len(songs) >= 5:
                                     break
                             return songs
     except Exception as e:
@@ -1540,10 +1093,9 @@ def get_album(id: str):
         if not data.get("success") or not alb_data or not alb_data.get("id"):
             res = requests.get(f"https://music-api.albatross0071.workers.dev/api/playlists?id={id}", timeout=5)
             data = res.json() if res.status_code == 200 else {}
-            alb_data = data.get("data", {})
 
         # If STILL not found, check if the ID is a SONG ID and get its album ID
-        if not data.get("success") or not alb_data or not alb_data.get("id"):
+        if not data.get("success") or not data.get("data", {}).get("id"):
             song_res = requests.get(f"https://music-api.albatross0071.workers.dev/api/songs?ids={id}", timeout=5)
             song_data = song_res.json() if song_res.status_code == 200 else {}
             if song_data.get("success") and song_data.get("data"):
@@ -1562,8 +1114,7 @@ def get_album(id: str):
                         res = requests.get(f"https://music-api.albatross0071.workers.dev/api/albums?id={real_id}", timeout=5)
                         data = res.json() if res.status_code == 200 else {}
         # If STILL not found, try searching the ID as an album name directly
-        final_alb_data = data.get("data", {})
-        if not data.get("success") or not final_alb_data or not final_alb_data.get("id"):
+        if not data.get("success") or not data.get("data", {}).get("id"):
             search_res = requests.get(f"https://music-api.albatross0071.workers.dev/api/search/albums?query={id}", timeout=5)
             search_data = search_res.json() if search_res.status_code == 200 else {}
             if search_data.get("success") and search_data.get("data", {}).get("results"):
@@ -1571,7 +1122,7 @@ def get_album(id: str):
                 res = requests.get(f"https://music-api.albatross0071.workers.dev/api/albums?id={real_id}", timeout=5)
                 data = res.json() if res.status_code == 200 else {}
 
-        if data.get("success") and ("songs" in data.get("data", {}) or data.get("data", {}).get("id")):
+        if data.get("success") and data.get("data", {}).get("id"):
             alb = data.get("data", {})
             
             # parse songs
@@ -1887,4 +1438,3 @@ def health_v1():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
