@@ -364,7 +364,7 @@ fun PlaylistScreen(
                                         .background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    PlayingAnimation()
+                                    com.pulse.music.ui.components.PlayingAnimation()
                                 }
                             }
                         }
@@ -432,21 +432,4 @@ fun PlaylistScreen(
         }
     }
 }
-
-@Composable
-fun PlayingAnimation() {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.height(16.dp)
-    ) {
-        val transition = rememberInfiniteTransition(label = "eq")
-        EqBar(transition, 0)
-        EqBar(transition, 1)
-        EqBar(transition, 2)
-        EqBar(transition, 3)
-    }
-}
-
-
 
