@@ -10,5 +10,5 @@ public final class BuildConfig {
   public static final int VERSION_CODE = 1;
   public static final String VERSION_NAME = "1.0";
   // Field from default config.
-  public static final String API_BASE_URL = "http://10.25.35.44:8080/";
+  public static final String API_BASE_URL = "https://pulse-music-backend-fallback-1.onrender.com/";
 }

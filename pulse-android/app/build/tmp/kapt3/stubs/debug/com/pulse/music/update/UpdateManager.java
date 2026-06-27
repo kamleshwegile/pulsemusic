@@ -5,9 +5,9 @@ public final class UpdateManager {
     @org.jetbrains.annotations.NotNull()
     private static final java.lang.String GITHUB_OWNER = "RAHUL-0568";
     @org.jetbrains.annotations.NotNull()
-    private static final java.lang.String GITHUB_REPO = "Pulse-Music-backend";
+    private static final java.lang.String GITHUB_REPO = "Pulse-Music-Releases";
     @org.jetbrains.annotations.NotNull()
-    private static final java.lang.String GITHUB_API_URL = "https://api.github.com/repos/RAHUL-0568/Pulse-Music-backend/releases/latest";
+    private static final java.lang.String GITHUB_API_URL = "https://api.github.com/repos/RAHUL-0568/Pulse-Music-Releases/releases/latest";
     @org.jetbrains.annotations.NotNull()
     public static final com.pulse.music.update.UpdateManager INSTANCE = null;
     
