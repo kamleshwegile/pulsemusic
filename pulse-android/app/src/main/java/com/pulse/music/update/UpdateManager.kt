@@ -30,8 +30,8 @@ object UpdateManager {
 
     fun cleanupOldUpdates(context: Context) {
         try {
-            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val files = dir.listFiles { _, name -> name.startsWith("Pulse-update-") && name.endsWith(".apk") }
+            val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            val files = dir?.listFiles { _, name -> name.startsWith("Pulse-update-") && name.endsWith(".apk") }
             files?.forEach { it.delete() }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -83,7 +83,7 @@ object UpdateManager {
             .setTitle("Pulse Music Update")
             .setDescription("Downloading the latest version...")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, ("Pulse-update-" + System.currentTimeMillis() + ".apk"))
+            .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, ("Pulse-update-" + System.currentTimeMillis() + ".apk"))
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(true)
 
@@ -153,5 +153,8 @@ object UpdateManager {
         }
     }
 }
+
+
+
 
 
