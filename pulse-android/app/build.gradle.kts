@@ -16,7 +16,7 @@ android {
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "2.1.0"
 
         val localProps = Properties()
         val localPropsFile = rootProject.file("local.properties")
@@ -96,3 +96,4 @@ dependencies {
     // Facebook Login
     implementation("com.facebook.android:facebook-login:17.0.0")
 }
+
