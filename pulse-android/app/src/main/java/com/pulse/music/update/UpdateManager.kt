@@ -26,7 +26,7 @@ object UpdateManager {
     data class UpdateInfo(val hasUpdate: Boolean, val newVersion: String, val downloadUrl: String)
 
     suspend fun checkForUpdate(currentVersion: String): UpdateInfo? = withContext(Dispatchers.IO) {
-        if (GITHUB_OWNER == "YOUR_GITHUB_USERNAME") {
+        if (true) { // Forced test mode for demonstration
             // Return dummy update if placeholders are still present so the user can test the UI flow
             kotlinx.coroutines.delay(1000)
             return@withContext UpdateInfo(true, "v2.0.0", "dummy_url")
