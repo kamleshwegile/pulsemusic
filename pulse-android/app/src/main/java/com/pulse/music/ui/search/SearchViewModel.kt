@@ -41,8 +41,11 @@ class SearchViewModel @Inject constructor(
     private val onlineRepo: OnlineMusicRepository,
     private val songDao: SongDao,
     private val playlistDao: PlaylistDao,
-    private val musicPlayerManager: MusicPlayerManager
+    private val musicPlayerManager: MusicPlayerManager,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
+
+    private val sharedPrefs = context.getSharedPreferences("search_prefs", android.content.Context.MODE_PRIVATE)
 
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -66,13 +69,9 @@ class SearchViewModel @Inject constructor(
     }
     
     private fun fetchRecentSearches() {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val res = onlineRepo.getRecentSearches().getOrNull()
-            if (res != null) {
-                val searches = res.mapNotNull { it["query"] as? String }
-                _uiState.update { it.copy(recentSearches = searches) }
-            }
-        }
+        val historyStr = sharedPrefs.getString("recent_searches", "") ?: ""
+        val searches = if (historyStr.isNotBlank()) historyStr.split("|||") else emptyList()
+        _uiState.update { it.copy(recentSearches = searches) }
     }
     
     companion object {
@@ -100,26 +99,31 @@ class SearchViewModel @Inject constructor(
     }
 
     fun saveRecentSearch(query: String) {
-        android.util.Log.e("SearchHistory", "saveRecentSearch called with query: $query")
-        if (query.isBlank()) {
-            android.util.Log.e("SearchHistory", "query is blank, aborting")
-            return
+        if (query.isBlank()) return
+        
+        val currentSearches = _uiState.value.recentSearches.toMutableList()
+        currentSearches.remove(query) // Remove if exists to put it at the top
+        currentSearches.add(0, query)
+        
+        // Keep only top 20 recent searches
+        if (currentSearches.size > 20) {
+            currentSearches.removeAt(currentSearches.size - 1)
         }
+        
+        _uiState.update { it.copy(recentSearches = currentSearches) }
+        sharedPrefs.edit().putString("recent_searches", currentSearches.joinToString("|||")).apply()
+
+        // Still send to backend silently for cross-device sync, but don't wait/fetch from it
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            android.util.Log.e("SearchHistory", "Launching API call for addRecentSearch")
-            val result = onlineRepo.addRecentSearch(query)
-            if (result.isSuccess) {
-                android.util.Log.e("SearchHistory", "API call success: ${result.getOrNull()}")
-            } else {
-                android.util.Log.e("SearchHistory", "API call failed", result.exceptionOrNull())
-            }
-            fetchRecentSearches()
+            onlineRepo.addRecentSearch(query)
         }
     }
 
     fun removeRecentSearch(query: String) {
-        // Optimistically remove from UI immediately
-        _uiState.update { it.copy(recentSearches = it.recentSearches.filter { s -> s != query }) }
+        val currentSearches = _uiState.value.recentSearches.toMutableList()
+        currentSearches.remove(query)
+        _uiState.update { it.copy(recentSearches = currentSearches) }
+        sharedPrefs.edit().putString("recent_searches", currentSearches.joinToString("|||")).apply()
         
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             onlineRepo.removeRecentSearch(query)

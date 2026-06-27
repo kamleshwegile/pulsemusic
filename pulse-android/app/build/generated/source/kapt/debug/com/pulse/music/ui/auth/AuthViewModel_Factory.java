@@ -1,6 +1,7 @@
 package com.pulse.music.ui.auth;
 
 import com.pulse.music.data.repository.AuthRepository;
+import com.pulse.music.data.repository.OnlineMusicRepository;
 import com.pulse.music.player.MusicPlayerManager;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -25,26 +26,31 @@ import javax.inject.Provider;
 public final class AuthViewModel_Factory implements Factory<AuthViewModel> {
   private final Provider<AuthRepository> repositoryProvider;
 
+  private final Provider<OnlineMusicRepository> musicRepositoryProvider;
+
   private final Provider<MusicPlayerManager> musicPlayerManagerProvider;
 
   public AuthViewModel_Factory(Provider<AuthRepository> repositoryProvider,
+      Provider<OnlineMusicRepository> musicRepositoryProvider,
       Provider<MusicPlayerManager> musicPlayerManagerProvider) {
     this.repositoryProvider = repositoryProvider;
+    this.musicRepositoryProvider = musicRepositoryProvider;
     this.musicPlayerManagerProvider = musicPlayerManagerProvider;
   }
 
   @Override
   public AuthViewModel get() {
-    return newInstance(repositoryProvider.get(), musicPlayerManagerProvider.get());
+    return newInstance(repositoryProvider.get(), musicRepositoryProvider.get(), musicPlayerManagerProvider.get());
   }
 
   public static AuthViewModel_Factory create(Provider<AuthRepository> repositoryProvider,
+      Provider<OnlineMusicRepository> musicRepositoryProvider,
       Provider<MusicPlayerManager> musicPlayerManagerProvider) {
-    return new AuthViewModel_Factory(repositoryProvider, musicPlayerManagerProvider);
+    return new AuthViewModel_Factory(repositoryProvider, musicRepositoryProvider, musicPlayerManagerProvider);
   }
 
   public static AuthViewModel newInstance(AuthRepository repository,
-      MusicPlayerManager musicPlayerManager) {
-    return new AuthViewModel(repository, musicPlayerManager);
+      OnlineMusicRepository musicRepository, MusicPlayerManager musicPlayerManager) {
+    return new AuthViewModel(repository, musicRepository, musicPlayerManager);
   }
 }

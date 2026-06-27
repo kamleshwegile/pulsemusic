@@ -78,7 +78,7 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // Media3 (ExoPlayer)
-    val media3_version = "1.2.1"
+    val media3_version = "1.4.1"
     implementation("androidx.media3:media3-exoplayer:$media3_version")
     implementation("androidx.media3:media3-session:$media3_version")
     implementation("androidx.media3:media3-exoplayer-dash:$media3_version")

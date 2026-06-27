@@ -61,7 +61,10 @@ object JamSessionManager {
         _currentUserId.value = userId
         _chatMessages.value = emptyList()
 
-        var urlStr = "ws://10.225.30.44:8080/api/v1/jam/ws/$roomId/$userId" + if (isCreating) "?action=create" else ""
+        val baseUrl = com.pulse.music.BuildConfig.API_BASE_URL
+        val wsBaseUrl = baseUrl.replace("http://", "ws://").replace("https://", "wss://")
+        val encodedUserId = java.net.URLEncoder.encode(userId, "UTF-8")
+        var urlStr = "${wsBaseUrl}api/v1/jam/ws/$roomId/$encodedUserId" + if (isCreating) "?action=create" else ""
         if (token != null) {
             urlStr += if (urlStr.contains("?")) "&token=$token" else "?token=$token"
         }

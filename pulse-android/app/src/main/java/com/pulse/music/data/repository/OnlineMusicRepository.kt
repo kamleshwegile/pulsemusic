@@ -9,6 +9,14 @@ import javax.inject.Singleton
 class OnlineMusicRepository @Inject constructor(
     private val apiService: PulseApiService
 ) {
+    suspend fun getMusicCapsule(): Result<com.pulse.music.data.network.MusicCapsuleResponse> {
+        return try {
+            Result.success(apiService.getMusicCapsule())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun searchOnline(query: String): Result<SearchResponse> {
         return try {
             val response = apiService.search(query)

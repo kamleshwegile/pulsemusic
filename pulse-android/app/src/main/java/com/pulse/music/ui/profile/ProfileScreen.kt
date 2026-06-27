@@ -45,6 +45,16 @@ fun ProfileScreen(
     val spatialAudio by viewModel.spatialAudio.collectAsState()
     val gapless by viewModel.gapless.collectAsState()
     val crossfade by viewModel.crossfade.collectAsState()
+
+    val capsuleState by viewModel.capsuleState.collectAsState()
+    var showCapsule by remember { mutableStateOf(false) }
+
+    val isLastDayOfMonth = remember {
+        val calendar = java.util.Calendar.getInstance()
+        val today = calendar.get(java.util.Calendar.DAY_OF_MONTH)
+        val lastDay = calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+        today == lastDay
+    }
     
     // Image picker launcher
     val launcher = rememberLauncherForActivityResult(
@@ -78,6 +88,31 @@ fun ProfileScreen(
                     onEditProfilePic = { launcher.launch("image/*") }
                 ) 
             }
+            if (isLastDayOfMonth) {
+                item {
+                    Button(
+                        onClick = {
+                            viewModel.fetchMusicCapsule()
+                            showCapsule = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFFFF4081), Color(0xFF7C4DFF))
+                                )
+                            ),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("View Your Music Capsule", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            }
             item { DiscoveryInsights() }
             item { 
                 PlaybackSettings(
@@ -102,6 +137,12 @@ fun ProfileScreen(
             item {
                 AccountActions(onLogout = { viewModel.logout() })
             }
+        }
+        if (showCapsule && capsuleState != null) {
+            MusicCapsuleDialog(
+                capsule = capsuleState!!,
+                onDismiss = { showCapsule = false }
+            )
         }
     }
 }
@@ -413,3 +454,6 @@ private fun StorageSettings(onClearCache: () -> Unit) {
         }
     }
 }
+
+
+

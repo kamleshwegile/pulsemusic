@@ -54,6 +54,7 @@ fun ArtistScreen(
     val isFollowed by viewModel.isFollowed.collectAsState()
     val currentSong by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState(initial = false)
+    val isShuffleEnabled by viewModel.isShuffleEnabled.collectAsState()
     var showAllTracks by remember { mutableStateOf(false) }
     var showAllAlbums by remember { mutableStateOf(false) }
 
@@ -178,16 +179,13 @@ fun ArtistScreen(
                         }
 
                         // Shuffle Button
-                        IconButton(
-                            onClick = { 
-                                val tracks = topTracks.map { it as Song }
-                                if (tracks.isNotEmpty()) {
-                                    onShuffleClick(tracks)
-                                }
-                            },
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(28.dp))
+                        IconButton(onClick = { viewModel.toggleShuffle() }, modifier = Modifier.size(48.dp)) {
+                            Icon(
+                                Icons.Default.Shuffle, 
+                                contentDescription = "Shuffle", 
+                                tint = if (isShuffleEnabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), 
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
 

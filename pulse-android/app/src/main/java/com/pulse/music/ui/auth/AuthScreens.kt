@@ -218,6 +218,9 @@ fun RegisterScreen(
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
+    var step by remember { mutableStateOf(0) }
+    var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Box(
@@ -244,47 +247,101 @@ fun RegisterScreen(
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
+                if (step == 0) {
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("Username") },
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
-                Button(
-                    onClick = { 
-                        viewModel.register(username, email, password, onNavigateToHome, onError = { errorMsg ->
-                            Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
-                        }) 
-                    },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Sign Up")
+                    Button(
+                        onClick = { 
+                            if (email.isNotBlank() && password.isNotBlank() && username.isNotBlank()) {
+                                isLoading = true
+                                viewModel.requestRegisterOtp(email) { msg ->
+                                    isLoading = false
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    if (msg.contains("sent", ignoreCase = true)) {
+                                        step = 1
+                                    }
+                                }
+                            } else {
+                                Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isLoading
+                    ) {
+                        Text(if (isLoading) "Sending Code..." else "Continue")
+                    }
+                } else {
+                    Text(
+                        text = "We sent a 6-digit code to $email",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+                    
+                    OutlinedTextField(
+                        value = code,
+                        onValueChange = { code = it },
+                        label = { Text("6-Digit Code") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                    )
+
+                    Button(
+                        onClick = { 
+                            if (code.isNotBlank()) {
+                                isLoading = true
+                                viewModel.register(username, email, password, code, onNavigateToHome, onError = { errorMsg ->
+                                    isLoading = false
+                                    Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                }) 
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isLoading
+                    ) {
+                        Text(if (isLoading) "Verifying..." else "Verify & Sign Up")
+                    }
+                    
+                    TextButton(
+                        onClick = { step = 0 },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text("Back")
+                    }
                 }
 
                 TextButton(

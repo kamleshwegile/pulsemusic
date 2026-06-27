@@ -88,13 +88,24 @@ class MusicPlayerManager @Inject constructor(
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun createExoPlayer(): ExoPlayer {
-        val audioAttributes = androidx.media3.common.AudioAttributes.Builder()
+        val audioAttributesBuilder = androidx.media3.common.AudioAttributes.Builder()
             .setUsage(androidx.media3.common.C.USAGE_MEDIA)
             .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC)
-            .build()
             
-        return ExoPlayer.Builder(context)
-            .setAudioAttributes(audioAttributes, true)
+        if (android.os.Build.VERSION.SDK_INT == 33) {
+            audioAttributesBuilder.setSpatializationBehavior(androidx.media3.common.C.SPATIALIZATION_BEHAVIOR_NEVER)
+        }
+        val audioAttributes = audioAttributesBuilder.build()
+            
+        val renderersFactory = androidx.media3.exoplayer.DefaultRenderersFactory(context)
+        if (android.os.Build.VERSION.SDK_INT == 33) {
+            renderersFactory.setEnableAudioFloatOutput(false)
+            renderersFactory.setEnableAudioTrackPlaybackParams(false)
+            renderersFactory.setEnableDecoderFallback(true)
+        }
+
+        return ExoPlayer.Builder(context, renderersFactory)
+            .setAudioAttributes(audioAttributes, false) // Manage audio focus manually to prevent ExoPlayers from pausing each other
             .setHandleAudioBecomingNoisy(true)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(context).setDataSourceFactory(sharedDataSourceFactory))
             .build().also { exo ->
@@ -115,6 +126,26 @@ class MusicPlayerManager @Inject constructor(
     // Legacy bridge properties to avoid breaking other parts of the file temporarily if any remain
     private val crossfadeSecs: Int get() = crossfadeManager.crossfadeSecs
     private val isCrossfading: Boolean get() = crossfadeManager.isCrossfading
+
+    private val audioFocusChangeListener = android.media.AudioManager.OnAudioFocusChangeListener { focusChange ->
+        if (focusChange == android.media.AudioManager.AUDIOFOCUS_LOSS || focusChange == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+            player.pause()
+        } else if (focusChange == android.media.AudioManager.AUDIOFOCUS_GAIN) {
+            player.play()
+        }
+    }
+
+    private val focusRequest = if (android.os.Build.VERSION.SDK_INT >= 26) {
+        android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(
+                android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            .setOnAudioFocusChangeListener(audioFocusChangeListener)
+            .build()
+    } else null
 
     init {
         val sessionToken = androidx.media3.session.SessionToken(context, android.content.ComponentName(context, PlaybackService::class.java))
@@ -503,6 +534,17 @@ class MusicPlayerManager @Inject constructor(
             if (targetPlayer !== player) return
             _isPlaying.value = playing
             if (playing) startPositionPolling() else stopPositionPolling()
+        }
+
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            if (playWhenReady) {
+                if (android.os.Build.VERSION.SDK_INT >= 26 && focusRequest != null) {
+                    audioManager.requestAudioFocus(focusRequest)
+                } else {
+                    @Suppress("DEPRECATION")
+                    audioManager.requestAudioFocus(audioFocusChangeListener, android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.AUDIOFOCUS_GAIN)
+                }
+            }
         }
         
         override fun onPlayerError(error: androidx.media3.common.PlaybackException) {

@@ -71,23 +71,51 @@ class AuthRepository @Inject constructor(
     val gapless: Flow<Boolean> = context.dataStore.data.map { prefs -> prefs[GAPLESS_KEY] ?: false }
     val crossfade: Flow<Int> = context.dataStore.data.map { prefs -> prefs[CROSSFADE_KEY] ?: 0 }
 
+    private fun parseError(e: Exception): Exception {
+        if (e is retrofit2.HttpException) {
+            try {
+                val errorBody = e.response()?.errorBody()?.string()
+                if (errorBody != null) {
+                    val json = org.json.JSONObject(errorBody)
+                    if (json.has("detail")) {
+                        return Exception(json.getString("detail"))
+                    } else if (json.has("message")) {
+                        return Exception(json.getString("message"))
+                    }
+                }
+            } catch (ex: Exception) {
+                // Ignore parse errors
+            }
+        }
+        return e
+    }
+
     suspend fun login(email: String, password: String): Result<AuthResponse> {
         return try {
             val response = api.login(LoginRequest(email, password))
             saveAuth(response)
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(parseError(e))
         }
     }
 
-    suspend fun register(username: String, email: String, password: String): Result<AuthResponse> {
+    suspend fun requestRegisterOtp(email: String): Result<ForgotPasswordResponse> {
         return try {
-            val response = api.register(RegisterRequest(username, email, password))
+            val response = api.requestRegisterOtp(ForgotPasswordRequest(email))
+            Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(parseError(e))
+        }
+    }
+
+    suspend fun register(username: String, email: String, password: String, code: String): Result<AuthResponse> {
+        return try {
+            val response = api.register(RegisterRequest(username, email, password, code))
             saveAuth(response)
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(parseError(e))
         }
     }
 
@@ -101,7 +129,7 @@ class AuthRepository @Inject constructor(
             saveAuth(response)
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(parseError(e))
         }
     }
 
@@ -110,7 +138,7 @@ class AuthRepository @Inject constructor(
             val response = api.forgotPassword(ForgotPasswordRequest(email))
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(parseError(e))
         }
     }
 
@@ -119,7 +147,7 @@ class AuthRepository @Inject constructor(
             val response = api.verifyCode(VerifyCodeRequest(email, code))
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(parseError(e))
         }
     }
 
@@ -128,7 +156,7 @@ class AuthRepository @Inject constructor(
             val response = api.resetPassword(ResetPasswordRequest(email, code, newPassword))
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(parseError(e))
         }
     }
 
@@ -138,8 +166,25 @@ class AuthRepository @Inject constructor(
             prefs.remove(USERNAME_KEY)
             prefs.remove(PROFILE_PIC_KEY)
         }
+        
+        // Clear all persistent storage to prevent data leaking to new users
         withContext(kotlinx.coroutines.Dispatchers.IO) {
             database.clearAllTables()
+            
+            try {
+                // Clear SharedPreferences caches
+                context.getSharedPreferences("pulse_actual_recent_plays", Context.MODE_PRIVATE).edit().clear().apply()
+                context.getSharedPreferences("pulse_library_cache", Context.MODE_PRIVATE).edit().clear().apply()
+                
+                // Clear JSON file caches
+                val homeCache = java.io.File(context.cacheDir, "home_cache.json")
+                if (homeCache.exists()) homeCache.delete()
+                
+                // Clear static memory states
+                com.pulse.music.ui.home.HomeViewModel.cachedUiState = null
+            } catch (e: Exception) {
+                // Ignore cleanup errors
+            }
         }
     }
 

@@ -71,11 +71,10 @@ class PlaylistViewModel @Inject constructor(
         musicPlayerManager.togglePlayPause()
     }
 
-    fun shufflePlay(contextSongs: List<Song>) {
-        if (contextSongs.isNotEmpty()) {
-            val shuffled = contextSongs.shuffled()
-            musicPlayerManager.playSongFromList(shuffled.first(), shuffled)
-        }
+    val isShuffleEnabled = musicPlayerManager.shuffleEnabled
+
+    fun toggleShuffle() {
+        musicPlayerManager.toggleShuffle()
     }
 
     fun toggleFavorite() {

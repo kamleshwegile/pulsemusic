@@ -45,7 +45,7 @@ class JamViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val newJam = jamRepository.createJam(name)
-                connectToJamSession(newJam.roomCode, isCreating = true)
+                connectToJamSession(newJam.roomCode)
             } catch (e: Exception) {
                 e.printStackTrace()
                 val msg = if (e is retrofit2.HttpException && e.code() == 400) {

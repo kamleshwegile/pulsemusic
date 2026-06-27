@@ -117,11 +117,9 @@ class PlaybackService : MediaSessionService() {
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(pendingIntent)
             .setBitmapLoader(object : androidx.media3.common.util.BitmapLoader {
+                override fun supportsMimeType(mimeType: String): Boolean = true
                 override fun decodeBitmap(data: ByteArray): com.google.common.util.concurrent.ListenableFuture<android.graphics.Bitmap> {
                     return com.google.common.util.concurrent.Futures.immediateFuture(android.graphics.BitmapFactory.decodeByteArray(data, 0, data.size))
-                }
-                override fun loadBitmap(uri: android.net.Uri): com.google.common.util.concurrent.ListenableFuture<android.graphics.Bitmap> {
-                    return loadBitmap(uri, null)
                 }
                 override fun loadBitmapFromMetadata(metadata: androidx.media3.common.MediaMetadata): com.google.common.util.concurrent.ListenableFuture<android.graphics.Bitmap>? {
                     val data = metadata.artworkData
@@ -130,7 +128,7 @@ class PlaybackService : MediaSessionService() {
                     }
                     return null
                 }
-                override fun loadBitmap(uri: android.net.Uri, options: android.graphics.BitmapFactory.Options?): com.google.common.util.concurrent.ListenableFuture<android.graphics.Bitmap> {
+                override fun loadBitmap(uri: android.net.Uri): com.google.common.util.concurrent.ListenableFuture<android.graphics.Bitmap> {
                     val future = com.google.common.util.concurrent.SettableFuture.create<android.graphics.Bitmap>()
                     java.util.concurrent.Executors.newSingleThreadExecutor().execute {
                         try {

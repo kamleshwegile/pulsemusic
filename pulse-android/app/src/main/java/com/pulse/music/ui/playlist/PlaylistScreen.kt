@@ -6,6 +6,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -54,6 +55,7 @@ fun PlaylistScreen(
     val currentSong by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState(initial = false)
     val isFavorite by viewModel.isFavorite.collectAsState()
+    val isShuffleEnabled by viewModel.isShuffleEnabled.collectAsState()
     
     val context = LocalContext.current
     val listState = rememberLazyListState()
@@ -277,13 +279,13 @@ fun PlaylistScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedIconButton(
-                            onClick = { viewModel.shufflePlay(playlistSongs) },
-                            modifier = Modifier.size(48.dp),
-                            shape = CircleShape,
-                            colors = IconButtonDefaults.outlinedIconButtonColors(contentColor = MaterialTheme.colorScheme.onBackground)
-                        ) {
-                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", modifier = Modifier.size(24.dp))
+                        IconButton(onClick = { viewModel.toggleShuffle() }, modifier = Modifier.size(48.dp)) {
+                            Icon(
+                                Icons.Default.Shuffle, 
+                                contentDescription = "Shuffle", 
+                                tint = if (isShuffleEnabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f), 
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                         
                         val interactionSourcePlay = remember { MutableInteractionSource() }

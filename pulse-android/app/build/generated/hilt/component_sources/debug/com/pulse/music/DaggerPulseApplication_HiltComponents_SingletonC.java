@@ -544,7 +544,7 @@ public final class DaggerPulseApplication_HiltComponents_SingletonC {
           return (T) new ArtistViewModel(singletonCImpl.musicRepositoryProvider.get(), viewModelCImpl.followedArtistRepository(), singletonCImpl.musicPlayerManagerProvider.get());
 
           case 2: // com.pulse.music.ui.auth.AuthViewModel 
-          return (T) new AuthViewModel(singletonCImpl.authRepositoryProvider.get(), singletonCImpl.musicPlayerManagerProvider.get());
+          return (T) new AuthViewModel(singletonCImpl.authRepositoryProvider.get(), singletonCImpl.onlineMusicRepositoryProvider.get(), singletonCImpl.musicPlayerManagerProvider.get());
 
           case 3: // com.pulse.music.ui.home.HomeViewModel 
           return (T) new HomeViewModel(singletonCImpl.onlineMusicRepositoryProvider.get(), singletonCImpl.songDao(), singletonCImpl.musicPlayerManagerProvider.get(), ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.authRepositoryProvider.get());
@@ -562,7 +562,7 @@ public final class DaggerPulseApplication_HiltComponents_SingletonC {
           return (T) new PlaylistViewModel(singletonCImpl.playlistRepositoryProvider.get(), viewModelCImpl.likedSongsRepository(), singletonCImpl.musicPlayerManagerProvider.get());
 
           case 8: // com.pulse.music.ui.search.SearchViewModel 
-          return (T) new SearchViewModel(singletonCImpl.onlineMusicRepositoryProvider.get(), singletonCImpl.songDao(), singletonCImpl.playlistDao(), singletonCImpl.musicPlayerManagerProvider.get());
+          return (T) new SearchViewModel(singletonCImpl.onlineMusicRepositoryProvider.get(), singletonCImpl.songDao(), singletonCImpl.playlistDao(), singletonCImpl.musicPlayerManagerProvider.get(), ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           default: throw new AssertionError(id);
         }

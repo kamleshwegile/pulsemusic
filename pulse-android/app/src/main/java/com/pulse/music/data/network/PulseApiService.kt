@@ -16,7 +16,7 @@ data class AuthResponse(
 
 
 data class LoginRequest(val email: String, val password: String)
-data class RegisterRequest(val username: String, val email: String, val password: String)
+data class RegisterRequest(val username: String, val email: String, val password: String, val code: String)
 data class ForgotPasswordRequest(val email: String)
 data class ForgotPasswordResponse(val status: String, val message: String)
 data class VerifyCodeRequest(val email: String, val code: String)
@@ -76,6 +76,9 @@ interface PulseApiService {
 
     @POST("api/v1/auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
+
+    @POST("api/v1/auth/request-register-otp")
+    suspend fun requestRegisterOtp(@Body request: ForgotPasswordRequest): ForgotPasswordResponse
 
     @POST("api/v1/auth/register")
     suspend fun register(@Body request: RegisterRequest): AuthResponse
@@ -137,6 +140,9 @@ interface PulseApiService {
     @POST("api/v1/user/playlists")
     suspend fun createPlaylist(@Query("name") name: String): Map<String, String>
 
+    @GET("api/v1/user/music-capsule")
+    suspend fun getMusicCapsule(): MusicCapsuleResponse
+    
     @POST("api/v1/user/playlists/spotify-import")
     suspend fun importSpotifyPlaylist(@Body request: Map<String, String>): Map<String, Any>
 
@@ -168,3 +174,23 @@ interface PulseApiService {
     @retrofit2.http.DELETE("api/v1/jam/{jam_id}")
     suspend fun deleteJam(@Path("jam_id") jamId: String): Map<String, String>
 }
+
+data class MusicCapsuleSong(
+    val id: String,
+    val title: String,
+    val artist: String,
+    val albumArt: String,
+    val playCount: Int
+)
+
+data class MusicCapsuleArtist(
+    val name: String,
+    val playCount: Int
+)
+
+data class MusicCapsuleResponse(
+    val totalPlays: Int,
+    val uniqueSongs: Int,
+    val topSongs: List<MusicCapsuleSong>,
+    val topArtists: List<MusicCapsuleArtist>
+)

@@ -8,6 +8,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import com.pulse.music.player.MusicPlayerManager
@@ -16,8 +18,21 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repository: AuthRepository,
+    private val musicRepository: com.pulse.music.data.repository.OnlineMusicRepository,
     private val musicPlayerManager: MusicPlayerManager
 ) : ViewModel() {
+
+    private val _capsuleState = MutableStateFlow<com.pulse.music.data.network.MusicCapsuleResponse?>(null)
+    val capsuleState: StateFlow<com.pulse.music.data.network.MusicCapsuleResponse?> = _capsuleState.asStateFlow()
+    
+    fun fetchMusicCapsule() {
+        viewModelScope.launch {
+            val result = musicRepository.getMusicCapsule()
+            if (result.isSuccess) {
+                _capsuleState.value = result.getOrNull()
+            }
+        }
+    }
 
     val token: StateFlow<String?> = repository.authToken.stateIn(
         viewModelScope,
@@ -78,9 +93,20 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(username: String, email: String, password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun requestRegisterOtp(email: String, onResult: (String) -> Unit) {
         viewModelScope.launch {
-            val result = repository.register(username, email, password)
+            val result = repository.requestRegisterOtp(email)
+            if (result.isSuccess) {
+                onResult(result.getOrNull()?.message ?: "Code sent")
+            } else {
+                onResult(result.exceptionOrNull()?.message ?: "Failed to send code")
+            }
+        }
+    }
+
+    fun register(username: String, email: String, password: String, code: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.register(username, email, password, code)
             if (result.isSuccess) {
                 onSuccess()
             } else {

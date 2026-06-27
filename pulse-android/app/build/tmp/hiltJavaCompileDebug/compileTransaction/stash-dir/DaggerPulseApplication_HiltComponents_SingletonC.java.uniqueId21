@@ -562,7 +562,7 @@ public final class DaggerPulseApplication_HiltComponents_SingletonC {
           return (T) new PlaylistViewModel(singletonCImpl.playlistRepositoryProvider.get(), viewModelCImpl.likedSongsRepository(), singletonCImpl.musicPlayerManagerProvider.get());
 
           case 8: // com.pulse.music.ui.search.SearchViewModel 
-          return (T) new SearchViewModel(singletonCImpl.onlineMusicRepositoryProvider.get(), singletonCImpl.songDao(), singletonCImpl.playlistDao(), singletonCImpl.musicPlayerManagerProvider.get());
+          return (T) new SearchViewModel(singletonCImpl.onlineMusicRepositoryProvider.get(), singletonCImpl.songDao(), singletonCImpl.playlistDao(), singletonCImpl.musicPlayerManagerProvider.get(), ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           default: throw new AssertionError(id);
         }

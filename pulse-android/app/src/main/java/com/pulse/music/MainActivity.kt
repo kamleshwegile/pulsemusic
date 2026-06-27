@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -293,11 +294,14 @@ class MainActivity : ComponentActivity() {
                             if (showMiniPlayer && currentSong != null) {
                                 val queue by musicPlayerManager.queue.collectAsState()
                                 val currentIndex by musicPlayerManager.currentIndex.collectAsState()
+                                val isShuffleEnabled by musicPlayerManager.shuffleEnabled.collectAsState()
                                 MiniPlayer(
                                     queue = queue,
                                     currentIndex = currentIndex,
                                     isPlaying = isPlaying,
+                                    isShuffleEnabled = isShuffleEnabled,
                                     onTogglePlay = { musicPlayerManager.togglePlayPause() },
+                                    onToggleShuffle = { musicPlayerManager.toggleShuffle() },
                                     onSkipNext = { musicPlayerManager.skipNext() },
                                     onSkipPrev = { musicPlayerManager.skipPrevious() },
                                     onClick = { navController.navigate("now_playing") }
@@ -393,7 +397,9 @@ fun MiniPlayer(
     queue: List<com.pulse.music.domain.Song>,
     currentIndex: Int,
     isPlaying: Boolean,
+    isShuffleEnabled: Boolean = false,
     onTogglePlay: () -> Unit,
+    onToggleShuffle: (() -> Unit)? = null,
     onSkipNext: () -> Unit,
     onSkipPrev: () -> Unit,
     onClick: () -> Unit
@@ -409,7 +415,7 @@ fun MiniPlayer(
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
         val widthPx = constraints.maxWidth.toFloat()
-        val threshold = widthPx * 0.35f
+        val threshold = widthPx * 0.15f
 
         // Background tracks (Preview)
         if (offsetX.value < 0f && nextSong != null) {
@@ -442,7 +448,9 @@ fun MiniPlayer(
         MiniPlayerCard(
             song = currentSong,
             isPlaying = isPlaying,
+            isShuffleEnabled = isShuffleEnabled,
             onTogglePlay = onTogglePlay,
+            onToggleShuffle = onToggleShuffle,
             modifier = Modifier
                 .graphicsLayer {
                     translationX = offsetX.value
@@ -504,7 +512,9 @@ fun MiniPlayer(
 fun MiniPlayerCard(
     song: com.pulse.music.domain.Song,
     isPlaying: Boolean,
+    isShuffleEnabled: Boolean = false,
     onTogglePlay: (() -> Unit)? = null,
+    onToggleShuffle: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -565,6 +575,16 @@ fun MiniPlayerCard(
             }
 
             if (onTogglePlay != null) {
+                if (onToggleShuffle != null) {
+                    IconButton(onClick = onToggleShuffle, modifier = Modifier.size(48.dp)) {
+                        Icon(
+                            Icons.Default.Shuffle, 
+                            contentDescription = "Shuffle", 
+                            tint = if (isShuffleEnabled) Color.White else Color.White.copy(alpha = 0.4f), 
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
                 IconButton(onClick = onTogglePlay, modifier = Modifier.size(48.dp)) {
                     Icon(
                         if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,

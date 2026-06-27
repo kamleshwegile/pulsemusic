@@ -43,10 +43,8 @@ class CrossfadeManager {
             current.removeMediaItems(fadingIdx + 1, current.mediaItemCount)
         }
         
-        // Prevent audio focus stealing between our own players
-        val attrs = current.audioAttributes
-        current.setAudioAttributes(attrs, false)
-        next.setAudioAttributes(attrs, false)
+        // Dynamic setAudioAttributes causes the AudioSink to recreate and breaks timestamps (4x speed bug).
+        // Let them steal focus or rely on MediaSession focus.
         
         next.volume = 0f
         next.play()
@@ -79,9 +77,7 @@ class CrossfadeManager {
             fadingPlayer = null
             activePlayer.volume = 1f
             
-            // Restore normal audio focus handling
-            val attrs = activePlayer.audioAttributes
-            activePlayer.setAudioAttributes(attrs, true)
+            // Audio focus is restored naturally by ExoPlayer when the old player stops.
             
             android.util.Log.d("CrossfadeManager", "Player swap completed.")
         }

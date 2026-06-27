@@ -67,10 +67,9 @@ class ArtistViewModel @Inject constructor(
         musicPlayerManager.togglePlayPause()
     }
 
-    fun shufflePlay(contextSongs: List<com.pulse.music.domain.Song>) {
-        if (contextSongs.isNotEmpty()) {
-            val shuffled = contextSongs.shuffled()
-            musicPlayerManager.playSongFromList(shuffled.first(), shuffled)
-        }
+    val isShuffleEnabled = musicPlayerManager.shuffleEnabled
+
+    fun toggleShuffle() {
+        musicPlayerManager.toggleShuffle()
     }
 }

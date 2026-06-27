@@ -44,6 +44,7 @@ fun AlbumScreen(
     val currentSong by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState(initial = false)
     val isFavorite by viewModel.isFavorite.collectAsState()
+    val isShuffleEnabled by viewModel.isShuffleEnabled.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     Scaffold(
@@ -64,9 +65,7 @@ fun AlbumScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton(onClick = {}) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
-                }
+                Spacer(modifier = Modifier.width(48.dp)) // Maintain centering by matching the back button's width
             }
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -164,7 +163,6 @@ fun AlbumScreen(
                                 tint = if (isFavorite) Color(0xFFF92839) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 modifier = Modifier.size(22.dp).clickable { viewModel.toggleFavorite() }
                             )
-                            Icon(Icons.Default.Download, contentDescription = "Download", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
                             Icon(
                                 Icons.Default.Share,
                                 contentDescription = "Share",
@@ -178,18 +176,15 @@ fun AlbumScreen(
                                     context.startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
                                 }
                             )
-                            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f), RoundedCornerShape(22.dp))
-                                    .clip(RoundedCornerShape(22.dp))
-                                    .clickable { viewModel.shufflePlay(album.tracks) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(24.dp))
+                            IconButton(onClick = { viewModel.toggleShuffle() }, modifier = Modifier.size(48.dp)) {
+                                Icon(
+                                    Icons.Default.Shuffle,
+                                    contentDescription = "Shuffle",
+                                    tint = if (isShuffleEnabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                             val isAlbumPlaying = isPlaying && currentSong != null && album.tracks.any { it.id == currentSong?.id }
                             Box(

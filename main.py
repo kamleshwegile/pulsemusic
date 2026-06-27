@@ -288,7 +288,7 @@ async def kick_user(room_id: str, payload: dict, user_id: str = Depends(get_curr
     return {"message": "User kicked successfully"}
 
 @app.websocket("/api/v1/jam/ws/{room_id}/{username}")
-async def jam_websocket(websocket: WebSocket, room_id: str, username: str, action: str = None, token: str = None):
+async def jam_websocket(websocket: WebSocket, room_id: str, username: str, action: str = Query(None), token: str = Query(None)):
     # Try to extract real user_id from token if available
     auth_header = websocket.headers.get("authorization")
     print(f"WS connect: username={username}, auth_header={auth_header}, token_query={token}")

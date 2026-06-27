@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.5.2" type="partial_results">
+    <map id="UnsafeIntentLaunch">
+            <map id="unprotected">
+                <entry
+                    name="com.pulse.music.player.PlaybackService"
+                    boolean="true"/>
+                <entry
+                    name="com.facebook.CustomTabActivity"
+                    boolean="true"/>
+                <entry
+                    name="com.pulse.music.MainActivity"
+                    boolean="true"/>
+            </map>
+    </map>
+    <map id="NotificationPermission">
+        <entry
+            name="source"
+            boolean="true"/>
+    </map>
+    <map id="SetAndClearCommunicationDevice">
+        <location id="0"
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/pulse/music/ui/nowplaying/NowPlayingScreen.kt"
+            line="362"
+            column="95"
+            startOffset="17762"
+            endLine="362"
+            endColumn="138"
+            endOffset="17805"/>
+    </map>
+    <map id="UnusedResources">
+        <location id="R.layout.notification_custom_pill"
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/layout/notification_custom_pill.xml"
+            line="2"
+            column="1"
+            startOffset="40"
+            endLine="60"
+            endColumn="16"
+            endOffset="2329"/>
+        <location id="R.drawable.pill_background"
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/drawable/pill_background.xml"
+            line="2"
+            column="1"
+            startOffset="40"
+            endLine="6"
+            endColumn="9"
+            endOffset="330"/>
+        <entry
+            name="model"
+            string="drawable[circle_background(D),ic_launcher_background(U),ic_launcher_foreground(U),pill_background(D)],id[notification_album_art(D),notification_title(D),notification_artist(D),notification_play_pause(D),notification_bg(D),notification_overlay(D),notification_art(D),notification_prev(D),notification_next(D),notification_progress(D)],layout[notification_custom_pill(D),notification_expanded(D)],mipmap[ic_launcher(U),ic_launcher_round(U)],string[facebook_app_id(U),facebook_client_token(U),app_name(U),fb_login_protocol_scheme(U),default_web_client_id(U)];e^3^0,10^1^2,11^1^2;;;"/>
+        <location id="R.drawable.circle_background"
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/drawable/circle_background.xml"
+            line="2"
+            column="1"
+            startOffset="40"
+            endLine="5"
+            endColumn="9"
+            endOffset="224"/>
+        <location id="R.layout.notification_expanded"
+            file="${:app*debug*MAIN*sourceProvider*0*resDir*0}/layout/notification_expanded.xml"
+            line="2"
+            column="1"
+            startOffset="40"
+            endLine="118"
+            endColumn="15"
+            endOffset="4753"/>
+    </map>
+
+</incidents>

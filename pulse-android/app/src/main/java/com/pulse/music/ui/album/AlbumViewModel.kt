@@ -43,11 +43,10 @@ class AlbumViewModel @Inject constructor(
         _isFavorite.value = !_isFavorite.value
     }
 
-    fun shufflePlay(songs: List<com.pulse.music.domain.Song>) {
-        if (songs.isNotEmpty()) {
-            val shuffled = songs.shuffled()
-            musicPlayerManager.playSongFromList(shuffled.first(), shuffled)
-        }
+    val isShuffleEnabled = musicPlayerManager.shuffleEnabled
+
+    fun toggleShuffle() {
+        musicPlayerManager.toggleShuffle()
     }
 
     fun togglePlayPause() {
