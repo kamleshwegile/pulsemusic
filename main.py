@@ -21,7 +21,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 
 
 def filter_jio_image(url):
-    if url and isinstance(url, str) and "default" in url and (".png" in url or ".jpg" in url):
+    if url and isinstance(url, str) and ("default" in url.lower() or "jiosaavn" in url.lower() and "default" in url.lower()):
         return ""
     return url
 
@@ -1691,3 +1691,4 @@ def health_v1():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
