@@ -101,3 +101,4 @@ object NetworkModule {
         return retrofit.create(PulseApiService::class.java)
     }
 }
+

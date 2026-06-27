@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -76,7 +77,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         // Auto-clear cache if it exceeds 150MB
-        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             try {
                 var sizeBytes = 0L
                 cacheDir.walkTopDown().filter { it.isFile }.forEach { sizeBytes += it.length() }
@@ -621,3 +622,5 @@ fun MiniPlayerCard(
         }
     }
 }
+
+
