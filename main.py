@@ -1151,6 +1151,8 @@ def _search_songs_internal(q: str, type: str = "song"):
                         continue
                     images = item.get("image", [])
                     cover = images[-1]["url"] if images else ""
+                    if "default" in cover and (".png" in cover or ".jpg" in cover):
+                        cover = ""
                     artist = item.get("primaryArtists") or item.get("singers") or "Unknown"
                     songs.append(Song(
                         id=item["id"],
@@ -1168,7 +1170,7 @@ def _search_songs_internal(q: str, type: str = "song"):
                 for a in artists_results:
                     images = a.get("image", [])
                     cover = images[-1]["url"] if images else ""
-                    if "default" in cover and ".png" in cover:
+                    if "default" in cover and (".png" in cover or ".jpg" in cover):
                         cover = ""
                     artists.append(Artist(
                         id=a["id"],
@@ -1182,6 +1184,8 @@ def _search_songs_internal(q: str, type: str = "song"):
                 for alb in albums_results:
                     images = alb.get("image", [])
                     cover = images[-1]["url"] if images else ""
+                    if "default" in cover and (".png" in cover or ".jpg" in cover):
+                        cover = ""
                     year_val = alb.get("year", 0)
                     if isinstance(year_val, str) and year_val.isdigit():
                         year_val = int(year_val)
