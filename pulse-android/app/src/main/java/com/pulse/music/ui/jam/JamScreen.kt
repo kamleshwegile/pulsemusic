@@ -175,7 +175,13 @@ fun JamScreen(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Delete",
                                     tint = Color.Red,
-                                    modifier = Modifier.clickable { viewModel.deleteJam(jam.jamId) }
+                                    modifier = Modifier.clickable {
+                                        if (jam.hostId == currentUserId) {
+                                            viewModel.deleteJam(jam.jamId)
+                                        } else {
+                                            viewModel.leaveJam(jam.jamId)
+                                        }
+                                    }
                                 )
                             }
                         }

@@ -67,6 +67,15 @@ class JamViewModel @Inject constructor(
         }
     }
 
+    fun leaveJam(jamId: String) {
+        viewModelScope.launch {
+            jamRepository.leaveJam(jamId)
+            if (currentRoomId.value == jamId) {
+                disconnect()
+            }
+        }
+    }
+
     fun connectToJamSession(roomId: String, isCreating: Boolean = false) {
         viewModelScope.launch {
             val username = authRepository.username.firstOrNull() ?: "Guest-${java.util.UUID.randomUUID().toString().substring(0, 4)}"

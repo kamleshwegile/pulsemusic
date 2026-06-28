@@ -39,4 +39,14 @@ class JamRepository @Inject constructor(
             fetchMyJams() // always refresh list
         }
     }
+
+    suspend fun leaveJam(jamId: String) {
+        try {
+            apiService.leaveJam(jamId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            fetchMyJams() // always refresh list
+        }
+    }
 }

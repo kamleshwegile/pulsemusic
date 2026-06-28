@@ -173,6 +173,9 @@ interface PulseApiService {
 
     @retrofit2.http.DELETE("api/v1/jam/{jam_id}")
     suspend fun deleteJam(@Path("jam_id") jamId: String): Map<String, String>
+
+    @retrofit2.http.DELETE("api/v1/jam/{jam_id}/leave")
+    suspend fun leaveJam(@Path("jam_id") jamId: String): Map<String, String>
 }
 
 data class MusicCapsuleSong(

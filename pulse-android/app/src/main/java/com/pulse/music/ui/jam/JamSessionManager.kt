@@ -18,7 +18,9 @@ import org.json.JSONObject
 
 object JamSessionManager {
     var applicationContext: Context? = null
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .pingInterval(30, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
     private var webSocket: WebSocket? = null
 
     private val _isConnected = MutableStateFlow(false)
