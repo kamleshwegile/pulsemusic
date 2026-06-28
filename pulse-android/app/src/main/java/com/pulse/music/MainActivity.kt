@@ -79,6 +79,9 @@ class MainActivity : ComponentActivity() {
         // Auto-clear cache if it exceeds 150MB
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             try {
+                // Delete old update APKs immediately on startup to save space
+                com.pulse.music.update.UpdateManager.cleanupOldUpdates(this@MainActivity)
+
                 var sizeBytes = 0L
                 cacheDir.walkTopDown().filter { it.isFile }.forEach { sizeBytes += it.length() }
                 val cacheSizeMb = sizeBytes / (1024f * 1024f)
