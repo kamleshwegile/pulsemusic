@@ -199,15 +199,6 @@ fun NowPlayingScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "Made with ❤️  by Rahul",
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
                 Text(
                     text = "Lyrics",
                     color = MaterialTheme.colorScheme.onBackground,
@@ -623,6 +614,19 @@ fun MainPlayerContent(
                     }
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 4.dp)
+        ) {
+            Text(
+                text = "Made with ❤️  by Rahul",
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 
