@@ -60,6 +60,18 @@ object JamSessionManager {
     private val _currentUserId = MutableStateFlow<String?>(null)
     val currentUserId: StateFlow<String?> = _currentUserId.asStateFlow()
 
+    val isHost: Boolean
+        get() {
+            val currentUserId = _currentUserId.value ?: return false
+            val participantsList = _participants.value
+            for (p in participantsList) {
+                if (p.optString("user_id") == currentUserId && p.optString("role") == "HOST") {
+                    return true
+                }
+            }
+            return false
+        }
+
     fun connectToJamSession(roomId: String, userId: String, isCreating: Boolean = false, token: String? = null) {
         if (_isConnected.value) return // already connected
         

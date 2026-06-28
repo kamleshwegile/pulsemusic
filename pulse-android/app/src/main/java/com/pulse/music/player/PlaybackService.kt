@@ -128,8 +128,14 @@ class PlaybackService : MediaSessionService() {
 
             override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
                 // If it transitioned locally (by user explicitly), broadcast it.
-                // Ignore AUTO transition to prevent overriding other users.
-                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) return
+                // If it was an AUTO transition (track finished naturally):
+                // - Only the HOST should broadcast the next song to keep everyone in sync.
+                // - Guests should ignore auto-transitions and wait for the host's broadcast.
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                    if (!jamSessionManager.isHost) {
+                        return
+                    }
+                }
                 
                 val currentSong = musicPlayerManager.currentSong.value
                 if (currentSong != null && jamSessionManager.isConnected.value) {
