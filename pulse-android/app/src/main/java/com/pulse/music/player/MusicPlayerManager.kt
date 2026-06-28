@@ -157,8 +157,8 @@ class MusicPlayerManager @Inject constructor(
             context.dataStore.data.collect { prefs ->
                 crossfadeManager.crossfadeSecs = prefs[cfKey] ?: 0
                 val gapless = prefs[gaplessKey] ?: false
-                player1.skipSilenceEnabled = gapless
-                player2.skipSilenceEnabled = gapless
+                player1.skipSilenceEnabled = false
+                player2.skipSilenceEnabled = false
             }
         }
     }
