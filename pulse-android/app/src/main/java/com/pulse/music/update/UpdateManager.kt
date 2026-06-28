@@ -91,85 +91,94 @@ object UpdateManager {
         
         cleanupOldUpdates(context)
 
-        val request = DownloadManager.Request(Uri.parse(downloadUrl))
-            .setTitle("Pulse Music Update")
-            .setDescription("Downloading the latest version...")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, ("Pulse-update-" + System.currentTimeMillis() + ".apk"))
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
-
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val downloadId = downloadManager.enqueue(request)
-
         scope.launch(Dispatchers.IO) {
-            while (isDownloading.value) {
-                val query = DownloadManager.Query().setFilterById(downloadId)
-                val cursor = downloadManager.query(query)
-                if (cursor != null && cursor.moveToFirst()) {
-                    val bytesDownloadedIndex = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
-                    val bytesTotalIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-                    val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+            try {
+                val url = URL(downloadUrl)
+                var connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.instanceFollowRedirects = true
+                
+                downloadStatusText.value = "Connecting..."
+                connection.connect()
+                
+                // Handle redirects manually if needed
+                var redirectCount = 0
+                while (connection.responseCode / 100 == 3 && redirectCount < 5) {
+                    val newUrl = connection.getHeaderField("Location")
+                    connection.disconnect()
+                    connection = URL(newUrl).openConnection() as HttpURLConnection
+                    connection.connect()
+                    redirectCount++
+                }
+
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                    downloadStatusText.value = "Failed: ${connection.responseCode}"
+                    isDownloading.value = false
+                    return@launch
+                }
+
+                val contentLength = connection.contentLength
+                downloadStatusText.value = "Downloading..."
+
+                val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                if (dir != null && !dir.exists()) dir.mkdirs()
+                val outputFile = File(dir, "Pulse-update-${System.currentTimeMillis()}.apk")
+                
+                val input = connection.inputStream
+                val output = java.io.FileOutputStream(outputFile)
+                val data = ByteArray(4096)
+                var total: Long = 0
+                var count: Int
+                
+                var lastUpdate = System.currentTimeMillis()
+
+                while (input.read(data).also { count = it } != -1) {
+                    total += count
                     
-                    if (bytesDownloadedIndex != -1 && bytesTotalIndex != -1 && statusIndex != -1) {
-                        val bytesDownloaded = cursor.getLong(bytesDownloadedIndex)
-                        val bytesTotal = cursor.getLong(bytesTotalIndex)
-                        val status = cursor.getInt(statusIndex)
-
-                        when (status) {
-                            DownloadManager.STATUS_PENDING -> downloadStatusText.value = "Pending..."
-                            DownloadManager.STATUS_RUNNING -> downloadStatusText.value = "Downloading..."
-                            DownloadManager.STATUS_PAUSED -> downloadStatusText.value = "Paused..."
-                            DownloadManager.STATUS_SUCCESSFUL -> downloadStatusText.value = "Complete!"
-                            DownloadManager.STATUS_FAILED -> downloadStatusText.value = "Failed."
-                        }
-
-                        if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                            downloadProgress.value = 1f
-                            isDownloading.value = false
-                        } else if (status == DownloadManager.STATUS_FAILED) {
-                            isDownloading.value = false
+                    val now = System.currentTimeMillis()
+                    if (now - lastUpdate > 100) { // Update UI every 100ms
+                        downloadedBytes.value = total
+                        if (contentLength > 0) {
+                            downloadProgress.value = total.toFloat() / contentLength.toFloat()
                         } else {
-                            downloadedBytes.value = bytesDownloaded
-                            if (bytesTotal > 0) {
-                                downloadProgress.value = bytesDownloaded.toFloat() / bytesTotal.toFloat()
-                            } else {
-                                downloadProgress.value = -1f // Indeterminate
-                            }
+                            downloadProgress.value = -1f
                         }
+                        lastUpdate = now
                     }
+                    output.write(data, 0, count)
                 }
-                cursor?.close()
-                if (isDownloading.value) delay(500)
-            }
-        }
 
-        val onComplete = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                if (id == downloadId) {
-                    val uri = downloadManager.getUriForDownloadedFile(downloadId)
-                    if (uri != null) {
-                        installApk(context, uri)
-                    }
-                    context.unregisterReceiver(this)
+                output.flush()
+                output.close()
+                input.close()
+                
+                downloadProgress.value = 1f
+                downloadStatusText.value = "Complete!"
+                isDownloading.value = false
+                
+                withContext(Dispatchers.Main) {
+                    installApk(context, outputFile)
                 }
-            }
-        }
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED)
-        } else {
-            context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                downloadStatusText.value = "Failed."
+                isDownloading.value = false
+            }
         }
     }
 
-    private fun installApk(context: Context, uri: Uri) {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
-        }
+    private fun installApk(context: Context, file: File) {
         try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                context.applicationContext.packageName + ".provider",
+                file
+            )
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
             context.startActivity(intent)
         } catch (e: Exception) {
             e.printStackTrace()
