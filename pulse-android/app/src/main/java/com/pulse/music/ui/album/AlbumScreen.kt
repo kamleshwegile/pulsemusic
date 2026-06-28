@@ -219,16 +219,16 @@ fun AlbumScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
+                            .height(72.dp)
                             .clickable { onSongClick(song, album.tracks) }
                             .padding(horizontal = 20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.size(56.dp), contentAlignment = Alignment.Center) {
                             AsyncImage(
                                 model = song.albumArt,
                                 contentDescription = "Song Art",
-                                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(4.dp)).background(Color.DarkGray),
+                                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)).background(Color.DarkGray),
                                 contentScale = ContentScale.Crop,
                                 error = rememberVectorPainter(Icons.Default.MusicNote)
                             )
@@ -238,11 +238,11 @@ fun AlbumScreen(
                             }
                         }
 
-                        Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp)) {
                             Text(
                                 text = song.title,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                fontSize = 13.sp,
+                                fontSize = 16.sp,
                                 fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -250,8 +250,8 @@ fun AlbumScreen(
                             if (isActive || song.artist != album.artist) {
                                 Text(
                                     text = song.artist,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
-                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                    fontSize = 14.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
