@@ -31,6 +31,7 @@ class JamRepository @Inject constructor(
     }
 
     suspend fun deleteJam(jamId: String) {
+        _myJams.value = _myJams.value.filter { it.jamId != jamId }
         try {
             apiService.deleteJam(jamId)
         } catch (e: Exception) {
@@ -41,6 +42,7 @@ class JamRepository @Inject constructor(
     }
 
     suspend fun leaveJam(jamId: String) {
+        _myJams.value = _myJams.value.filter { it.jamId != jamId }
         try {
             apiService.leaveJam(jamId)
         } catch (e: Exception) {
