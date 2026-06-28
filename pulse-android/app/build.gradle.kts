@@ -15,8 +15,8 @@ android {
         applicationId = "com.pulse.music"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "2.2.1"
+        versionCode = 6
+        versionName = "2.2.2"
 
         val localProps = Properties()
         val localPropsFile = rootProject.file("local.properties")
