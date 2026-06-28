@@ -32,8 +32,9 @@ object JamSessionManager {
     private val _currentRoomId = MutableStateFlow<String?>(null)
     val currentRoomId: StateFlow<String?> = _currentRoomId.asStateFlow()
 
-    private val _incomingSync = MutableStateFlow<Pair<Boolean, Long>?>(null)
-    val incomingSync: StateFlow<Pair<Boolean, Long>?> = _incomingSync.asStateFlow()
+    private var _syncCounter = 0L
+    private val _incomingSync = MutableStateFlow<Triple<Boolean, Long, Long>?>(null)
+    val incomingSync: StateFlow<Triple<Boolean, Long, Long>?> = _incomingSync.asStateFlow()
 
     private val _incomingSong = MutableStateFlow<com.pulse.music.domain.Song?>(null)
     val incomingSong: StateFlow<com.pulse.music.domain.Song?> = _incomingSong
@@ -109,7 +110,7 @@ object JamSessionManager {
                         // Removed drift correction because server and client clocks are not synchronized
                         // and network latency is much smaller than clock skew.
                         
-                        _incomingSync.value = Pair(isPlaying, position)
+                        _incomingSync.value = Triple(isPlaying, position, ++_syncCounter)
                     }
                     "play_song" -> {
                         val songJson = json.getJSONObject("song")
@@ -153,7 +154,7 @@ object JamSessionManager {
                             _incomingSongWithSync.value = Pair(song, Pair(isPlaying, position))
                             // Do not overwrite incomingSync, let PlaybackService handle it together
                         } else {
-                            _incomingSync.value = Pair(isPlaying, position)
+                            _incomingSync.value = Triple(isPlaying, position, ++_syncCounter)
                         }
                         
                         val queueArray = session.optJSONArray("queue")

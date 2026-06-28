@@ -21,7 +21,7 @@ class JamViewModel @Inject constructor(
 
     val isConnected: StateFlow<Boolean> = JamSessionManager.isConnected
     val currentRoomId: StateFlow<String?> = JamSessionManager.currentRoomId
-    val incomingSync: StateFlow<Pair<Boolean, Long>?> = JamSessionManager.incomingSync
+    val incomingSync: StateFlow<Triple<Boolean, Long, Long>?> = JamSessionManager.incomingSync
     val queue: StateFlow<List<JSONObject>> = JamSessionManager.queue
     val chatMessages: StateFlow<List<JSONObject>> = JamSessionManager.chatMessages
     val participants: StateFlow<List<JSONObject>> = JamSessionManager.participants

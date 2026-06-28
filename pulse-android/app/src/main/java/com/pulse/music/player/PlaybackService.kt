@@ -40,7 +40,7 @@ class PlaybackService : MediaSessionService() {
 
         scope.launch {
             jamSessionManager.incomingSync.collect { sync ->
-                sync?.let { (isPlaying, positionMs) ->
+                sync?.let { (isPlaying, positionMs, _) ->
                     if (player.playWhenReady != isPlaying) {
                         ignoreNextPlayChange = true
                         player.playWhenReady = isPlaying
