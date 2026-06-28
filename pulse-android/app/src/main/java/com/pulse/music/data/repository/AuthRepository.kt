@@ -55,7 +55,7 @@ class AuthRepository @Inject constructor(
             try {
                 val parts = token.split(".")
                 if (parts.size == 3) {
-                    val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
+                    val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING))
                     val json = org.json.JSONObject(payload)
                     json.optString("sub")
                 } else null
