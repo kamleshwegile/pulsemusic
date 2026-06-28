@@ -78,9 +78,9 @@ class JamViewModel @Inject constructor(
 
     fun connectToJamSession(roomId: String, isCreating: Boolean = false) {
         viewModelScope.launch {
-            val username = authRepository.username.firstOrNull() ?: "Guest-${java.util.UUID.randomUUID().toString().substring(0, 4)}"
+            val uid = authRepository.userId.firstOrNull() ?: "Guest-${java.util.UUID.randomUUID().toString().substring(0, 4)}"
             val token = authRepository.authToken.firstOrNull()
-            JamSessionManager.connectToJamSession(roomId, username, isCreating, token)
+            JamSessionManager.connectToJamSession(roomId, uid, isCreating, token)
         }
     }
 
