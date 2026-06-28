@@ -52,6 +52,13 @@ fun JamScreen(
         }
     }
 
+    // Re-fetch jams whenever user returns to the lobby (disconnects from a session)
+    LaunchedEffect(isConnected) {
+        if (!isConnected) {
+            viewModel.fetchMyJams()
+        }
+    }
+
     val myJams by viewModel.myJams.collectAsState()
 
     var selectedTabIndex by remember { mutableStateOf(0) }
