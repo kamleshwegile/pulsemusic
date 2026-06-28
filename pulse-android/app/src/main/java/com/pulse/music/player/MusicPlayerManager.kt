@@ -151,14 +151,31 @@ class MusicPlayerManager @Inject constructor(
         val sessionToken = androidx.media3.session.SessionToken(context, android.content.ComponentName(context, PlaybackService::class.java))
         mediaControllerFuture = androidx.media3.session.MediaController.Builder(context, sessionToken).buildAsync()
         
+        var savedCrossfadeSecs = 0
+        
         scope.launch {
             val cfKey = intPreferencesKey("crossfade")
             val gaplessKey = booleanPreferencesKey("gapless")
             context.dataStore.data.collect { prefs ->
-                crossfadeManager.crossfadeSecs = prefs[cfKey] ?: 0
+                savedCrossfadeSecs = prefs[cfKey] ?: 0
+                // Only apply crossfade if NOT in a jam session
+                if (!com.pulse.music.ui.jam.JamSessionManager.isConnected.value) {
+                    crossfadeManager.crossfadeSecs = savedCrossfadeSecs
+                }
                 val gapless = prefs[gaplessKey] ?: false
                 player1.skipSilenceEnabled = false
                 player2.skipSilenceEnabled = false
+            }
+        }
+        
+        // Auto-disable crossfade during jam sessions to keep playback in sync
+        scope.launch {
+            com.pulse.music.ui.jam.JamSessionManager.isConnected.collect { inJam ->
+                if (inJam) {
+                    crossfadeManager.crossfadeSecs = 0
+                } else {
+                    crossfadeManager.crossfadeSecs = savedCrossfadeSecs
+                }
             }
         }
     }
