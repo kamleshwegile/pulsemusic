@@ -132,14 +132,20 @@ class PlaybackService : MediaSessionService() {
                 // - Only the HOST should broadcast the next song to keep everyone in sync.
                 // - Guests should ignore auto-transitions and wait for the host's broadcast.
                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                    if (!jamSessionManager.isHost) {
+                    if (jamSessionManager.isConnected.value && !jamSessionManager.isHost) {
+                        player.pause()
                         return
                     }
+                    if (!jamSessionManager.isHost) return
                 }
                 
-                val currentSong = musicPlayerManager.currentSong.value
-                if (currentSong != null && jamSessionManager.isConnected.value) {
-                    jamSessionManager.broadcastPlaySong(currentSong)
+                // Fetch the actual song that the player just transitioned to
+                val idx = player.currentMediaItemIndex
+                val queue = musicPlayerManager.queue.value
+                val newSong = if (idx >= 0 && idx < queue.size) queue[idx] else musicPlayerManager.currentSong.value
+                
+                if (newSong != null && jamSessionManager.isConnected.value) {
+                    jamSessionManager.broadcastPlaySong(newSong)
                 }
             }
         })
