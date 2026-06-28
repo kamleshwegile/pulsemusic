@@ -391,12 +391,18 @@ private fun AppUpdates(context: android.content.Context) {
     val coroutineScope = rememberCoroutineScope()
     var isChecking by remember { mutableStateOf(false) }
     var updateAvailable by remember { mutableStateOf<com.pulse.music.update.UpdateManager.UpdateInfo?>(null) }
-    var downloadProgress by remember { mutableStateOf(-1f) }
+    
+    val downloadProgress by com.pulse.music.update.UpdateManager.downloadProgress.collectAsState()
+    val isDownloading by com.pulse.music.update.UpdateManager.isDownloading.collectAsState()
+    
+    var showUpToDate by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val info = com.pulse.music.update.UpdateManager.checkForUpdate(com.pulse.music.BuildConfig.VERSION_NAME)
-        if (info != null && info.hasUpdate) {
-            updateAvailable = info
+        if (!isDownloading) {
+            val info = com.pulse.music.update.UpdateManager.checkForUpdate(com.pulse.music.BuildConfig.VERSION_NAME)
+            if (info != null && info.hasUpdate) {
+                updateAvailable = info
+            }
         }
     }
 
@@ -407,21 +413,17 @@ private fun AppUpdates(context: android.content.Context) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        if (!isChecking && downloadProgress == -1f) {
+                        if (!isChecking && !isDownloading) {
+                            if (showUpToDate) return@clickable
                             isChecking = true
                             coroutineScope.launch {
                                 try {
                                     val updateInfo = updateAvailable ?: com.pulse.music.update.UpdateManager.checkForUpdate(com.pulse.music.BuildConfig.VERSION_NAME)
                                     if (updateInfo != null && updateInfo.hasUpdate) {
                                         updateAvailable = updateInfo
-                                        downloadProgress = 0f
-                                        com.pulse.music.update.UpdateManager.downloadAndInstallUpdate(context, updateInfo.downloadUrl, coroutineScope) { progress ->
-                                            downloadProgress = progress
-                                            if (progress >= 1f) {
-                                                downloadProgress = -1f
-                                            }
-                                        }
+                                        com.pulse.music.update.UpdateManager.downloadAndInstallUpdate(context, updateInfo.downloadUrl, coroutineScope)
                                     } else {
+                                        showUpToDate = true
                                         android.widget.Toast.makeText(context, "You are on the latest version!", android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 } catch (e: Exception) {
@@ -439,20 +441,21 @@ private fun AppUpdates(context: android.content.Context) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         val titleText = when {
-                            downloadProgress >= 0f -> "Downloading Update..."
+                            isDownloading -> "Downloading Update..."
                             isChecking -> "Checking for updates..."
+                            showUpToDate -> "You are up to date!"
                             updateAvailable != null -> "New update available (" + updateAvailable!!.newVersion + ")"
                             else -> "Check for Updates"
                         }
-                        Text(titleText, color = if (updateAvailable != null) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                        Text(titleText, color = if (updateAvailable != null && !showUpToDate && !isDownloading) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                         Text("Current version: " + com.pulse.music.BuildConfig.VERSION_NAME, color = Color.Gray, fontSize = 12.sp)
                     }
-                    if (downloadProgress == -1f) {
+                    if (!isDownloading && !showUpToDate && !isChecking) {
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
                     }
                 }
                 
-                if (downloadProgress >= 0f) {
+                if (isDownloading) {
                     Spacer(modifier = Modifier.height(12.dp))
                     androidx.compose.material3.LinearProgressIndicator(
                         progress = { downloadProgress },
@@ -461,7 +464,7 @@ private fun AppUpdates(context: android.content.Context) {
                         trackColor = Color.DarkGray
                     )
                     Text(
-                        text = "% downloaded",
+                        text = "${(downloadProgress * 100).toInt()}% downloaded",
                         color = Color.Gray,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp).align(Alignment.End)
