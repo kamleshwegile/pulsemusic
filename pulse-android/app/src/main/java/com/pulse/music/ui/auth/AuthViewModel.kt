@@ -46,6 +46,12 @@ class AuthViewModel @Inject constructor(
         null
     )
 
+    val email: StateFlow<String?> = repository.email.stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        null
+    )
+
     val profilePicUri: StateFlow<String?> = repository.profilePicUri.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,

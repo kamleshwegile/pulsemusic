@@ -76,6 +76,9 @@ fun NowPlayingScreen(
     val highlightedIndex by viewModel.highlightedLine.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
     val isJamConnected by com.pulse.music.ui.jam.JamSessionManager.isConnected.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     var showQueue by remember { mutableStateOf(false) }
     var showDevices by remember { mutableStateOf(false) }
@@ -187,7 +190,13 @@ fun NowPlayingScreen(
                     volume = volume,
                     onVolumeChange = { volume = it },
                     showQueue = { showQueue = true },
-                    showDevices = { showDevices = true },
+                    showDevices = { 
+                        try {
+                            context.startActivity(android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, "Bluetooth settings not available", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     showLyrics = { showLyrics = true },
                     onBack = onBack,
                     onNavigateToArtist = onNavigateToArtist,
@@ -345,26 +354,6 @@ fun NowPlayingScreen(
             )
         }
 
-        AnimatedVisibility(
-            visible = showDevices,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
-            modifier = Modifier.align(Alignment.BottomCenter).zIndex(2f)
-        ) {
-            val localContext = androidx.compose.ui.platform.LocalContext.current
-            val audioManager = localContext.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
-            val outputDevices = remember {
-                audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS).filter { it.isSink }.distinctBy { it.productName }
-            }
-            DevicePanel(
-                devices = outputDevices,
-                onSelectDevice = { device ->
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) audioManager.setCommunicationDevice(device)
-                    showDevices = false
-                },
-                onClose = { showDevices = false }
-            )
-        }
 
         AnimatedVisibility(
             visible = showLyrics,

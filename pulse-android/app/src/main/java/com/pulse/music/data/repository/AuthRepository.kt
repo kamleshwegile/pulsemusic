@@ -32,6 +32,7 @@ class AuthRepository @Inject constructor(
 ) {
     private val TOKEN_KEY = stringPreferencesKey("jwt_token")
     private val USERNAME_KEY = stringPreferencesKey("username")
+    private val EMAIL_KEY = stringPreferencesKey("email")
     private val PROFILE_PIC_KEY = stringPreferencesKey("profile_pic_uri")
     
     // Playback Settings
@@ -42,6 +43,10 @@ class AuthRepository @Inject constructor(
 
     val authToken: Flow<String?> = context.dataStore.data.map { prefs ->
         prefs[TOKEN_KEY]
+    }
+    
+    val email: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[EMAIL_KEY]
     }
 
     val userId: Flow<String?> = context.dataStore.data.map { prefs ->
@@ -237,6 +242,7 @@ class AuthRepository @Inject constructor(
         context.dataStore.edit { prefs ->
             prefs[TOKEN_KEY] = response.token
             prefs[USERNAME_KEY] = response.username
+            prefs[EMAIL_KEY] = response.email
             response.profilePic?.let { pic ->
                 prefs[PROFILE_PIC_KEY] = pic
             }

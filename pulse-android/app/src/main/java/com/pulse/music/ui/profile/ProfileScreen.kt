@@ -39,6 +39,7 @@ fun ProfileScreen(
     val context = LocalContext.current
     val token by viewModel.token.collectAsState()
     val username by viewModel.username.collectAsState()
+    val email by viewModel.email.collectAsState()
     val profilePicUri by viewModel.profilePicUri.collectAsState()
     
     val highQuality by viewModel.highQuality.collectAsState()
@@ -84,6 +85,7 @@ fun ProfileScreen(
             item { 
                 ProfileHero(
                     username = username ?: "User", 
+                    email = email ?: "user@example.com",
                     profilePicUri = profilePicUri,
                     onEditProfilePic = { launcher.launch("image/*") }
                 ) 
@@ -113,7 +115,6 @@ fun ProfileScreen(
                     }
                 }
             }
-            item { DiscoveryInsights() }
             item { 
                 PlaybackSettings(
                     highQuality = highQuality,
@@ -151,18 +152,11 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileHero(username: String, profilePicUri: String?, onEditProfilePic: () -> Unit) {
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(Color(0xFF1E3A8A).copy(alpha = 0.4f), Color(0xFF8A0A21).copy(alpha = 0.2f))
-    )
-    
+private fun ProfileHero(username: String, email: String, profilePicUri: String?, onEditProfilePic: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(gradientBrush)
-            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
-            .padding(24.dp)
+            .padding(vertical = 24.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             Box(
@@ -170,7 +164,6 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
                     .size(100.dp)
                     .clip(CircleShape)
                     .background(Color.DarkGray)
-                    .border(3.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), CircleShape)
                     .clickable { onEditProfilePic() },
                 contentAlignment = Alignment.Center
             ) {
@@ -210,45 +203,8 @@ private fun ProfileHero(username: String, profilePicUri: String?, onEditProfileP
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                Text(username, color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFFF92839), Color(0xFF06B6D4))))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text("PREMIUM", color = MaterialTheme.colorScheme.onBackground, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            Text("@${username.lowercase()} • 120 Days Streak", color = Color(0xFFFF4D5E), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("128", color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Text("HOURS/MO", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("4.2k", color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Text("FOLLOWERS", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DiscoveryInsights() {
-    Column {
-        Text("Listening Insights", color = MaterialTheme.colorScheme.onBackground, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
-        SettingsCard {
-            SettingRow(icon = Icons.Default.Explore, title = "Discovery Score", description = "You explore 40% more new music than average.")
-            Divider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f))
-            SettingRow(icon = Icons.Default.LibraryMusic, title = "Top Genres", description = "Punjabi Pop, Lo-Fi Chill, Bollywood")
+            Text(username, color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(email, color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
         }
     }
 }

@@ -1,9 +1,20 @@
 -- Merging decision tree log ---
+provider#androidx.core.content.FileProvider
+INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:73:9-81:20
+	android:grantUriPermissions
+		ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:77:13-47
+	android:authorities
+		INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml
+		ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:75:13-60
+	android:exported
+		ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:76:13-37
+	android:name
+		ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:74:13-62
 manifest
-ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:2:1-74:12
-INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:2:1-74:12
-INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:2:1-74:12
-INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:2:1-74:12
+ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:2:1-83:12
+INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:2:1-83:12
+INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:2:1-83:12
+INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:2:1-83:12
 MERGED from [androidx.media3:media3-session:1.4.1] C:\Users\Mehak\.gradle\caches\transforms-4\76f463c38479c928a133f1facbd33b5f\transformed\media3-session-1.4.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.media3:media3-extractor:1.4.1] C:\Users\Mehak\.gradle\caches\transforms-4\9017ebe3e0da66cf4110adb49b4afca3\transformed\media3-extractor-1.4.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.media3:media3-container:1.4.1] C:\Users\Mehak\.gradle\caches\transforms-4\360ef44505beda24f003cb3804735e24\transformed\media3-container-1.4.1\AndroidManifest.xml:17:1-22:12
@@ -159,8 +170,8 @@ ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\ap
 	android:name
 		ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:11:22-80
 application
-ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:13:5-73:19
-INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:13:5-73:19
+ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:13:5-82:19
+INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:13:5-82:19
 MERGED from [androidx.credentials:credentials-play-services-auth:1.2.2] C:\Users\Mehak\.gradle\caches\transforms-4\525f01fd55c0bd1b9364a44fbc8e1f73\transformed\credentials-play-services-auth-1.2.2\AndroidManifest.xml:23:5-42:19
 MERGED from [androidx.credentials:credentials-play-services-auth:1.2.2] C:\Users\Mehak\.gradle\caches\transforms-4\525f01fd55c0bd1b9364a44fbc8e1f73\transformed\credentials-play-services-auth-1.2.2\AndroidManifest.xml:23:5-42:19
 MERGED from [com.google.android.gms:play-services-auth:20.7.0] C:\Users\Mehak\.gradle\caches\transforms-4\a839da6842327599fc5345a515e68539\transformed\play-services-auth-20.7.0\AndroidManifest.xml:22:5-38:19
@@ -317,6 +328,12 @@ MERGED from [com.facebook.android:facebook-common:17.0.0] C:\Users\Mehak\.gradle
 		ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:64:13-58
 intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.BROWSABLE+category:name:android.intent.category.DEFAULT+data:scheme:@string/fb_login_protocol_scheme
 ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:66:13-71:29
+meta-data#android.support.FILE_PROVIDER_PATHS
+ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:78:13-80:58
+	android:resource
+		ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:80:17-55
+	android:name
+		ADDED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml:79:17-67
 uses-sdk
 INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\Mehak\OneDrive\Desktop\android music player\pulse-android\app\src\main\AndroidManifest.xml

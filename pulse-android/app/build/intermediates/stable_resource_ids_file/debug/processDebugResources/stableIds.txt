@@ -1267,6 +1267,7 @@ com.pulse.music:style/Base.Theme.AppCompat.Light.Dialog.Alert = 0x7f0e0047
 com.pulse.music:string/androidx.credentials.TYPE_PUBLIC_KEY_CREDENTIAL = 0x7f0d001c
 com.pulse.music:style/Base.TextAppearance.AppCompat.Small.Inverse = 0x7f0e0023
 com.pulse.music:drawable/btn_checkbox_checked_to_unchecked_mtrl_animation = 0x7f070050
+com.pulse.music:xml/provider_paths = 0x7f100000
 com.pulse.music:dimen/com_facebook_profilepictureview_preset_size_normal = 0x7f060064
 com.pulse.music:dimen/compat_notification_large_icon_max_width = 0x7f06006c
 com.pulse.music:color/button_material_light = 0x7f05002c

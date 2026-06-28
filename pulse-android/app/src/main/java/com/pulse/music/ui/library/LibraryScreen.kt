@@ -186,11 +186,14 @@ fun LibraryScreen(
                                 tint = MaterialTheme.colorScheme.onBackground,
                                 modifier = Modifier.size(28.dp).clickable { showAddMenu = true }
                             )
-                            DropdownMenu(
-                                expanded = showAddMenu,
-                                onDismissRequest = { showAddMenu = false },
-                                modifier = Modifier.background(Color(0xFF2A2A2A))
+                            MaterialTheme(
+                                shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(16.dp))
                             ) {
+                                DropdownMenu(
+                                    expanded = showAddMenu,
+                                    onDismissRequest = { showAddMenu = false },
+                                    modifier = Modifier.background(Color(0xFF2A2A2A))
+                                ) {
                                 DropdownMenuItem(
                                     text = { Text("Create Playlist", color = Color.White) },
                                     onClick = {
@@ -205,6 +208,7 @@ fun LibraryScreen(
                                         showAddMenu = false
                                     }
                                 )
+                            }
                             }
                         }
                     }
