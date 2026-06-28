@@ -510,6 +510,15 @@ private fun AccountActions(onLogout: () -> Unit) {
                 }
             }
         }
+        Spacer(modifier = Modifier.height(48.dp))
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Text(
+                text = "Made with ❤️  by Rahul",
+                color = Color.Gray.copy(alpha = 0.8f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
