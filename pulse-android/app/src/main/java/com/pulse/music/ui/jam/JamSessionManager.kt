@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.WebSocket
@@ -22,6 +23,8 @@ object JamSessionManager {
         .pingInterval(30, java.util.concurrent.TimeUnit.SECONDS)
         .build()
     private var webSocket: WebSocket? = null
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var pingJob: Job? = null
 
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
@@ -79,6 +82,18 @@ object JamSessionManager {
             override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
                 _isConnected.value = true
                 _currentRoomId.value = roomId
+                
+                pingJob?.cancel()
+                pingJob = scope.launch {
+                    while (isActive) {
+                        delay(25000) // Send a ping every 25 seconds
+                        try {
+                            webSocket.send(JSONObject().put("event", "ping").toString())
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
@@ -202,12 +217,14 @@ object JamSessionManager {
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                pingJob?.cancel()
                 _isConnected.value = false
                 _currentRoomId.value = null
                 _participants.value = emptyList()
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
+                pingJob?.cancel()
                 _isConnected.value = false
                 _currentRoomId.value = null
                 
@@ -223,6 +240,7 @@ object JamSessionManager {
     }
 
     fun disconnect() {
+        pingJob?.cancel()
         webSocket?.close(1000, "User left")
         webSocket?.cancel()
         webSocket = null
