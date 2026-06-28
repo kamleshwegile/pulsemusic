@@ -28,7 +28,8 @@ object UpdateManager {
 
     val isDownloading = kotlinx.coroutines.flow.MutableStateFlow(false)
     val downloadProgress = kotlinx.coroutines.flow.MutableStateFlow(0f)
-    val downloadedBytes = kotlinx.coroutines.flow.MutableStateFlow(0)
+    val downloadedBytes = kotlinx.coroutines.flow.MutableStateFlow(0L)
+    val downloadStatusText = kotlinx.coroutines.flow.MutableStateFlow("Starting...")
 
     data class UpdateInfo(val hasUpdate: Boolean, val newVersion: String, val downloadUrl: String)
 
@@ -85,6 +86,8 @@ object UpdateManager {
         if (isDownloading.value) return
         isDownloading.value = true
         downloadProgress.value = 0f
+        downloadedBytes.value = 0L
+        downloadStatusText.value = "Starting..."
         
         cleanupOldUpdates(context)
 
@@ -109,16 +112,24 @@ object UpdateManager {
                     val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
                     
                     if (bytesDownloadedIndex != -1 && bytesTotalIndex != -1 && statusIndex != -1) {
-                        val bytesDownloaded = cursor.getInt(bytesDownloadedIndex)
-                        val bytesTotal = cursor.getInt(bytesTotalIndex)
+                        val bytesDownloaded = cursor.getLong(bytesDownloadedIndex)
+                        val bytesTotal = cursor.getLong(bytesTotalIndex)
                         val status = cursor.getInt(statusIndex)
+
+                        when (status) {
+                            DownloadManager.STATUS_PENDING -> downloadStatusText.value = "Pending..."
+                            DownloadManager.STATUS_RUNNING -> downloadStatusText.value = "Downloading..."
+                            DownloadManager.STATUS_PAUSED -> downloadStatusText.value = "Paused..."
+                            DownloadManager.STATUS_SUCCESSFUL -> downloadStatusText.value = "Complete!"
+                            DownloadManager.STATUS_FAILED -> downloadStatusText.value = "Failed."
+                        }
 
                         if (status == DownloadManager.STATUS_SUCCESSFUL) {
                             downloadProgress.value = 1f
                             isDownloading.value = false
                         } else if (status == DownloadManager.STATUS_FAILED) {
                             isDownloading.value = false
-                        } else if (bytesDownloaded > 0) {
+                        } else {
                             downloadedBytes.value = bytesDownloaded
                             if (bytesTotal > 0) {
                                 downloadProgress.value = bytesDownloaded.toFloat() / bytesTotal.toFloat()

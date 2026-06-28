@@ -394,6 +394,7 @@ private fun AppUpdates(context: android.content.Context) {
     
     val downloadProgress by com.pulse.music.update.UpdateManager.downloadProgress.collectAsState()
     val downloadedBytes by com.pulse.music.update.UpdateManager.downloadedBytes.collectAsState()
+    val downloadStatusText by com.pulse.music.update.UpdateManager.downloadStatusText.collectAsState()
     val isDownloading by com.pulse.music.update.UpdateManager.isDownloading.collectAsState()
     
     var showUpToDate by remember { mutableStateOf(false) }
@@ -442,7 +443,7 @@ private fun AppUpdates(context: android.content.Context) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         val titleText = when {
-                            isDownloading -> "Downloading Update..."
+                            isDownloading -> downloadStatusText
                             isChecking -> "Checking for updates..."
                             showUpToDate -> "You are up to date!"
                             updateAvailable != null -> "New update available (" + updateAvailable!!.newVersion + ")"
