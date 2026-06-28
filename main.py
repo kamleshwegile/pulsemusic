@@ -258,6 +258,10 @@ async def delete_jam(room_id: str, user_id: str = Depends(get_current_user)):
         
     return {"message": "Jam deleted successfully"}
 
+@app.delete("/api/v1/jam/{room_id}/leave")
+async def leave_jam(room_id: str, user_id: str = Depends(get_current_user)):
+    jam_members_collection.delete_one({"room_id": room_id, "user_id": user_id})
+    return {"message": "Left jam successfully"}
 @app.post("/api/v1/jam/{room_id}/kick")
 async def kick_user(room_id: str, payload: dict, user_id: str = Depends(get_current_user)):
     target_user_id = payload.get("target_user_id")
