@@ -261,6 +261,24 @@ async def delete_jam(room_id: str, user_id: str = Depends(get_current_user)):
 @app.delete("/api/v1/jam/{room_id}/leave")
 async def leave_jam(room_id: str, user_id: str = Depends(get_current_user)):
     jam_members_collection.delete_one({"room_id": room_id, "user_id": user_id})
+    
+    if room_id in jam_rooms:
+        room = jam_rooms[room_id]
+        target_ws = None
+        for ws, info in list(room.connections.items()):
+            if info["user_id"] == user_id:
+                target_ws = ws
+                break
+        
+        if target_ws:
+            if target_ws in room.connections:
+                del room.connections[target_ws]
+            
+            await room.broadcast({
+                "event": "user_left",
+                "participants": {info["user_id"]: info for info in room.connections.values()}
+            })
+    
     return {"message": "Left jam successfully"}
 @app.post("/api/v1/jam/{room_id}/kick")
 async def kick_user(room_id: str, payload: dict, user_id: str = Depends(get_current_user)):
