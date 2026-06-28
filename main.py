@@ -476,6 +476,10 @@ async def jam_websocket(websocket: WebSocket, room_id: str, username: str, actio
                 if target_ws:
                     await target_ws.send_text(json.dumps({"event": "removed"}))
 
+            elif event == "ping":
+                await websocket.send_text(json.dumps({"event": "pong"}))
+                continue
+
             if room.connections[websocket]["role"] == "PENDING":
                 continue
 
