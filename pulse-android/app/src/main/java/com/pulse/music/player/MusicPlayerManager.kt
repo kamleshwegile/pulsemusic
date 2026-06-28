@@ -713,6 +713,13 @@ class MusicPlayerManager @Inject constructor(
         }
     }
 
+    fun setQueueSync(songs: List<Song>) {
+        _queue.value = songs
+        val mediaItems = songs.map { buildMediaItem(it) }
+        player.setMediaItems(mediaItems)
+        preBufferAlternatePlayer()
+    }
+
     fun enqueue(song: Song) {
         scope.launch {
             val resolvedSong = song.copy(source = resolveSongSource(song))

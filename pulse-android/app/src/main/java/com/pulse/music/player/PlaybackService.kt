@@ -45,9 +45,19 @@ class PlaybackService : MediaSessionService() {
                         ignoreNextPlayChange = true
                         player.playWhenReady = isPlaying
                     }
-                    if (Math.abs(player.currentPosition - positionMs) > 1000) {
+                    val diff = player.currentPosition - positionMs
+                    if (Math.abs(diff) > 2000) {
+                        // Hard seek if diff > 2 seconds
                         ignoreNextSeek = true
                         player.seekTo(positionMs)
+                        player.playbackParameters = androidx.media3.common.PlaybackParameters(1.0f)
+                    } else if (Math.abs(diff) > 100) {
+                        // Drift correction: Speed up or slow down slightly
+                        val speed = if (diff < 0) 1.02f else 0.98f
+                        player.playbackParameters = androidx.media3.common.PlaybackParameters(speed)
+                    } else {
+                        // In sync, restore normal speed
+                        player.playbackParameters = androidx.media3.common.PlaybackParameters(1.0f)
                     }
                 }
             }
@@ -77,6 +87,23 @@ class PlaybackService : MediaSessionService() {
                 }
             }
         }
+        scope.launch {
+            jamSessionManager.queue.collect { queueJson ->
+                if (jamSessionManager.isConnected.value && queueJson.isNotEmpty()) {
+                    val songs = queueJson.map { item ->
+                        com.pulse.music.domain.Song(
+                            id = item.optString("song_id", ""),
+                            title = item.optString("title", "Unknown Title"),
+                            artist = item.optString("artist", "Unknown Artist"),
+                            albumArt = item.optString("albumArt", ""),
+                            durationMs = item.optLong("durationMs", 0L),
+                            source = item.optString("source", "")
+                        )
+                    }
+                    musicPlayerManager.setQueueSync(songs)
+                }
+            }
+        }
         // Listen to local playback changes and broadcast to Jam participants
         player.addListener(object : Player.Listener {
             override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
@@ -100,7 +127,10 @@ class PlaybackService : MediaSessionService() {
             }
 
             override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
-                // If it transitioned locally, broadcast it
+                // If it transitioned locally (by user explicitly), broadcast it.
+                // Ignore AUTO transition to prevent overriding other users.
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) return
+                
                 val currentSong = musicPlayerManager.currentSong.value
                 if (currentSong != null && jamSessionManager.isConnected.value) {
                     jamSessionManager.broadcastPlaySong(currentSong)

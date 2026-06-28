@@ -171,14 +171,12 @@ fun JamScreen(
                                     Text(jam.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                     Text("Code: ${jam.roomCode} • ${jam.memberCount} members", color = Color.LightGray, fontSize = 14.sp)
                                 }
-                                if (jam.hostId == currentUserId) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Delete",
-                                        tint = Color.Red,
-                                        modifier = Modifier.clickable { viewModel.deleteJam(jam.jamId) }
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Delete",
+                                    tint = Color.Red,
+                                    modifier = Modifier.clickable { viewModel.deleteJam(jam.jamId) }
+                                )
                             }
                         }
                     }

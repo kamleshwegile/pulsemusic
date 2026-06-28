@@ -364,7 +364,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                         items.forEach { (label, icon, route) ->
                                             val selected = currentRoute == route
-                                            val color = if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                                            val color = if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
                                             val activeColor = if (selected) PulseRed else color
                                             val scale by animateFloatAsState(
                                                 targetValue = if (selected) 1.05f else 1f,

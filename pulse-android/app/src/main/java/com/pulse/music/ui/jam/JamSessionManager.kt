@@ -222,6 +222,7 @@ object JamSessionManager {
 
     fun disconnect() {
         webSocket?.close(1000, "User left")
+        webSocket?.cancel()
         webSocket = null
         _isConnected.value = false
         _currentRoomId.value = null
