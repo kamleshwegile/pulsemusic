@@ -165,6 +165,7 @@ interface PulseApiService {
     ): Map<String, String>
 
     // Jam APIs
+    @retrofit2.http.Headers("Cache-Control: no-cache, no-store")
     @GET("api/v1/jam/my-jams")
     suspend fun getMyJams(): List<com.pulse.music.domain.JamRoomInfo>
 
