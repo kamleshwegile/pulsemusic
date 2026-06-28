@@ -393,6 +393,7 @@ private fun AppUpdates(context: android.content.Context) {
     var updateAvailable by remember { mutableStateOf<com.pulse.music.update.UpdateManager.UpdateInfo?>(null) }
     
     val downloadProgress by com.pulse.music.update.UpdateManager.downloadProgress.collectAsState()
+    val downloadedBytes by com.pulse.music.update.UpdateManager.downloadedBytes.collectAsState()
     val isDownloading by com.pulse.music.update.UpdateManager.isDownloading.collectAsState()
     
     var showUpToDate by remember { mutableStateOf(false) }
@@ -457,18 +458,33 @@ private fun AppUpdates(context: android.content.Context) {
                 
                 if (isDownloading) {
                     Spacer(modifier = Modifier.height(12.dp))
-                    androidx.compose.material3.LinearProgressIndicator(
-                        progress = { downloadProgress },
-                        modifier = Modifier.fillMaxWidth().height(4.dp),
-                        color = Color(0xFFF92839),
-                        trackColor = Color.DarkGray
-                    )
-                    Text(
-                        text = "${(downloadProgress * 100).toInt()}% downloaded",
-                        color = Color.Gray,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(top = 4.dp).align(Alignment.End)
-                    )
+                    if (downloadProgress >= 0f) {
+                        androidx.compose.material3.LinearProgressIndicator(
+                            progress = { downloadProgress },
+                            modifier = Modifier.fillMaxWidth().height(4.dp),
+                            color = Color(0xFFF92839),
+                            trackColor = Color.DarkGray
+                        )
+                        Text(
+                            text = "${(downloadProgress * 100).toInt()}% downloaded",
+                            color = Color.Gray,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 4.dp).align(Alignment.End)
+                        )
+                    } else {
+                        androidx.compose.material3.LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().height(4.dp),
+                            color = Color(0xFFF92839),
+                            trackColor = Color.DarkGray
+                        )
+                        val mb = String.format("%.1f", downloadedBytes / (1024f * 1024f))
+                        Text(
+                            text = "$mb MB downloaded...",
+                            color = Color.Gray,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 4.dp).align(Alignment.End)
+                        )
+                    }
                 }
             }
         }

@@ -26,6 +26,10 @@ object UpdateManager {
     private const val GITHUB_REPO = "Pulse-Music-Releases"
     private const val GITHUB_API_URL = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
 
+    val isDownloading = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val downloadProgress = kotlinx.coroutines.flow.MutableStateFlow(0f)
+    val downloadedBytes = kotlinx.coroutines.flow.MutableStateFlow(0)
+
     data class UpdateInfo(val hasUpdate: Boolean, val newVersion: String, val downloadUrl: String)
 
     fun cleanupOldUpdates(context: Context) {
@@ -53,8 +57,9 @@ object UpdateManager {
                 val json = JSONObject(response)
                 val tagName = json.getString("tag_name")
                 
-                val isNewer = (tagName.replace("v", "").replace(".", "").toIntOrNull() ?: 0) >
-                              (currentVersion.replace("v", "").replace(".", "").toIntOrNull() ?: 0)
+                val cleanTag = tagName.replace(Regex("[^0-9]"), "").toIntOrNull() ?: 0
+                val cleanCurrent = currentVersion.replace(Regex("[^0-9]"), "").toIntOrNull() ?: 0
+                val isNewer = cleanTag > cleanCurrent
 
                 var apkUrl = ""
                 val assets = json.getJSONArray("assets")
@@ -76,7 +81,11 @@ object UpdateManager {
         return@withContext UpdateInfo(false, currentVersion, "")
     }
 
-    fun downloadAndInstallUpdate(context: Context, downloadUrl: String, scope: CoroutineScope, onProgress: (Float) -> Unit) {
+    fun downloadAndInstallUpdate(context: Context, downloadUrl: String, scope: CoroutineScope) {
+        if (isDownloading.value) return
+        isDownloading.value = true
+        downloadProgress.value = 0f
+        
         cleanupOldUpdates(context)
 
         val request = DownloadManager.Request(Uri.parse(downloadUrl))
@@ -91,8 +100,7 @@ object UpdateManager {
         val downloadId = downloadManager.enqueue(request)
 
         scope.launch(Dispatchers.IO) {
-            var isDownloading = true
-            while (isDownloading) {
+            while (isDownloading.value) {
                 val query = DownloadManager.Query().setFilterById(downloadId)
                 val cursor = downloadManager.query(query)
                 if (cursor != null && cursor.moveToFirst()) {
@@ -106,17 +114,22 @@ object UpdateManager {
                         val status = cursor.getInt(statusIndex)
 
                         if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                            onProgress(1f)
-                            isDownloading = false
+                            downloadProgress.value = 1f
+                            isDownloading.value = false
                         } else if (status == DownloadManager.STATUS_FAILED) {
-                            isDownloading = false
-                        } else if (bytesTotal > 0) {
-                            onProgress(bytesDownloaded.toFloat() / bytesTotal.toFloat())
+                            isDownloading.value = false
+                        } else if (bytesDownloaded > 0) {
+                            downloadedBytes.value = bytesDownloaded
+                            if (bytesTotal > 0) {
+                                downloadProgress.value = bytesDownloaded.toFloat() / bytesTotal.toFloat()
+                            } else {
+                                downloadProgress.value = -1f // Indeterminate
+                            }
                         }
                     }
                 }
                 cursor?.close()
-                if (isDownloading) delay(500)
+                if (isDownloading.value) delay(500)
             }
         }
 
@@ -153,6 +166,7 @@ object UpdateManager {
         }
     }
 }
+
 
 
 
