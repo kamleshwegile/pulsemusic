@@ -2,3 +2,18 @@ venv/
 __pycache__/
 *.pyc
 .env
+
+# Android build artifacts
+pulse-android/app/build/
+pulse-android/build/
+pulse-android/.gradle/
+*.class
+
+# IDE files
+.idea/
+*.iml
+
+# Temp files
+temp_repo/
+test_upload.py
+test_ws_live.py

@@ -30,8 +30,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SPOTIPY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID", "cccb6c89f4ac43f8a874a20b19e38fc5")
-SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET", "d0b74333a8d24d51bdd58f4ed77179b1")
+SPOTIPY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID", "")
+SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET", "")
 
 if SPOTIPY_CLIENT_ID and SPOTIPY_CLIENT_SECRET:
     sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=SPOTIPY_CLIENT_ID, client_secret=SPOTIPY_CLIENT_SECRET))
@@ -41,25 +41,39 @@ else:
 app = FastAPI()
 
 # Database Config
-MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://user:pass@cluster.mongodb.net/")
-client = MongoClient(MONGO_URL)
-db = client["pulse"]
-users_collection = db["users"]
-# Ensure email uniqueness at DB level
-try:
-    users_collection.create_index("email", unique=True)
-except Exception:
-    pass  # Index may already exist
-liked_songs_collection = db["liked_songs"]
-followed_artists_collection = db["followed_artists"]
-playlists_collection = db["playlists"]
-recent_searches_collection = db["recent_searches"]
-recently_played_collection = db["recently_played"]
-jams_collection = db["jams"]
-jam_members_collection = db["jam_members"]
-jam_messages_collection = db["jam_messages"]
+MONGO_URL = os.getenv("MONGO_URL", "")
+if MONGO_URL:
+    client = MongoClient(MONGO_URL)
+    db = client["pulse"]
+    users_collection = db["users"]
+    try:
+        users_collection.create_index("email", unique=True)
+    except Exception as e:
+        print(f"Warning: Could not create index on users collection: {e}")
+    
+    liked_songs_collection = db["liked_songs"]
+    followed_artists_collection = db["followed_artists"]
+    playlists_collection = db["playlists"]
+    recent_searches_collection = db["recent_searches"]
+    recently_played_collection = db["recently_played"]
+    jams_collection = db["jams"]
+    jam_members_collection = db["jam_members"]
+    jam_messages_collection = db["jam_messages"]
+else:
+    print("Warning: MONGO_URL is not set. Database features will be unavailable.")
+    client = None
+    db = None
+    users_collection = None
+    liked_songs_collection = None
+    followed_artists_collection = None
+    playlists_collection = None
+    recent_searches_collection = None
+    recently_played_collection = None
+    jams_collection = None
+    jam_members_collection = None
+    jam_messages_collection = None
 
-SECRET_KEY = os.getenv("SECRET_KEY", os.getenv("JWT_SECRET", "super-secret-fallback-key"))
+SECRET_KEY = os.getenv("SECRET_KEY", os.getenv("JWT_SECRET", "fallback-dev-key-change-in-production"))
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -524,6 +538,33 @@ async def jam_websocket(websocket: WebSocket, room_id: str, username: str, actio
                 room.current_song = msg.get("song")
                 room.sync_to_db()
                 await room.broadcast(msg, sender=websocket)
+
+            elif event == "sync_queue":
+                queue = msg.get("queue", [])
+                current_index = msg.get("current_index", 0)
+                position_ms = msg.get("position_ms", 0)
+                room.queue = queue
+                room.sync_to_db()
+                await room.broadcast({
+                    "event": "queue_updated",
+                    "queue": room.queue,
+                    "current_index": current_index,
+                    "position_ms": position_ms
+                }, sender=websocket)
+
+            elif event == "sync_shuffle":
+                shuffle_enabled = msg.get("enabled", False)
+                await room.broadcast({
+                    "event": "shuffle_updated",
+                    "enabled": shuffle_enabled
+                }, sender=websocket)
+
+            elif event == "sync_repeat":
+                repeat_mode = msg.get("mode", "OFF")
+                await room.broadcast({
+                    "event": "repeat_updated",
+                    "mode": repeat_mode
+                }, sender=websocket)
 
             elif event == "add_song":
                 song = msg.get("song")

@@ -66,7 +66,7 @@ class PlaybackService : MediaSessionService() {
             jamSessionManager.incomingSongWithSync.collect { data ->
                 data?.let { (song, syncInfo) ->
                     val (isPlaying, positionMs) = syncInfo
-                    if (musicPlayerManager.currentSong.value?.id != song.id) {
+                    if (jamSessionManager.isConnected.value) {
                         if (player.playWhenReady != isPlaying) {
                             ignoreNextPlayChange = true
                         }
@@ -88,19 +88,56 @@ class PlaybackService : MediaSessionService() {
             }
         }
         scope.launch {
-            jamSessionManager.queue.collect { queueJson ->
-                if (jamSessionManager.isConnected.value && queueJson.isNotEmpty()) {
-                    val songs = queueJson.map { item ->
-                        com.pulse.music.domain.Song(
-                            id = item.optString("song_id", ""),
-                            title = item.optString("title", "Unknown Title"),
-                            artist = item.optString("artist", "Unknown Artist"),
-                            albumArt = item.optString("albumArt", ""),
-                            durationMs = item.optLong("durationMs", 0L),
-                            source = item.optString("source", "")
-                        )
+            jamSessionManager.incomingQueueSync.collect { syncData ->
+                if (syncData != null && jamSessionManager.isConnected.value) {
+                    val queueJson = syncData.first
+                    val syncIndex = syncData.second
+                    val syncPos = syncData.third
+                    
+                    if (queueJson.isNotEmpty()) {
+                        val songs = queueJson.map { item ->
+                            com.pulse.music.domain.Song(
+                                id = item.optString("id", item.optString("song_id", "")),
+                                title = item.optString("title", "Unknown Title"),
+                                artist = item.optString("artist", "Unknown Artist"),
+                                albumArt = item.optString("albumArt", ""),
+                                durationMs = item.optLong("durationMs", 0L),
+                                source = item.optString("source", "")
+                            )
+                        }
+                        musicPlayerManager.setQueueSync(songs, syncIndex, syncPos)
                     }
-                    musicPlayerManager.setQueueSync(songs)
+                }
+            }
+        }
+        scope.launch {
+            jamSessionManager.isConnected.collect { connected ->
+                if (connected && jamSessionManager.isHost) {
+                    val q = musicPlayerManager.queue.value
+                    val curIdx = musicPlayerManager.currentIndex.value.coerceAtLeast(0)
+                    val pos = musicPlayerManager.currentPosition.value
+                    jamSessionManager.broadcastQueue(q, curIdx, pos)
+                    jamSessionManager.broadcastShuffle(musicPlayerManager.shuffleEnabled.value)
+                    jamSessionManager.broadcastRepeat(musicPlayerManager.repeatMode.value.name)
+                }
+            }
+        }
+        
+        scope.launch {
+            jamSessionManager.incomingShuffle.collect { enabled ->
+                enabled?.let {
+                    if (musicPlayerManager.shuffleEnabled.value != it) {
+                        musicPlayerManager.setShuffleSync(it)
+                    }
+                }
+            }
+        }
+        scope.launch {
+            jamSessionManager.incomingRepeat.collect { mode ->
+                mode?.let {
+                    if (musicPlayerManager.repeatMode.value.name != it) {
+                        musicPlayerManager.setRepeatSync(it)
+                    }
                 }
             }
         }
@@ -130,13 +167,15 @@ class PlaybackService : MediaSessionService() {
                 // If it transitioned locally (by user explicitly), broadcast it.
                 // If it was an AUTO transition (track finished naturally):
                 // - Only the HOST should broadcast the next song to keep everyone in sync.
-                // - Guests should ignore auto-transitions and wait for the host's broadcast.
                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                    if (jamSessionManager.isConnected.value && !jamSessionManager.isHost) {
-                        player.pause()
-                        return
-                    }
-                    if (!jamSessionManager.isHost) return
+                    // Let both devices seamlessly auto-transition using their synced ExoPlayer queues.
+                    // Do not broadcast play_song here, as that causes the guest to re-buffer and lag.
+                    return
+                }
+                
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED) {
+                    // Ignore transitions caused by the network explicitly syncing the queue
+                    return
                 }
                 
                 // Fetch the actual song that the player just transitioned to

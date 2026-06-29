@@ -596,7 +596,7 @@ fun MiniPlayerCard(
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 12.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsisagy
                 )
             }
 

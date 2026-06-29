@@ -611,7 +611,7 @@ class MusicPlayerManager @Inject constructor(
                 }
 
                 // Dynamically fetch and append 5 recommended songs to the queue on every song play, ONLY if Repeat is OFF
-                if (_repeatMode.value == RepeatMode.OFF && !current.id.startsWith("local_")) {
+                if (_repeatMode.value == RepeatMode.OFF && !current.id.startsWith("local_") && !com.pulse.music.ui.jam.JamSessionManager.isConnected.value) {
                     scope.launch(Dispatchers.IO) {
                         try {
                             val recs = onlineRepo.getRecommendations(current.artist, current.title).getOrNull()
@@ -664,12 +664,14 @@ class MusicPlayerManager @Inject constructor(
     fun playSongFromList(song: Song, allSongs: List<Song>) {
         abortCrossfade()
         saveRecentPlay(song)
-        scope.launch {
+        playSongJob?.cancel()
+        playSongJob = scope.launch {
             _queue.value = allSongs
             val idx = allSongs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
             _currentIndex.value = idx
             
             val resolvedSource = resolveSongSource(song)
+            if (!isActive) return@launch
             val resolvedSong = song.copy(source = resolvedSource)
             
             val updatedQueue = allSongs.toMutableList()
@@ -682,19 +684,34 @@ class MusicPlayerManager @Inject constructor(
             player.prepare()
             player.play()
             preBufferAlternatePlayer()
-            
-            // Auto-fetch recommendations block removed to fix Repeat All behavior for Singles
-            // (Queue needs to remain size 1 so ExoPlayer loops exactly one item)
+            com.pulse.music.ui.jam.JamSessionManager.broadcastQueue(_queue.value, idx, 0)
         }
     }
 
     /** Play a single song. */
+    private var playSongJob: kotlinx.coroutines.Job? = null
+
     @OptIn(UnstableApi::class)
     fun playSong(song: Song, startPositionMs: Long = 0L, playWhenReady: Boolean = true) {
         abortCrossfade()
         saveRecentPlay(song)
-        scope.launch {
+        playSongJob?.cancel()
+        playSongJob = scope.launch {
+            // Instant play/pause/seek sync if we are already playing this exact song!
+            val currentIdx = _currentIndex.value
+            if (currentIdx >= 0 && _currentSong.value?.id == song.id) {
+                val diff = kotlin.math.abs(player.currentPosition - startPositionMs)
+                if (diff > 1500) {
+                    player.seekTo(currentIdx, startPositionMs)
+                }
+                if (player.playWhenReady != playWhenReady) {
+                    player.playWhenReady = playWhenReady
+                }
+                return@launch
+            }
+            
             val resolvedSource = resolveSongSource(song)
+            if (!isActive) return@launch
             val resolvedSong = song.copy(source = resolvedSource)
             
             val idx = _queue.value.indexOfFirst { it.id == song.id }
@@ -726,15 +743,29 @@ class MusicPlayerManager @Inject constructor(
                 player.prepare()
                 if (playWhenReady) player.play()
                 preBufferAlternatePlayer()
+                com.pulse.music.ui.jam.JamSessionManager.broadcastQueue(_queue.value, newIdx, startPositionMs)
             }
         }
     }
 
-    fun setQueueSync(songs: List<Song>) {
+    fun setQueueSync(songs: List<Song>, syncIndex: Int, syncPositionMs: Long) {
         _queue.value = songs
         val mediaItems = songs.map { buildMediaItem(it) }
-        player.setMediaItems(mediaItems)
+        
+        // Coerce index to be safe
+        val safeIndex = syncIndex.coerceIn(0, maxOf(0, mediaItems.size - 1))
+        val currentPlayWhenReady = player.playWhenReady
+        
+        player.setMediaItems(mediaItems, safeIndex, syncPositionMs)
+        player.playWhenReady = currentPlayWhenReady
+        player.prepare()
         preBufferAlternatePlayer()
+        
+        // Ensure UI state matches the new queue immediately
+        if (safeIndex >= 0 && safeIndex < songs.size) {
+            _currentIndex.value = safeIndex
+            _currentSong.value = songs[safeIndex]
+        }
     }
 
     fun enqueue(song: Song) {
@@ -752,6 +783,7 @@ class MusicPlayerManager @Inject constructor(
                     player.prepare()
                     player.play()
                 }
+                com.pulse.music.ui.jam.JamSessionManager.broadcastQueue(_queue.value, _currentIndex.value.coerceAtLeast(0), player.currentPosition)
             }
         }
     }
@@ -830,14 +862,48 @@ class MusicPlayerManager @Inject constructor(
 
     /** Toggle shuffle on/off. */
     fun toggleShuffle() {
-        _shuffleEnabled.value = !_shuffleEnabled.value
-        player.shuffleModeEnabled = _shuffleEnabled.value
+        val newState = !_shuffleEnabled.value
+        _shuffleEnabled.value = newState
+        
+        if (com.pulse.music.ui.jam.JamSessionManager.isConnected.value) {
+            player.shuffleModeEnabled = false
+            if (newState) {
+                // Physically shuffle the queue for Jam session
+                val q = _queue.value.toMutableList()
+                if (q.size > 1 && _currentIndex.value >= 0) {
+                    val current = q.removeAt(_currentIndex.value)
+                    q.shuffle()
+                    q.add(0, current)
+                    _queue.value = q
+                    _currentIndex.value = 0
+                    
+                    val mediaItems = q.map { buildMediaItem(it) }
+                    player.setMediaItems(mediaItems, 0, player.currentPosition)
+                    com.pulse.music.ui.jam.JamSessionManager.broadcastQueue(q, 0, player.currentPosition)
+                }
+            }
+            com.pulse.music.ui.jam.JamSessionManager.broadcastShuffle(newState)
+        } else {
+            player.shuffleModeEnabled = newState
+        }
     }
     
     fun setShuffleEnabled(enabled: Boolean) {
         if (_shuffleEnabled.value != enabled) {
             _shuffleEnabled.value = enabled
-            player.shuffleModeEnabled = enabled
+            if (com.pulse.music.ui.jam.JamSessionManager.isConnected.value) {
+                player.shuffleModeEnabled = false
+                com.pulse.music.ui.jam.JamSessionManager.broadcastShuffle(enabled)
+            } else {
+                player.shuffleModeEnabled = enabled
+            }
+        }
+    }
+    
+    fun setShuffleSync(enabled: Boolean) {
+        if (_shuffleEnabled.value != enabled) {
+            _shuffleEnabled.value = enabled
+            player.shuffleModeEnabled = false // Always false in jam sessions
         }
     }
 
@@ -859,6 +925,15 @@ class MusicPlayerManager @Inject constructor(
             RepeatMode.ONE -> RepeatMode.OFF
         }
         syncRepeatMode()
+        com.pulse.music.ui.jam.JamSessionManager.broadcastRepeat(_repeatMode.value.name)
+    }
+
+    fun setRepeatSync(modeName: String) {
+        val mode = try { RepeatMode.valueOf(modeName) } catch (e: Exception) { RepeatMode.OFF }
+        if (_repeatMode.value != mode) {
+            _repeatMode.value = mode
+            syncRepeatMode()
+        }
     }
 
     /** Remove a song from queue by index. */
@@ -873,6 +948,7 @@ class MusicPlayerManager @Inject constructor(
             _currentSong.value = null
             _currentIndex.value = -1
         }
+        com.pulse.music.ui.jam.JamSessionManager.broadcastQueue(_queue.value, _currentIndex.value.coerceAtLeast(0), player.currentPosition)
     }
 
     fun setSleepTimer(mode: SleepTimerMode) {

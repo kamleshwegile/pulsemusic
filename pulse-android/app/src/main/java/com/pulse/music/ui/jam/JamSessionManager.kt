@@ -42,6 +42,15 @@ object JamSessionManager {
     private val _incomingSongWithSync = MutableStateFlow<Pair<com.pulse.music.domain.Song, Pair<Boolean, Long>>?>(null)
     val incomingSongWithSync: StateFlow<Pair<com.pulse.music.domain.Song, Pair<Boolean, Long>>?> = _incomingSongWithSync.asStateFlow()
 
+    private val _incomingShuffle = MutableStateFlow<Boolean?>(null)
+    val incomingShuffle: StateFlow<Boolean?> = _incomingShuffle.asStateFlow()
+
+    private val _incomingRepeat = MutableStateFlow<String?>(null)
+    val incomingRepeat: StateFlow<String?> = _incomingRepeat.asStateFlow()
+
+    private val _incomingQueueSync = MutableStateFlow<Triple<List<JSONObject>, Int, Long>?>(null)
+    val incomingQueueSync: StateFlow<Triple<List<JSONObject>, Int, Long>?> = _incomingQueueSync.asStateFlow()
+
     private val _queue = MutableStateFlow<List<JSONObject>>(emptyList())
     val queue: StateFlow<List<JSONObject>> = _queue.asStateFlow()
 
@@ -137,11 +146,20 @@ object JamSessionManager {
                     }
                     "queue_updated" -> {
                         val queueArray = json.getJSONArray("queue")
+                        val currentIndex = json.optInt("current_index", 0)
+                        val positionMs = json.optLong("position_ms", 0L)
                         val list = mutableListOf<JSONObject>()
                         for (i in 0 until queueArray.length()) {
                             list.add(queueArray.getJSONObject(i))
                         }
                         _queue.value = list
+                        _incomingQueueSync.value = Triple(list, currentIndex, positionMs)
+                    }
+                    "shuffle_updated" -> {
+                        _incomingShuffle.value = json.optBoolean("enabled")
+                    }
+                    "repeat_updated" -> {
+                        _incomingRepeat.value = json.optString("mode")
                     }
                     "session_state" -> {
                         _isPendingApproval.value = false
@@ -335,6 +353,50 @@ object JamSessionManager {
                 put("text", text)
             }
             webSocket?.send(json.toString())
+        }
+    }
+    
+    fun broadcastQueue(queueList: List<com.pulse.music.domain.Song>, currentIndex: Int, positionMs: Long) {
+        if (_isConnected.value && !_isPendingApproval.value) {
+            val queueJsonArray = org.json.JSONArray()
+            queueList.forEach { song ->
+                val songJson = JSONObject().apply {
+                    put("id", song.id)
+                    put("title", song.title)
+                    put("artist", song.artist)
+                    put("albumArt", song.albumArt ?: "")
+                    put("durationMs", song.durationMs ?: 0)
+                    put("source", song.source)
+                }
+                queueJsonArray.put(songJson)
+            }
+            val payload = JSONObject().apply {
+                put("event", "sync_queue")
+                put("queue", queueJsonArray)
+                put("current_index", currentIndex)
+                put("position_ms", positionMs)
+            }
+            webSocket?.send(payload.toString())
+        }
+    }
+
+    fun broadcastShuffle(enabled: Boolean) {
+        if (_isConnected.value && !_isPendingApproval.value) {
+            val payload = JSONObject().apply {
+                put("event", "sync_shuffle")
+                put("enabled", enabled)
+            }
+            webSocket?.send(payload.toString())
+        }
+    }
+
+    fun broadcastRepeat(mode: String) {
+        if (_isConnected.value && !_isPendingApproval.value) {
+            val payload = JSONObject().apply {
+                put("event", "sync_repeat")
+                put("mode", mode)
+            }
+            webSocket?.send(payload.toString())
         }
     }
     
