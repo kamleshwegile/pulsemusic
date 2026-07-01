@@ -1,0 +1,116 @@
+name: Deploy to Amazon ECS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+env:
+  AWS_REGION: "us-east-1"
+  PROJECT_NAME: "ticketrider"
+  ENVIRONMENT: "dev"
+  # AWS Role ARN configured via OIDC
+  AWS_ROLE_ARN: "arn:aws:iam::072160582486:role/ticketrider-dev-github-actions"
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
+jobs:
+  deploy-java-api:
+    name: Deploy Java Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Java image to Amazon ECR
+        id: build-java-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-java-api
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd pulse-backend
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-java-api --query taskDefinition > task-def-java.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def-java
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-def-java.json
+          container-name: pulse-java-api
+          image: ${{ steps.build-java-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-java.outputs.task-definition }}
+          service: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-java-api
+          cluster: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster
+          wait-for-service-stability: true
+
+  deploy-python-api:
+    name: Deploy Python Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Python image to Amazon ECR
+        id: build-python-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-python-api
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-python-api --query taskDefinition > task-def-python.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def-python
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-def-python.json
+          container-name: pulse-python-api
+          image: ${{ steps.build-python-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-python.outputs.task-definition }}
+          service: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-python-api
+          cluster: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster
+          wait-for-service-stability: true
