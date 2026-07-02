@@ -3,10 +3,11 @@ __pycache__/
 *.pyc
 .env
 
-# Android build artifacts
-pulse-android/app/build/
-pulse-android/build/
-pulse-android/.gradle/
+# Android & Java build artifacts
+build/
+*/build/
+*/*/build/
+.gradle/
 *.class
 
 # IDE files
