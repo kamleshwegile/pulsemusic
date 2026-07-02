@@ -3,7 +3,9 @@ import bcrypt
 import time
 from bson import ObjectId
 
-client = pymongo.MongoClient("mongodb+srv://rahul210092004_db_user:cLbu4LKjF4aT5Hmj@cluster0.dtdusis.mongodb.net/?appName=Cluster0")
+import os
+
+client = pymongo.MongoClient(os.getenv("MONGO_URL", ""))
 
 db = client["pulse"]
 users = db["users"]

@@ -85,7 +85,7 @@ fun Application.configureDI() {
 }
 
 fun Application.configureDatabases() {
-    val dbUrl = System.getenv("DATABASE_URL") ?: "mongodb+srv://rahul210092004_db_user:cLbu4LKjF4aT5Hmj@cluster0.dtdusis.mongodb.net/?appName=Cluster0"
+    val dbUrl = System.getenv("DATABASE_URL") ?: ""
     val client = KMongo.createClient(dbUrl).coroutine
     database = client.getDatabase("pulse")
     
