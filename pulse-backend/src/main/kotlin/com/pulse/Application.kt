@@ -124,5 +124,6 @@ fun Application.configureCORS() {
         anyHost()
         allowHeader("Authorization")
         allowHeader("Content-Type")
+        allowHeader("X-Pulse-App-Key")
     }
 }
