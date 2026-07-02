@@ -63,7 +63,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-java.outputs.task-definition }}
-          service: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-java-api
+          service: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-java-api-svc
           cluster: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster
           wait-for-service-stability: true
 
@@ -111,6 +111,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-python.outputs.task-definition }}
-          service: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-python-api
+          service: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-pulse-python-api-svc
           cluster: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-cluster
           wait-for-service-stability: true
