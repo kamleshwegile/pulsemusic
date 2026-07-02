@@ -51,6 +51,15 @@ fun Application.authRoutes(secret: String, issuer: String) {
 
     routing {
         route("/pulse-java-api/api/v1/auth") {
+            // Require API Key to prevent bot registrations
+            intercept(io.ktor.server.application.ApplicationCallPipeline.Plugins) {
+                val apiKey = call.request.headers["X-Pulse-App-Key"]
+                if (apiKey != "pulse-frontend-prod-key-9f8a7b6c5d4e") {
+                    call.respond(HttpStatusCode.Unauthorized, "Missing or Invalid API Key")
+                    finish()
+                }
+            }
+
             post("/register") {
                 val req = try {
                     call.receive<RegisterRequest>()

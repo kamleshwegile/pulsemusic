@@ -27,7 +27,24 @@ fun Application.configureApiRoutes() {
 
     routing {
         route("/pulse-java-api/api/v1") {
-            get("/search") {
+            // Layer A: Require API Key for all routes under this path (except /health)
+            intercept(io.ktor.server.application.ApplicationCallPipeline.Plugins) {
+                if (call.request.local.uri != "/pulse-java-api/api/v1/health") {
+                    val apiKey = call.request.headers["X-Pulse-App-Key"]
+                    if (apiKey != "pulse-frontend-prod-key-9f8a7b6c5d4e") {
+                        call.respond(HttpStatusCode.Unauthorized, "Missing or Invalid API Key")
+                        finish()
+                    }
+                }
+            }
+
+            get("/health") {
+                call.respond(providerManager.getHealth().associateBy { it.name })
+            }
+
+            // Layer C: Require JWT Token for music routes
+            authenticate("auth-jwt") {
+                get("/search") {
                 val q = call.request.queryParameters["q"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing query")
                 val type = call.request.queryParameters["type"] ?: "song"
                 val cacheKey = "search:all:v2:$q"
@@ -357,9 +374,7 @@ fun Application.configureApiRoutes() {
                 }
             }
 
-            get("/health") {
-                call.respond(providerManager.getHealth().associateBy { it.name })
-            }
+            } // end of authenticate
         }
     }
 }

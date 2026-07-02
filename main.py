@@ -43,6 +43,19 @@ app = FastAPI()
 from fastapi import Request
 
 @app.middleware("http")
+async def require_api_key(request: Request, call_next):
+    # Skip health checks
+    path = request.url.path
+    if path == "/" or path.endswith("/health"):
+        return await call_next(request)
+        
+    api_key = request.headers.get("X-Pulse-App-Key")
+    if api_key != "pulse-frontend-prod-key-9f8a7b6c5d4e":
+        return Response(content="Missing or Invalid API Key", status_code=401)
+        
+    return await call_next(request)
+
+@app.middleware("http")
 async def strip_alb_prefix(request: Request, call_next):
     prefix = "/pulse-python-api"
     if request.scope["path"].startswith(prefix):
