@@ -40,6 +40,12 @@ fun Application.module() {
     configureAuth()
     configureApiRoutes()
     
+    routing {
+        get("/") {
+            call.respondText("OK", io.ktor.http.ContentType.Text.Plain)
+        }
+    }
+
     val jwtSecret = System.getenv("JWT_SECRET") ?: "super-secret-fallback-key"
     val jwtIssuer = System.getenv("JWT_ISSUER") ?: "http://0.0.0.0:8080/"
     authRoutes(jwtSecret, jwtIssuer)

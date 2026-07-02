@@ -92,6 +92,10 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
 
+@app.get("/")
+async def root_health_check():
+    return {"status": "OK"}
+
 # ------------------- Jam Suggestions Endpoint -------------------
 @app.get("/api/v1/jam/suggestions/{room_id}")
 async def jam_suggestions(room_id: str, token: str = Header(None, alias="Authorization")):
