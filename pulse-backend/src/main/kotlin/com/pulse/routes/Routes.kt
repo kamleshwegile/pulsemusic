@@ -12,6 +12,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import com.pulse.models.*
 import kotlinx.coroutines.async
+import io.ktor.server.auth.*
 
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
