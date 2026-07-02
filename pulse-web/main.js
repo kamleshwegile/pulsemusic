@@ -1,6 +1,4 @@
 const API_BASE_URL = '/api/v1';
-const API_KEY = 'pulse-frontend-prod-key-9f8a7b6c5d4e';
-
 // DOM Elements
 const loginBtn = document.getElementById('loginBtn');
 const userInfo = document.getElementById('userInfo');
@@ -147,7 +145,6 @@ async function performSearch(query) {
   try {
     const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}&type=song`, {
       headers: {
-        'X-Pulse-App-Key': API_KEY,
         'Authorization': `Bearer ${currentUser.token}`
       }
     });
@@ -195,8 +192,7 @@ async function handleAuth(e) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-Pulse-App-Key': API_KEY
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(body)
     });
@@ -250,7 +246,6 @@ async function fetchTrendingSongs() {
     document.querySelector('.section-header h2').textContent = 'Trending Now';
     const response = await fetch(`${API_BASE_URL}/trending?country=IN`, {
       headers: {
-        'X-Pulse-App-Key': API_KEY,
         'Authorization': `Bearer ${currentUser.token}`
       }
     });
