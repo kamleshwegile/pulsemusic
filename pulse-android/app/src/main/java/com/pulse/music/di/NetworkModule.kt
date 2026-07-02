@@ -52,6 +52,7 @@ object NetworkModule {
             }
             val builder = original.newBuilder()
                 .header("X-App-Version", BuildConfig.VERSION_NAME)
+                .header("X-Pulse-App-Key", "pulse-frontend-prod-key-9f8a7b6c5d4e")
                 
             if (!token.isNullOrEmpty()) {
                 builder.header("Authorization", "Bearer $token")

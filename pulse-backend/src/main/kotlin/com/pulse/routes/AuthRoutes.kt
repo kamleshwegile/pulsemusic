@@ -68,6 +68,8 @@ fun Application.authRoutes(secret: String, issuer: String) {
                     return@post
                 }
 
+                println("INFO [Auth]: New user registering: ${req.email}")
+
                 if (req.username.isBlank() || req.email.isBlank() || req.password.isBlank()) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Fields cannot be empty"))
                     return@post
@@ -106,6 +108,8 @@ fun Application.authRoutes(secret: String, issuer: String) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request body"))
                     return@post
                 }
+
+                println("INFO [Auth]: User attempting to login: ${req.email}")
 
                 val userRow = usersCollection.findOne(User::email eq req.email)
 
