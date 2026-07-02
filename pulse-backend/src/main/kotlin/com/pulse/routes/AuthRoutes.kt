@@ -50,7 +50,7 @@ fun Application.authRoutes(secret: String, issuer: String) {
     val usersCollection = database.getCollection<User>("users")
 
     routing {
-        route("/api/v1/auth") {
+        route("/pulse-java-api/api/v1/auth") {
             post("/register") {
                 val req = try {
                     call.receive<RegisterRequest>()

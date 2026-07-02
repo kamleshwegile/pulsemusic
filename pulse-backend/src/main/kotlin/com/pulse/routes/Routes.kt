@@ -26,7 +26,7 @@ fun Application.configureApiRoutes() {
     val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
 
     routing {
-        route("/api/v1") {
+        route("/pulse-java-api/api/v1") {
             get("/search") {
                 val q = call.request.queryParameters["q"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing query")
                 val type = call.request.queryParameters["type"] ?: "song"

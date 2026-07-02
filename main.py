@@ -40,6 +40,17 @@ else:
 
 app = FastAPI()
 
+from fastapi import Request
+
+@app.middleware("http")
+async def strip_alb_prefix(request: Request, call_next):
+    prefix = "/pulse-python-api"
+    if request.scope["path"].startswith(prefix):
+        request.scope["path"] = request.scope["path"][len(prefix):]
+        if not request.scope["path"]:
+            request.scope["path"] = "/"
+    return await call_next(request)
+
 # Database Config
 MONGO_URL = os.getenv("MONGO_URL", "")
 if MONGO_URL:
