@@ -63,66 +63,7 @@ object NetworkModule {
         }
 
         val failoverInterceptor = Interceptor { chain ->
-            val request = chain.request()
-            
-            val fallbackUrls = listOf(
-                BuildConfig.API_BASE_URL,
-                "https://pulse-music-backend-fallback-1.onrender.com/",
-                "https://pulse-music-backend-fallback-2.onrender.com/"
-            )
-
-            val prefs = context.getSharedPreferences("backend_prefs", Context.MODE_PRIVATE)
-            var currentIndex = prefs.getInt("active_backend_index", 0)
-
-            var targetUrl = request.url.newBuilder()
-                .scheme(fallbackUrls[currentIndex].toHttpUrl().scheme)
-                .host(fallbackUrls[currentIndex].toHttpUrl().host)
-                .port(fallbackUrls[currentIndex].toHttpUrl().port)
-                .build()
-
-            var finalRequest = request.newBuilder().url(targetUrl).build()
-            var response: okhttp3.Response? = null
-            var exception: Exception? = null
-
-            try {
-                response = chain.proceed(finalRequest)
-            } catch (e: Exception) {
-                exception = e
-            }
-
-            // If the current backend is dead (timeout, 5xx, or crash), fail over to the next one!
-            if (response == null || !response.isSuccessful && response.code >= 500) {
-                for (i in 1 until fallbackUrls.size) {
-                    response?.close()
-                    currentIndex = (currentIndex + 1) % fallbackUrls.size
-
-                    targetUrl = request.url.newBuilder()
-                        .scheme(fallbackUrls[currentIndex].toHttpUrl().scheme)
-                        .host(fallbackUrls[currentIndex].toHttpUrl().host)
-                        .port(fallbackUrls[currentIndex].toHttpUrl().port)
-                        .build()
-
-                    finalRequest = request.newBuilder().url(targetUrl).build()
-
-                    try {
-                        response = chain.proceed(finalRequest)
-                        if (response.isSuccessful || response.code < 500) {
-                            exception = null
-                            // Save this working backend permanently!
-                            prefs.edit().putInt("active_backend_index", currentIndex).apply()
-                            break
-                        }
-                    } catch (e: Exception) {
-                        exception = e
-                    }
-                }
-            }
-
-            if (exception != null && response == null) {
-                throw exception
-            }
-
-            response ?: chain.proceed(request)
+            chain.proceed(chain.request())
         }
 
         val cacheSize = 1000L * 1024L * 1024L * 1024L // 1 Terabyte (Effectively Unlimited)
