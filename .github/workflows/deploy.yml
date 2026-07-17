@@ -11,10 +11,10 @@ on:
 
 env:
   AWS_REGION: "us-east-1"
-  PROJECT_NAME: "pulsemusic"
+  PROJECT_NAME: "ticketrider"
   ENVIRONMENT: "dev"
   # AWS Role ARN configured via OIDC
-  AWS_ROLE_ARN: "arn:aws:iam::072160582486:role/pulsemusic-dev-github-actions"
+  AWS_ROLE_ARN: "arn:aws:iam::072160582486:role/ticketrider-dev-github-actions"
 
 permissions:
   id-token: write # Required for OIDC
